@@ -10,8 +10,8 @@ plate_size = [780, 265];
 do_half_x = true;
 // If there's not enough space for a full grid cell, squeeze in a half cell (y direction)
 do_half_y = true;
-// Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
-plate_corner_radius = 4;
+
+/* [Magnets] */
 
 // Whether to enable friction-fit magnets for each grid cell
 magnets = true;
@@ -26,8 +26,12 @@ magnet_top = 0.5;
 // Floor below the magnet. Not structurally important, should be small to minimize filament use
 magnet_bottom = 0.75;
 
+/* [Intersection Puzzle Connector] */
+
 // Enable the intersection puzzle plate connector. This is similar to GridPlates/GRIPS. Small puzzle connectors are added cell intersections.
 connector_intersection_puzzle = true;
+
+/* [Edge Puzzle Connector] */
 
 // Enable the edge puzzle plate connector. This connector is a bit cleaner, but is harder to print, especially when magnets are disabled (not enough vertical space). It's also more customizable, so you can tune the fit to your printer.
 connector_edge_puzzle = false;
@@ -49,6 +53,10 @@ edge_puzzle_height_female = 2.25;
 // Male side of the edge puzzle connector is smaller than the female side by this amount
 edge_puzzle_height_male_delta = 0.25;
 
+/* [Advanced] */
+
+// Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
+plate_corner_radius = 4;
 // Edge adjustment values (clockwise: north, east, south, west). These values are *added* to the plate size as padding, i.e. the final plate will end up different than configured in plate_size. This allows you to customize the padding to be asymmetrical. You can also use negative values to "cut" the plate edges if you want to squeeze an extra square out of limited space.
 edge_adjust = [0, 0, 0, 0];
 
