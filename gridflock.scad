@@ -683,7 +683,7 @@ module test_pattern_numbering() {
     translate([-30, -30]) segment(count = [1, 1], connector = [true, true, true, true], global_segment_index = 12);
 }
 
-//main();
+main();
 //test_pattern_half();
 //test_pattern_padding();
-test_pattern_numbering();
+//test_pattern_numbering();
