@@ -156,8 +156,8 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
                 // baseplate_cutter accepts a height parameter. _profile_height is the actual profile part of this. The remainder is "dead" space below the profile that the bin does not use. That's where e.g. magnets are placed.
                 // The problem is that the height parameter must be at least BASEPLATE_HEIGHT, which is slightly larger than _profile_height, so there is some "mandatory" dead space.
-                cutter_height = _profile_height + _extra_height - solid_base;
-                translate([0, 0, _profile_height - cutter_height + 0.001]) { // the +0.001 fixes what appears to be some floating point
+                cutter_height = _profile_height + _extra_height - solid_base + 0.001; // the +0.001 fixes what appears to be some floating point issue
+                translate([0, 0, _profile_height - cutter_height]) {
                     if (cutter_height >= BASEPLATE_HEIGHT) {
                         baseplate_cutter(size, cutter_height);
                     } else if (cutter_height >= _total_height) {
