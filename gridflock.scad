@@ -10,6 +10,8 @@ plate_size = [371, 254];
 do_half_x = true;
 // If there's not enough space for a full grid cell, squeeze in a half cell (y direction)
 do_half_y = true;
+// Thickness of the optional solid base
+solid_base = 0;
 
 /* [Magnets] */
 
@@ -91,10 +93,12 @@ _magnet_extraction_dim = [magnet_diameter/2, magnet_diameter/2+2];
 _magnet_extraction_dim_negative = [magnet_diameter/2, magnet_diameter/2];
 
 // actual height of a gridfinity profile with no extra clearance.
-// gridfinity rebuilt adds extra clearance at the bottom, we cut that out.
+// gridfinity rebuilt adds extra clearance at the bottom, we cut that out. This is the height for z>0
 _profile_height = 4.65;
+// height of the magnet level
 _magnet_level_height = (magnet_style == _MAGNET_PRESS_FIT ? magnet_top : 0) + magnet_bottom + magnet_height;
-_extra_height = magnets ? _magnet_level_height : 0;
+// total height of the non-bin levels (magnets, solid base). These are placed at z<0
+_extra_height = (magnets ? _magnet_level_height : 0) + solid_base;
 
 _total_height = _profile_height + _extra_height;
 
@@ -150,7 +154,23 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
         union() {
             difference() {
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
-                translate([0, 0, _profile_height - BASEPLATE_HEIGHT - _extra_height + 0.001]) baseplate_cutter(size, BASEPLATE_HEIGHT + _extra_height);
+                // baseplate_cutter accepts a height parameter. _profile_height is the actual profile part of this. The remainder is "dead" space below the profile that the bin does not use. That's where e.g. magnets are placed.
+                // The problem is that the height parameter must be at least BASEPLATE_HEIGHT, which is slightly larger than _profile_height, so there is some "mandatory" dead space.
+                cutter_height = _profile_height + _extra_height - solid_base;
+                translate([0, 0, _profile_height - cutter_height + 0.001]) { // the +0.001 fixes what appears to be some floating point
+                    if (cutter_height >= BASEPLATE_HEIGHT) {
+                        baseplate_cutter(size, cutter_height);
+                    } else if (cutter_height >= _total_height) {
+                        // we can simply move down a little bit, the additional cutting will only cut air anyway.
+                        translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
+                    } else {
+                        // we need to manually remove the dead space from the cut
+                        intersection() {
+                            translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
+                            translate([-size.x/2, -size.y/2]) cube([size.x, size.y, cutter_height]);
+                        }
+                    }
+                }
             }
             if (magnets) {
                 translate([0, 0, -_magnet_level_height]) linear_extrude(height = _magnet_level_height) {
@@ -177,17 +197,17 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
             }
         }
         if (magnets) {
-            translate([0, 0, -_magnet_level_height]) each_cell_corner(half) {
+            each_cell_corner(half) {
                 translate([_magnet_location, _magnet_location]) {
                     rot_slot = half.x == half.y ? -45 : -90;
                     // magnet slot
-                    translate([0, 0, magnet_bottom]) linear_extrude(magnet_height) {
+                    translate([0, 0, -_magnet_level_height + magnet_bottom]) linear_extrude(magnet_height) {
                         circle(magnet_diameter/2);
                         if (magnet_style == _MAGNET_PRESS_FIT) rotate([0, 0, rot_slot]) translate([-magnet_diameter/2, 0]) square([magnet_diameter, magnet_diameter/2 + _magnet_border]);
                     }
                     if (magnet_style == _MAGNET_PRESS_FIT) {
                         // magnet extraction slot
-                        rotate([0, 0, rot_slot]) linear_extrude(magnet_height + magnet_bottom) {
+                        rotate([0, 0, rot_slot]) translate([0, 0, -_extra_height]) linear_extrude(_extra_height - _magnet_level_height + magnet_bottom + magnet_height) {
                             extraction_dim = positive ? _magnet_extraction_dim : _magnet_extraction_dim_negative;
                             translate([-extraction_dim.x/2, -extraction_dim.y]) square(extraction_dim);
                             translate([0, -extraction_dim.y]) circle(extraction_dim.x/2);
