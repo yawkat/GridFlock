@@ -523,8 +523,8 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
     // whether to cut the male edge puzzle connector to make room for the bin in the next cell. For really short connectors this is not necessary, but there's also no good reason to turn this off, so it's not user configurable at the moment
     _edge_puzzle_overlap = true;
     last = last_cell(count);
-    intersection() {
-        difference() {
+    difference() {
+        intersection() {
             translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) difference() {
                 // basic plate with rounded corners
                 hull() {
@@ -537,53 +537,53 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                     segment_intersection_connectors(false, count, size, padding, connector);
                 }
             }
-            if (connector_edge_puzzle) {
-                translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, count, size, padding, connector);
-            }
-            if (numbering && global_segment_index != undef) {
-                squeeze = count.x <= 1;
-                navigate_cell(size, count, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x/(count.x == 0.5 ? 4 : 2)-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
-            }
-            if (bottom_chamfer[_SOUTH] > 0 && !connector[_SOUTH]) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([0, 90, 0]) rotate([0, 0, 90]) linear_extrude(size.x) scale(bottom_chamfer[_SOUTH]) chamfer_triangle();
-            if (bottom_chamfer[_WEST] > 0 && !connector[_WEST]) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([-90, 0, 0]) rotate([0, 0, -90]) linear_extrude(size.y) scale(bottom_chamfer[_WEST]) chamfer_triangle();
-            if (bottom_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([size.x/2, size.y/2, -_extra_height]) rotate([0, -90, 0]) rotate([0, 0, -90]) linear_extrude(size.x) scale(bottom_chamfer[_NORTH]) chamfer_triangle();
-            if (bottom_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.y) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
-        }
-        union() {
-            // padding cubes
-            translate([0, 0, -_extra_height]) {
-                if (padding[_NORTH] > 0) translate([-size.x/2, size.y/2-padding[_NORTH]]) cube([size.x, padding[_NORTH], _total_height]);
-                if (padding[_EAST] > 0) translate([size.x/2-padding[_EAST], -size.y/2]) cube([padding[_EAST], size.y, _total_height]);
-                if (padding[_SOUTH] > 0) translate([-size.x/2, -size.y/2]) cube([size.x, padding[_SOUTH], _total_height]);
-                if (padding[_WEST] > 0) translate([-size.x/2, -size.y/2]) cube([padding[_WEST], size.y, _total_height]);
-            }
-            // cells
-            for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, count, padding, [ix, iy]) {
-                cell([ix == count.x - 0.5, iy == count.y - 0.5], [
-                    connector[_NORTH] && iy == last.y,
-                    connector[_EAST] && ix == last.x,
-                    connector[_SOUTH] && iy == 0,
-                    connector[_WEST] && ix == 0
-                ]);
+            union() {
+                // padding cubes
+                translate([0, 0, -_extra_height]) {
+                    if (padding[_NORTH] > 0) translate([-size.x/2, size.y/2-padding[_NORTH]]) cube([size.x, padding[_NORTH], _total_height]);
+                    if (padding[_EAST] > 0) translate([size.x/2-padding[_EAST], -size.y/2]) cube([padding[_EAST], size.y, _total_height]);
+                    if (padding[_SOUTH] > 0) translate([-size.x/2, -size.y/2]) cube([size.x, padding[_SOUTH], _total_height]);
+                    if (padding[_WEST] > 0) translate([-size.x/2, -size.y/2]) cube([padding[_WEST], size.y, _total_height]);
+                }
+                // cells
+                for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, count, padding, [ix, iy]) {
+                    cell([ix == count.x - 0.5, iy == count.y - 0.5], [
+                        connector[_NORTH] && iy == last.y,
+                        connector[_EAST] && ix == last.x,
+                        connector[_SOUTH] && iy == 0,
+                        connector[_WEST] && ix == 0
+                    ]);
+                };
             };
         };
-    };
-    
-    if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, count, size, padding, connector);
-    if (connector_edge_puzzle) {
-        intersection() {
-            translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+_edge_puzzle_height_male) segment_edge_connectors(true, count, size, padding, connector);
-            if (_edge_puzzle_overlap) union() {
-                for (ix = [0:1:last.x]) {
-                    if (connector[_SOUTH]) navigate_cell(size, count, padding, [ix, -1]) cell([ix == count.x - 0.5, false], positive=false);
-                    if (connector[_NORTH]) navigate_cell(size, count, padding, [ix, last.y+1]) cell([ix == count.x - 0.5, false], positive=false);
-                }
-                for (iy = [0:1:last.y]) {
-                    if (connector[_WEST]) navigate_cell(size, count, padding, [-1, iy]) cell([false, iy == count.y - 0.5], positive=false);
-                    if (connector[_EAST]) navigate_cell(size, count, padding, [last.x+1, iy]) cell([false, iy == count.y - 0.5], positive=false);
+        
+        if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, count, size, padding, connector);
+        if (connector_edge_puzzle) {
+            intersection() {
+                translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+_edge_puzzle_height_male) segment_edge_connectors(true, count, size, padding, connector);
+                if (_edge_puzzle_overlap) union() {
+                    for (ix = [0:1:last.x]) {
+                        if (connector[_SOUTH]) navigate_cell(size, count, padding, [ix, -1]) cell([ix == count.x - 0.5, false], positive=false);
+                        if (connector[_NORTH]) navigate_cell(size, count, padding, [ix, last.y+1]) cell([ix == count.x - 0.5, false], positive=false);
+                    }
+                    for (iy = [0:1:last.y]) {
+                        if (connector[_WEST]) navigate_cell(size, count, padding, [-1, iy]) cell([false, iy == count.y - 0.5], positive=false);
+                        if (connector[_EAST]) navigate_cell(size, count, padding, [last.x+1, iy]) cell([false, iy == count.y - 0.5], positive=false);
+                    }
                 }
             }
         }
+        if (connector_edge_puzzle) {
+            translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, count, size, padding, connector);
+        }
+        if (numbering && global_segment_index != undef) {
+            squeeze = count.x <= 1;
+            navigate_cell(size, count, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x/(count.x == 0.5 ? 4 : 2)-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
+        }
+        if (bottom_chamfer[_SOUTH] > 0 && !connector[_SOUTH]) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([0, 90, 0]) rotate([0, 0, 90]) linear_extrude(size.x) scale(bottom_chamfer[_SOUTH]) chamfer_triangle();
+        if (bottom_chamfer[_WEST] > 0 && !connector[_WEST]) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([-90, 0, 0]) rotate([0, 0, -90]) linear_extrude(size.y) scale(bottom_chamfer[_WEST]) chamfer_triangle();
+        if (bottom_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([size.x/2, size.y/2, -_extra_height]) rotate([0, -90, 0]) rotate([0, 0, -90]) linear_extrude(size.x) scale(bottom_chamfer[_NORTH]) chamfer_triangle();
+        if (bottom_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.y) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
     }
 }
 
