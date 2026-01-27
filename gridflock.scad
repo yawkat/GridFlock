@@ -618,10 +618,14 @@ function plan_axis_ideal(axis_norm, bed_norm, start_padding_norm, end_padding_no
  * @param start_padding_norm The extra padding at the start of the axis, normalized by cell size
  * @param start_padding_norm The extra padding at the end of the axis, normalized by cell size
  * @param force_first If set, forcibly change the size of the first segment
- * @return A vector containing the number of cells in each planned segment
+ * @return A vector in the format: [start, mid, end], where the start is the size of the first segment, end the size of the last segment, and mid the size of all other segments
  */
-function plan_axis_incremental(axis_norm, bed_norm, start_padding_norm, end_padding_norm, force_first=undef) = 
-    axis_norm + start_padding_norm + end_padding_norm <= bed_norm ? [axis_norm] :
+function plan_axis_incremental_vars(axis_norm, bed_norm, start_padding_norm, end_padding_norm, force_first=undef) = 
+    assert(axis_norm > 0)
+    assert(bed_norm > 1)
+    assert(start_padding_norm != undef)
+    assert(end_padding_norm != undef)
+    axis_norm + start_padding_norm + end_padding_norm <= bed_norm ? [axis_norm, -1, -1] :
     let(
         // make a preliminary first segement
         first_p = force_first == undef ? floor(bed_norm - start_padding_norm) : force_first,
@@ -634,8 +638,58 @@ function plan_axis_incremental(axis_norm, bed_norm, start_padding_norm, end_padd
         first = shift ? first_p - 1 : first_p,
         // recalculate end segment size
         end = (axis_norm - first - 0.25) % mid + 0.25
-    ) [for(i = 0, pos = 0; pos < axis_norm; i = i + 1, pos = first + mid * (i - 1)) 
+    ) [first, mid, end];
+
+/**
+ * @Summary Transform a short plan from plan_axis_incremental_vars into a full plan as returned by plan_axis_ideal
+ * @return A vector containing the number of cells in each planned segment
+ */
+function vars_to_incremental(axis_norm, vars) = let(
+        first = vars[0],
+        mid = vars[1],
+        end = vars[2]
+    ) mid == -1 ? [first] : [for(i = 0, pos = 0; pos < axis_norm; i = i + 1, pos = first + mid * (i - 1)) 
         i == 0 ? first : pos + mid >= axis_norm ? end : mid];
+
+/**
+ * @Summary Calculate two axis plans that are staggered so that segment corners don't intersect
+ * @Details An incremental axis plan uses the maximum number of cells for each segment, and then sizes the final segment to contain the remaining cells.
+ * @param axis_norm The number of cells in this axis, may have 0.5 added to indicate a half cell
+ * @param bed_norm The bed size, normalized by cell size
+ * @param start_padding_norm The extra padding at the start of the axis, normalized by cell size
+ * @param start_padding_norm The extra padding at the end of the axis, normalized by cell size
+ * @param force_first If set, forcibly change the size of the first segment
+ * @return A vector of exactly two axis plans, each a vector containing the number of cells in each planned segment
+ */
+function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padding_norm=0) =
+    assert(axis_norm > 0)
+    assert(bed_norm > 1)
+    assert(start_padding_norm != undef)
+    assert(end_padding_norm != undef)
+    let (
+        // lambda: call plan_axis_incremental_vars with a specific shift
+        plan_vars = function(force_first) plan_axis_incremental_vars(axis_norm, bed_norm, start_padding_norm, end_padding_norm, force_first),
+        // lambda: calculate the number of segments for a given set of plan_axis_incremental_vars
+        plan_size = function(vars) vars[1] == -1 ? 1 : (axis_norm - vars[0] - vars[2]) / vars[1] + 2,
+        // make a simple plan for the first column
+        plan_a1 = plan_vars(undef)   
+    )
+    // shortcut: if we don't need to split at all, we don't need to worry about staggering
+    plan_a1[1] == -1 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_a1)] : 
+    let(
+        // if the last segment in the column is small, give that segment one more cell
+        plan_a2 = plan_a1[2] >= 2 || plan_a1[0] <= 2 ? plan_a1 : plan_vars(plan_a1[0] - 1),
+        // now, we determine the optimal shift of the second column.
+        // first, plan with a minimum shift as a baseline.
+        plan_b_shift1 = plan_vars(plan_a2[0] - 1),
+        // then, iterate all possible shifts, until we hit one that requires an additional segment compared to plan_b_shift1
+        plan_b_shift = [for (shift = 1, plan = plan_b_shift1, best_size = plan_size(plan); shift < plan_a2[0] && plan_size(plan) <= best_size; shift = shift + 1, plan = plan_vars(plan_a2[0] - shift)) 0],
+        max_unsplit_shift = len(plan_b_shift),
+        // separately, calculate an "optimum shift", where the 3-way intersections are as far apart as possible
+        optimum_shift = plan_a2[0] <= 3 ? 1 : floor(plan_a2[0] / 2),
+        // our final shift is the minimum of the two.
+        shift = min(optimum_shift, max_unsplit_shift)
+    ) [vars_to_incremental(axis_norm, plan_a2), vars_to_incremental(axis_norm, plan_vars(plan_a2[0] - shift))];
 
 /**
  * @Summary Calculate the sum of a vector's elements, up to the until index (exclusive)
@@ -663,12 +717,11 @@ module main() {
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
     plan_x = plan_axis_ideal(axis_norm=plate_count.x, bed_norm=(bed_size.x - connector_margin)/BASEPLATE_DIMENSIONS.x, start_padding_norm=plate_padding[_WEST]/BASEPLATE_DIMENSIONS.x, end_padding_norm=plate_padding[_EAST]/BASEPLATE_DIMENSIONS.x);
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
-    plan_y_1 = plan_axis_incremental(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
-    plan_y_2 = len(plan_y_1) <= 1 || plan_y_1[0] <= 1 ? plan_y_1 : plan_axis_incremental(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y, force_first=plan_y_1[0] - 1);
+    plans_y = plan_axis_staggered(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
     for (segix = [0:len(plan_x) - 1]) {
-        plan_y = segix % 2 == 0 ? plan_y_1 : plan_y_2;
+        plan_y = plans_y[segix % 2];
         for (segiy = [0:len(plan_y) - 1]) {
-            global_segment_index = segiy + ceil(segix / 2) * len(plan_y_1) + floor(segix / 2) * len(plan_y_2);
+            global_segment_index = segiy + ceil(segix / 2) * len(plans_y[0]) + floor(segix / 2) * len(plans_y[1]);
             translate([
                 (sum_sub_vector(plan_x, segix) + plan_x[segix]/2) * BASEPLATE_DIMENSIONS.x + segix * _segment_gap + (segix == 0 ? 0 : plate_padding[_WEST]),
                 (sum_sub_vector(plan_y, segiy) + plan_y[segiy]/2) * BASEPLATE_DIMENSIONS.y + segiy * _segment_gap + (segiy == 0 ? 0 : plate_padding[_SOUTH]),
