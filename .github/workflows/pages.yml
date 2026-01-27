@@ -36,7 +36,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y just
-          just test paths
+          just paths
 
       - name: Generate site
         uses: yawkat/web-openscad-editor@main
