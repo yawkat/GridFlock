@@ -544,10 +544,10 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                 squeeze = count.x <= 1;
                 navigate_cell(size, count, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x/(count.x == 0.5 ? 4 : 2)-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
             }
-            if (bottom_chamfer[_SOUTH] > 0) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([0, 90, 0]) rotate([0, 0, 90]) linear_extrude(size.y) scale(bottom_chamfer[_SOUTH]) chamfer_triangle();
-            if (bottom_chamfer[_WEST] > 0) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([-90, 0, 0]) rotate([0, 0, -90]) linear_extrude(size.x) scale(bottom_chamfer[_WEST]) chamfer_triangle();
-            if (bottom_chamfer[_NORTH] > 0) translate([size.x/2, size.y/2, -_extra_height]) rotate([0, -90, 0]) rotate([0, 0, -90]) linear_extrude(size.y) scale(bottom_chamfer[_NORTH]) chamfer_triangle();
-            if (bottom_chamfer[_EAST] > 0) translate([size.x/2, size.y/2, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.x) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
+            if (bottom_chamfer[_SOUTH] > 0 && !connector[_SOUTH]) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([0, 90, 0]) rotate([0, 0, 90]) linear_extrude(size.x) scale(bottom_chamfer[_SOUTH]) chamfer_triangle();
+            if (bottom_chamfer[_WEST] > 0 && !connector[_WEST]) translate([-size.x/2, -size.y/2, -_extra_height]) rotate([-90, 0, 0]) rotate([0, 0, -90]) linear_extrude(size.y) scale(bottom_chamfer[_WEST]) chamfer_triangle();
+            if (bottom_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([size.x/2, size.y/2, -_extra_height]) rotate([0, -90, 0]) rotate([0, 0, -90]) linear_extrude(size.x) scale(bottom_chamfer[_NORTH]) chamfer_triangle();
+            if (bottom_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.y) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
         }
         union() {
             // padding cubes
