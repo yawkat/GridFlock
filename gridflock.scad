@@ -74,6 +74,8 @@ number_squeeze_size = 2;
 plate_corner_radius = 4;
 // Edge adjustment values (clockwise: north, east, south, west). These values are *added* to the plate size as padding, i.e. the final plate will end up different than configured in plate_size. This allows you to customize the padding to be asymmetrical. You can also use negative values to "cut" the plate edges if you want to squeeze an extra square out of limited space.
 edge_adjust = [0, 0, 0, 0];
+// In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
+y_row_count_first = [0, 0]; 
 // Test patterns
 test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering]
 
@@ -84,9 +86,6 @@ _MAGNET_PRESS_FIT = 1;
 
 // openscad does not support boolean vectors in the customizer
 do_half = [do_half_x, do_half_y];
-
-// In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
-y_row_count_first = [0, 0]; 
 
 $fn=40;
 
