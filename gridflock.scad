@@ -85,6 +85,9 @@ _MAGNET_PRESS_FIT = 1;
 // openscad does not support boolean vectors in the customizer
 do_half = [do_half_x, do_half_y];
 
+// In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
+y_row_count_first = [0, 0]; 
+
 $fn=40;
 
 // dimensions of the magnet extraction slot
@@ -672,13 +675,15 @@ function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padd
         // lambda: calculate the number of segments for a given set of plan_axis_incremental_vars
         plan_size = function(vars) vars[1] == -1 ? 1 : (axis_norm - vars[0] - vars[2]) / vars[1] + 2,
         // make a simple plan for the first column
-        plan_a1 = plan_vars(undef)   
+        plan_a1 = plan_vars(y_row_count_first[0] <= 0 ? undef : y_row_count_first[0]),
+        // if the last segment in the column is small, give that segment one more cell
+        plan_a2 = plan_a1[1] == -1 || plan_a1[2] >= 2 || plan_a1[0] <= 2 ? plan_a1 : plan_vars(plan_a1[0] - 1)
     )
+    // manual override
+    y_row_count_first[1] > 0 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_vars(y_row_count_first[1]))] :
     // shortcut: if we don't need to split at all, we don't need to worry about staggering
     plan_a1[1] == -1 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_a1)] : 
     let(
-        // if the last segment in the column is small, give that segment one more cell
-        plan_a2 = plan_a1[2] >= 2 || plan_a1[0] <= 2 ? plan_a1 : plan_vars(plan_a1[0] - 1),
         // now, we determine the optimal shift of the second column.
         // first, plan with a minimum shift as a baseline.
         plan_b_shift1 = plan_vars(plan_a2[0] - 1),
