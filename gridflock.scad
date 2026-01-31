@@ -496,10 +496,11 @@ module edge_puzzle(positive, male, half) {
 module segment_corner(posy=_NORTH, posx=_WEST, connector=[false, false, false, false]) {
     assert(posy == _NORTH || posy == _SOUTH);
     assert(posx == _EAST || posx == _WEST);
+    adj_radius = max(plate_corner_radius, 0.01);
     if (connector[posx] || connector[posy]) {
-        square(size = [plate_corner_radius*2, plate_corner_radius*2], center=true);
+        square(size = [adj_radius*2, adj_radius*2], center=true);
     } else {
-        circle(r = plate_corner_radius);
+        circle(r = adj_radius);
     }
 }
 
