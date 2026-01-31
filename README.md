@@ -175,12 +175,12 @@ You can turn off this behavior with the `do_half_x` and `do_half_y` options.
 
 GridFlock generates plates with a corner radius of 4mm by default. This matches the Gridfinity corner radius, so when the plate size is a perfect multiple of 42, there is no gap.
 
-<!-- openscad -o docs/images/corner-radius.png --camera=0,0,0,40,0,10,400 -D plate_size='[42, 42]' -D magnets=false -->
+<!-- openscad -o docs/images/corner-radius.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D magnets=false -->
 <img src="docs/images/corner-radius.png" alt="Corner radius" />
 
 You can configure the radius with the `plate_corner_radius` property, e.g. 1mm:
 
-<!-- openscad -o docs/images/corner-radius-1.png --camera=0,0,0,40,0,10,400 -D plate_size='[42, 42]' -D magnets=false -D plate_corner_radius=1 -->
+<!-- openscad -o docs/images/corner-radius-1.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D magnets=false -D plate_corner_radius=1 -->
 <img src="docs/images/corner-radius-1.png" alt="Corner radius 1mm" />
 
 ## Custom cell size

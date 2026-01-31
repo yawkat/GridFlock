@@ -18,6 +18,6 @@ docs: clean-docs
     for line in open("README.md"):
         match = openscad_pattern.match(line)
         if match:
-            cmd = ("openscad", "--projection=ortho", "--colorscheme=BeforeDawn", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1)), "gridflock.scad")
+            cmd = ("openscad", "--projection=ortho", "--colorscheme=Starnight", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1)), "gridflock.scad")
             print("Running: " + shlex.join(cmd))
             subprocess.run(cmd, check=True)
