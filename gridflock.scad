@@ -390,8 +390,19 @@ module segment_intersection_connectors(positive, count, size, padding, connector
     }
     // At the corners of the segment, we now only have half-connectors. But if we have padding, there may be space for a full connector after all.
     // We add half-connectors at the corners and cut them to fit the plate.
+
+    // Size includes plate wall. We don't want to interfere with that.
+    calculate_plate_wall = function (side) connector[side] ? 0 : plate_wall_thickness[side];
+    bounds_min = [
+        -size.x/2 + calculate_plate_wall(_WEST),
+        -size.y/2 + calculate_plate_wall(_SOUTH)
+    ];
+    bounds_max = [
+        size.x/2 - calculate_plate_wall(_EAST),
+        size.y/2 - calculate_plate_wall(_NORTH)
+    ];
     intersection() {
-        translate([-size.x/2, -size.y/2 - 20]) square([size.x, size.y + 40]);
+        translate([bounds_min.x, -size.y/2 - 20]) square([bounds_max.x - bounds_min.x, size.y + 40]);
         union() {
             if (!connector[_WEST]) {
                 if (connector[_SOUTH]) navigate_corner(size, count, padding, [0, 0], _SOUTH, _WEST) rotate([0, 0, -90]) puzzle_female(positive);
@@ -404,7 +415,7 @@ module segment_intersection_connectors(positive, count, size, padding, connector
         }
     }
     intersection() {
-        translate([-size.x/2 - 20, -size.y/2]) square([size.x + 40, size.y]);
+        translate([-size.x/2 - 20, bounds_min.y]) square([size.x + 40, bounds_max.y - bounds_min.y]);
         union() {
             if (!connector[_SOUTH]) {
                 if (connector[_WEST]) navigate_corner(size, count, padding, [0, 0], _SOUTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
