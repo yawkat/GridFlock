@@ -77,6 +77,28 @@ plate_wall_thickness = [0, 0, 0, 0];
 // Plate wall height. The first value is the height above the plate, the second value the height below the plate
 plate_wall_height = [0, 0];
 
+/* [Vertical Screws] */
+
+// Radius of vertical screws
+vertical_screw_diameter = 3.2;
+// Top countersink dimension. First value is the diameter of the screw head, second value the height
+vertical_screw_countersink_top = [0, 0];
+
+// Enable screws at *plate* corners
+vertical_screw_plate_corners = false;
+// Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
+vertical_screw_plate_corner_inset = [1, 1];
+// Enable screws at *plate* edges
+vertical_screw_plate_edges = false;
+// Enable screws at *segment* corners that are not also plate corners
+vertical_screw_segment_corners = false;
+// Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
+vertical_screw_segment_corner_inset = [1, 1];
+// Enable screws at *segment* edges (will interfere with intersection connectors!)
+vertical_screw_segment_edges = false;
+// Enable screws at all other intersections
+vertical_screw_other = false;
+
 /* [Advanced] */
 
 // Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
@@ -505,6 +527,18 @@ module edge_puzzle(positive, male, half) {
 }
 
 /**
+ * @Summary Draw a vertical screw at the current coordinate
+ */
+module vertical_screw() {
+    // Additional space to clear above the screw. There shouldn't be anything here, but this guards against rounding errors
+    clear_upwards = 10;
+    rotate_extrude() {
+        translate([0, -_extra_height]) square([vertical_screw_diameter/2, _total_height + clear_upwards]);
+        translate([0, _profile_height]) polygon([[0, 0], [0, clear_upwards], [vertical_screw_countersink_top.x/2, clear_upwards], [vertical_screw_countersink_top.x/2, 0], [0, -vertical_screw_countersink_top.y]]);
+    }
+}
+
+/**
  * @Summary Draw the shape of a segment corner depending on connector configuration (2D)
  * @Details The corner is square if there is an adjacent connector, and rounded if there is not
  * @param posy The y corner position (north or south)
@@ -564,8 +598,10 @@ module chamfer_triangle() {
  * @param padding The padding, for each side
  * @param connector Whether to add a connector, for each side
  * @param global_segment_index If applicable, the global index of this segment. This is used to emboss numbering
+ * @param global_cell_index If applicable, the global cell index of this segment. This is used for vertical screws at plate corners
+ * @param global_cell_count If applicable, the global cell count. This is used for vertical screws at plate corners
  */
-module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, false, false], global_segment_index=undef) {
+module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, false, false], global_segment_index=undef, global_cell_index=[0, 0], global_cell_count=[0, 0]) {
     size = [
         BASEPLATE_DIMENSIONS.x * count.x + padding[_EAST] + padding[_WEST],
         BASEPLATE_DIMENSIONS.y * count.y + padding[_NORTH] + padding[_SOUTH],
@@ -639,6 +675,26 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
         if (bottom_chamfer[_WEST] > 0 && !connector[_WEST]) translate([-size.x/2, -size.y/2 - extend, -_extra_height]) rotate([-90, 0, 0]) rotate([0, 0, -90]) linear_extrude(size.y + extend * 2) scale(bottom_chamfer[_WEST]) chamfer_triangle();
         if (bottom_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([size.x/2 + extend, size.y/2, -_extra_height]) rotate([0, -90, 0]) rotate([0, 0, -90]) linear_extrude(size.x + extend * 2) scale(bottom_chamfer[_NORTH]) chamfer_triangle();
         if (bottom_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
+
+        // vertical screw holes
+        is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= bounds - inset) || (index == bounds - inset && index >= inset);
+        is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
+        is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
+        for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, count, padding, [ix, iy], _SOUTH, _WEST) {
+            segment_index = [ix, iy];
+            segment_bounds = [last.x + 1, last.y + 1];
+            if (is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset)) {
+                if (vertical_screw_plate_corners) vertical_screw();
+            } else if (is_edge(segment_index + global_cell_index, global_cell_count)) {
+                if (vertical_screw_plate_edges) vertical_screw();
+            } else if (is_corner(segment_index, segment_bounds, vertical_screw_segment_corner_inset)) {
+                if (vertical_screw_segment_corners) vertical_screw();
+            } else if (is_edge(segment_index, segment_bounds)) {
+                if (vertical_screw_segment_edges) vertical_screw();
+            } else {
+                if (vertical_screw_other) vertical_screw();
+            }
+        }
     }
 }
 
@@ -790,7 +846,6 @@ module main() {
     for (segix = [0:len(plan_x) - 1]) {
         plan_y = plans_y[segix % 2];
         for (segiy = [0:len(plan_y) - 1]) {
-            global_segment_index = segiy + ceil(segix / 2) * len(plans_y[0]) + floor(segix / 2) * len(plans_y[1]);
             translate([
                 (sum_sub_vector(plan_x, segix) + plan_x[segix]/2) * BASEPLATE_DIMENSIONS.x + segix * _segment_gap + (segix == 0 ? 0 : plate_padding[_WEST]),
                 (sum_sub_vector(plan_y, segiy) + plan_y[segiy]/2) * BASEPLATE_DIMENSIONS.y + segiy * _segment_gap + (segiy == 0 ? 0 : plate_padding[_SOUTH]),
@@ -805,7 +860,9 @@ module main() {
                 segix != len(plan_x) - 1,
                 segiy != 0,
                 segix != 0
-            ], global_segment_index=global_segment_index);
+            ], global_segment_index=segiy + ceil(segix / 2) * len(plans_y[0]) + floor(segix / 2) * len(plans_y[1]),
+            global_cell_index=[sum_sub_vector(plan_x, segix), sum_sub_vector(plan_y, segiy)],
+            global_cell_count=plate_count);
         }
     }
 }
