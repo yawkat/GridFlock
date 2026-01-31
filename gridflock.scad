@@ -70,6 +70,13 @@ number_font = "sans-serif";
 // When a segment is very narrow, use this reduced number size. Should rarely be relevant
 number_squeeze_size = 2;
 
+/* [Plate wall] */
+
+// Plate wall thickness. Can be specified for each direction individually (north, east, south, west). Note that this is *added* to the plate_size
+plate_wall_thickness = [0, 0, 0, 0];
+// Plate wall height. The first value is the height above the plate, the second value the height below the plate
+plate_wall_height = [0, 0];
+
 /* [Advanced] */
 
 // Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
@@ -79,7 +86,7 @@ edge_adjust = [0, 0, 0, 0];
 // In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
 y_row_count_first = [0, 0]; 
 // Test patterns
-test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering]
+test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall]
 
 /* [Hidden] */
 
@@ -487,21 +494,51 @@ module edge_puzzle(positive, male, half) {
 }
 
 /**
- * @Summary Draw the shape of a segment corner depending on connector configuration
+ * @Summary Draw the shape of a segment corner depending on connector configuration (2D)
  * @Details The corner is square if there is an adjacent connector, and rounded if there is not
  * @param posy The y corner position (north or south)
  * @param posx The x corner position (east or west)
  * @param connector The connector configuration
+ * @param radius Function to compute the corner radius by side
  */
-module segment_corner(posy=_NORTH, posx=_WEST, connector=[false, false, false, false]) {
+module segment_corner(posy=_NORTH, posx=_WEST, connector=[false, false, false, false], radius) {
     assert(posy == _NORTH || posy == _SOUTH);
     assert(posx == _EAST || posx == _WEST);
-    adj_radius = max(plate_corner_radius, 0.01);
+    radii = [radius(posx), radius(posy)];
     if (connector[posx] || connector[posy]) {
-        square(size = [adj_radius*2, adj_radius*2], center=true);
+        square(size = radii * 2, center=true);
     } else {
-        circle(r = adj_radius);
+        // ellipse
+        scale(radii) circle(r = 1);
     }
+}
+
+/**
+ * @Summary Draw the 2D shape of a segment, including rounded corners
+ * @param size The size of the segment
+ * @param connector The connector configuration
+ * @param include_wall If false, the plate_wall_thickness is not included in the rectangle
+ */
+module segment_rectangle(size, connector=[false, false, false, false], include_wall=false) {
+    // wall thickness to cut off, by side
+    wall_t = function (side) include_wall || connector[side] ? 0 : plate_wall_thickness[side];
+    // corner radius by side
+    compute_radius = function (side) max(0.01, plate_corner_radius - wall_t(side));
+    bounds_offset = function (side) compute_radius(side) + wall_t(side);
+    bounds_min = [
+        -size.x/2 + bounds_offset(_WEST),
+        -size.y/2 + bounds_offset(_SOUTH)
+    ];
+    bounds_max = [
+        size.x/2 - bounds_offset(_EAST),
+        size.y/2 - bounds_offset(_NORTH)
+    ];
+    hull() {
+        translate([bounds_min.x, bounds_min.y]) segment_corner(_SOUTH, _WEST, connector, compute_radius);
+        translate([bounds_max.x, bounds_min.y]) segment_corner(_SOUTH, _EAST, connector, compute_radius);
+        translate([bounds_max.x, bounds_max.y]) segment_corner(_NORTH, _EAST, connector, compute_radius);
+        translate([bounds_min.x, bounds_max.y]) segment_corner(_NORTH, _WEST, connector, compute_radius);
+    };
 }
 
 module chamfer_triangle() {
@@ -531,12 +568,7 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
             intersection() {
                 translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) difference() {
                     // basic plate with rounded corners
-                    hull() {
-                        translate([-size.x/2+plate_corner_radius, -size.y/2+plate_corner_radius]) segment_corner(_SOUTH, _WEST, connector);
-                        translate([size.x/2-plate_corner_radius, -size.y/2+plate_corner_radius]) segment_corner(_SOUTH, _EAST, connector);
-                        translate([size.x/2-plate_corner_radius, size.y/2-plate_corner_radius]) segment_corner(_NORTH, _EAST, connector);
-                        translate([-size.x/2+plate_corner_radius, size.y/2-plate_corner_radius]) segment_corner(_NORTH, _WEST, connector);
-                    };
+                    segment_rectangle(size, connector, include_wall=false);
                     if (connector_intersection_puzzle) {
                         segment_intersection_connectors(false, count, size, padding, connector);
                     }
@@ -560,6 +592,11 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                     };
                 };
             };
+
+            if (plate_wall_thickness != [0,0,0,0]) translate([0, 0, -_extra_height-plate_wall_height[1]]) linear_extrude(_total_height + plate_wall_height[0] + plate_wall_height[1]) difference() {
+                segment_rectangle(size, connector, include_wall=true);
+                segment_rectangle(size, connector, include_wall=false);
+            }
             
             if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, count, size, padding, connector);
             if (connector_edge_puzzle) {
@@ -732,7 +769,7 @@ module main() {
         plate_padding_sum.x / 2, // EAST
         plate_padding_sum.y / 2, // SOUTH
         plate_padding_sum.x / 2, // WEST
-    ] + edge_adjust;
+    ] + edge_adjust + plate_wall_thickness;
     // keep some margin on the edge of the bed clear for the connectors
     connector_margin = max(connector_intersection_puzzle ? 3.5 : 0, connector_edge_puzzle ? edge_puzzle_dim_c.y + edge_puzzle_dim.y : 0);
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
@@ -779,6 +816,10 @@ module test_pattern_numbering() {
     translate([-30, -30]) segment(count = [1, 1], connector = [true, true, true, true], global_segment_index = 12);
 }
 
+module test_pattern_wall() {
+    segment(count = [2, 2], connector=[false, false, false, false], padding=[5, 5, 5, 5]);
+}
+
 if (test_pattern == 0) {
     main();
 } else if (test_pattern == 1) {
@@ -787,4 +828,6 @@ if (test_pattern == 0) {
     test_pattern_padding();
 } else if (test_pattern == 3) {
     test_pattern_numbering();
+} else if (test_pattern == 4) {
+    test_pattern_wall();
 }
