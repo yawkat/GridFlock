@@ -21,6 +21,8 @@ bottom_chamfer = [0, 0, 0, 0];
 magnets = true;
 // Magnet style
 magnet_style = 1; // [0:Glue from top, 1:Press-Fit]
+// Style of the magnet level
+magnet_frame_style = 1; // [0:Solid (incompatible with press-fit), 1:Round Corners]
 // Diameter of the magnet slot
 magnet_diameter = 5.9;
 // Height of the magnet slot
@@ -99,6 +101,13 @@ vertical_screw_segment_edges = false;
 // Enable screws at all other intersections
 vertical_screw_other = false;
 
+/* [Thumb Screw] */
+
+// Generate thumb screw cutouts compatible with 'Gridfinity Refined'. This requires solid_base or magnets with 
+thumbscrews = false;
+// Thumb screw cutout diameter
+thumbscrew_diameter = 15.75;
+
 /* [Advanced] */
 
 // Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
@@ -114,6 +123,13 @@ test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall]
 
 _MAGNET_GLUE_TOP = 0;
 _MAGNET_PRESS_FIT = 1;
+
+_MAGNET_SOLID = 0;
+_MAGNET_ROUND_CORNERS = 1;
+
+assert(!magnets || magnet_frame_style != _MAGNET_SOLID || magnet_style != _MAGNET_PRESS_FIT, "'Solid' magnet frame style is not compatible with press-fit magnets.");
+
+assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGNET_SOLID), "Thumbscrew holes require some sort of solid base, such as magnet_style solid, or an explicit solid_base.");
 
 // openscad does not support boolean vectors in the customizer
 do_half = [do_half_x, do_half_y];
@@ -207,13 +223,17 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
             }
             if (magnets) {
                 translate([0, 0, -_magnet_level_height]) linear_extrude(height = _magnet_level_height) {
-                    if (positive) {
-                        each_cell_corner(half) {
-                            total_bounds = _magnet_location + magnet_diameter/2 + _magnet_border;
-                            square([_magnet_location, total_bounds]);
-                            square([total_bounds, _magnet_location]);
-                            translate([_magnet_location, _magnet_location]) circle(r=magnet_diameter/2+_magnet_border);
+                    if (positive && magnet_frame_style != _MAGNET_SOLID) {
+                        // round corners
+                        if (magnet_frame_style == _MAGNET_ROUND_CORNERS) {
+                            each_cell_corner(half) {
+                                total_bounds = _magnet_location + magnet_diameter/2 + _magnet_border;
+                                square([_magnet_location, total_bounds]);
+                                square([total_bounds, _magnet_location]);
+                                translate([_magnet_location, _magnet_location]) circle(r=magnet_diameter/2+_magnet_border);
+                            }
                         }
+                        // if we have a female edge connector here, add a bar for stability (edge_puzzle_magnet_border)
                         if (connector_edge_puzzle && edge_puzzle_magnet_border) {
                             bw = edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width;
                             translate(-size/2) {
@@ -224,6 +244,8 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                             if (connector[_EAST] && !_edge_puzzle_direction_male[_EAST]) translate([size.x/2-bw, -size.y/2]) square([bw, size.y]);
                         }
                     } else {
+                        // for negative mode, we don't care about extra geometry
+                        // this also runs for _MAGNET_SOLID style
                         translate(-BASEPLATE_DIMENSIONS/2) square([BASEPLATE_DIMENSIONS.x, BASEPLATE_DIMENSIONS.y]);
                     }
                 }
@@ -249,6 +271,11 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                     }
                 }
             }
+        }
+        if (thumbscrews) rotate_extrude() {
+            top = magnets && magnet_frame_style != _MAGNET_SOLID ? -_magnet_level_height : 0;
+            height = 100;
+            polygon([[0, top], [thumbscrew_diameter/2, top], [thumbscrew_diameter/2 + height, top-height], [0, top-height]]);
         }
     }
 }
