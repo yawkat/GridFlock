@@ -677,19 +677,18 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
         if (bottom_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
 
         // vertical screw holes
-        is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= bounds - inset) || (index == bounds - inset && index >= inset);
+        is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
         is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
         is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
         for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, count, padding, [ix, iy], _SOUTH, _WEST) {
             segment_index = [ix, iy];
-            segment_bounds = [last.x + 1, last.y + 1];
             if (is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset)) {
                 if (vertical_screw_plate_corners) vertical_screw();
             } else if (is_edge(segment_index + global_cell_index, global_cell_count)) {
                 if (vertical_screw_plate_edges) vertical_screw();
-            } else if (is_corner(segment_index, segment_bounds, vertical_screw_segment_corner_inset)) {
+            } else if (is_corner(segment_index, count, vertical_screw_segment_corner_inset)) {
                 if (vertical_screw_segment_corners) vertical_screw();
-            } else if (is_edge(segment_index, segment_bounds)) {
+            } else if (is_edge(segment_index, count)) {
                 if (vertical_screw_segment_edges) vertical_screw();
             } else {
                 if (vertical_screw_other) vertical_screw();
