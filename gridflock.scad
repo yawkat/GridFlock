@@ -2,10 +2,10 @@ include <gridfinity-rebuilt-openscad/src/core/gridfinity-baseplate.scad>
 use <gridfinity-rebuilt-openscad/src/helpers/list.scad>
 include <paths/puzzle.scad>
 
-// The bed size of the printer, e.g. 250x220 for the Prusa Core One
-bed_size = [250, 220];
 // The size of the grid plate to generate
 plate_size = [371, 254];
+// The bed size of the printer, e.g. 250x220 for the Prusa Core One
+bed_size = [250, 220];
 // If there's not enough space for a full grid cell, squeeze in a half cell (x direction)
 do_half_x = true;
 // If there's not enough space for a full grid cell, squeeze in a half cell (y direction)
@@ -24,13 +24,13 @@ magnet_style = 1; // [0:Glue from top, 1:Press-Fit]
 // Style of the magnet level
 magnet_frame_style = 1; // [0:Solid (incompatible with press-fit), 1:Round Corners]
 // Diameter of the magnet slot
-magnet_diameter = 5.9;
+magnet_diameter = 5.9; // 0.01
 // Height of the magnet slot
-magnet_height = 2.25;
+magnet_height = 2.25; // 0.25
 // Wall above the magnet. Should be small for maximum magnet strength
-magnet_top = 0.5;
+magnet_top = 0.5; // 0.25
 // Floor below the magnet. Not structurally important, should be small to minimize filament use
-magnet_bottom = 0.75;
+magnet_bottom = 0.75; // 0.25
 
 /* [Intersection Puzzle Connector] */
 
@@ -45,46 +45,46 @@ connector_edge_puzzle = false;
 // Number of puzzle connectors per cell
 edge_puzzle_count = 1;
 // Dimensions of the male puzzle connector (main piece)
-edge_puzzle_dim = [10, 2.5];
+edge_puzzle_dim = [10, 2.5]; // 0.1
 // Dimensions of the male puzzle connector (bridge to plate)
-edge_puzzle_dim_c = [3, 1.2];
+edge_puzzle_dim_c = [3, 1.2]; // 0.1
 // Clearance of the puzzle connector. The female side is larger than the above dimensions by this amount
-edge_puzzle_gap = 0.15;
+edge_puzzle_gap = 0.15; // 0.05
 // If magnets are enabled, use the vertical space to add a border to the female puzzle socket, for added stability and better printability
 edge_puzzle_magnet_border = true;
 // Size of the added border
-edge_puzzle_magnet_border_width = 2.5;
+edge_puzzle_magnet_border_width = 2.5; // 0.1
 // Height of the edge puzzle connector (female side, male is smaller by edge_puzzle_height_male_delta). You can set this to the full height, but make sure that no pieces of the segment remain unconnected!
-edge_puzzle_height_female = 2.25;
+edge_puzzle_height_female = 2.25; // 0.25
 // Male side of the edge puzzle connector is smaller than the female side by this amount
-edge_puzzle_height_male_delta = 0.25;
+edge_puzzle_height_male_delta = 0.25; // 0.25
 
 /* [Numbering] */
 
 // Enable numbering of the segements, embossed in a corner
 numbering = true;
 // Depth of the embossing
-number_depth = 0.5;
+number_depth = 0.5; // 0.25
 // Font size of the numbers
-number_size = 3;
+number_size = 3; // 0.5
 // Font
 number_font = "sans-serif";
 // When a segment is very narrow, use this reduced number size. Should rarely be relevant
-number_squeeze_size = 2;
+number_squeeze_size = 2; // 0.5
 
 /* [Plate wall] */
 
 // Plate wall thickness. Can be specified for each direction individually (north, east, south, west). Note that this is *added* to the plate_size
-plate_wall_thickness = [0, 0, 0, 0];
+plate_wall_thickness = [0, 0, 0, 0]; // 0.5
 // Plate wall height. The first value is the height above the plate, the second value the height below the plate
 plate_wall_height = [0, 0];
 
 /* [Vertical Screws] */
 
 // Radius of vertical screws
-vertical_screw_diameter = 3.2;
+vertical_screw_diameter = 3.2; // 0.1
 // Top countersink dimension. First value is the diameter of the screw head, second value the height
-vertical_screw_countersink_top = [0, 0];
+vertical_screw_countersink_top = [0, 0]; // 0.1
 
 // Enable screws at *plate* corners
 vertical_screw_plate_corners = false;
@@ -106,7 +106,7 @@ vertical_screw_other = false;
 // Generate thumb screw cutouts compatible with 'Gridfinity Refined'. This requires solid_base or magnets with 
 thumbscrews = false;
 // Thumb screw cutout diameter
-thumbscrew_diameter = 15.75;
+thumbscrew_diameter = 15.8; // 0.1
 
 /* [Advanced] */
 
@@ -872,15 +872,21 @@ module main() {
     for (segix = [0:len(plan_x) - 1]) {
         plan_y = plans_y[segix % 2];
         for (segiy = [0:len(plan_y) - 1]) {
-            translate([
-                (sum_sub_vector(plan_x, segix) + plan_x[segix]/2 - plate_count.x/2) * BASEPLATE_DIMENSIONS.x + (segix - (len(plan_x) - 1)/2) * _segment_gap + (segix == 0 ? -0.5 : 0.5) * plate_padding[_WEST] - plate_padding[_EAST]/2,
-                (sum_sub_vector(plan_y, segiy) + plan_y[segiy]/2 - plate_count.y/2) * BASEPLATE_DIMENSIONS.y + (segiy - (len(plan_y) - 1)/2) * _segment_gap + (segiy == 0 ? -0.5 : 0.5) * plate_padding[_SOUTH] - plate_padding[_NORTH]/2
-            ]) segment(count=[plan_x[segix], plan_y[segiy]], padding=[
+            // Compute size of full plate model including segment gaps. We need to do this inside the loop because it changes depending on plan_y
+            all_size = [
+                plate_padding[_WEST] + plate_padding[_EAST] + sum_sub_vector(plan_x, len(plan_x)) * BASEPLATE_DIMENSIONS.x + (len(plan_x) - 1) * _segment_gap,
+                plate_padding[_SOUTH] + plate_padding[_NORTH] + sum_sub_vector(plan_y, len(plan_y)) * BASEPLATE_DIMENSIONS.y + (len(plan_y) - 1) * _segment_gap
+            ];
+            segment_padding = [
                 segiy == len(plan_y) - 1 ? plate_padding[_NORTH] : 0,
                 segix == len(plan_x) - 1 ? plate_padding[_EAST] : 0,
                 segiy == 0 ? plate_padding[_SOUTH] : 0,
                 segix == 0 ? plate_padding[_WEST] : 0,
-            ], connector=[
+            ];
+            translate([
+                -all_size.x/2 + (sum_sub_vector(plan_x, segix) + plan_x[segix]/2) * BASEPLATE_DIMENSIONS.x + (segix != 0 ? plate_padding[_WEST] : 0) + (segment_padding[_WEST] + segment_padding[_EAST]) / 2 + segix * _segment_gap,
+                -all_size.y/2 + (sum_sub_vector(plan_y, segiy) + plan_y[segiy]/2) * BASEPLATE_DIMENSIONS.y + (segiy != 0 ? plate_padding[_SOUTH] : 0) + (segment_padding[_NORTH] + segment_padding[_SOUTH]) / 2 + segiy * _segment_gap
+            ]) segment(count=[plan_x[segix], plan_y[segiy]], padding=segment_padding, connector=[
                 segiy != len(plan_y) - 1,
                 segix != len(plan_x) - 1,
                 segiy != 0,

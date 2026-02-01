@@ -210,9 +210,6 @@ The number of each segment is embossed on the bottom of the segment to simplify 
 
 The depth of the embossing can be configured with `number_depth`. The size can be configured with `number_size`. The font can be configured with `number_font`.
 
-> [!WARNING]
-> Numbering is not supported by the generator website at the moment.
-
 <!-- openscad -o docs/images/numbering.png --camera=0,0,0,140,0,10,300 -D plate_size='[168, 168]' -D bed_size='[100,100]' -D magnets=false -->
 <img src="docs/images/numbering.png" alt="Numbering from below" />
 
@@ -345,7 +342,7 @@ The basic GridFlock cell placement algorithm is simple: Fit as many cells into t
 
 In some cases, you may want to modify this behavior using the `edge_adjust` property. This property is added to the padding on each of the four sides _after_ the cell placement calculation.
 
-> ![NOTE]
+> [!NOTE]
 > Because the edge adjustment is added to the padding, it will add or remove from the final plate size!
 
 ### Shifting the grid

@@ -43,6 +43,7 @@ jobs:
         with:
           scad: gridflock.scad
           output: out
+          description-extra-html: 'For detailed documentation, check the <a href="https://github.com/yawkat/GridFlock/blob/main/README.md">README</a>'
 
       - name: Publish
         uses: cloudflare/wrangler-action@v3
