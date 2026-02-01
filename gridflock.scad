@@ -15,7 +15,7 @@ solid_base = 0;
 // Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
 bottom_chamfer = [0, 0, 0, 0];
 // Padding alignment. The first value is the x direction (east/west), the second value the y direction (north/south). When padding is added to the build plate, this alignment is used to distribute it. A lower value will move the grid towards the west/south direction, adding more padding to the east/north
-alignment = [0.5, 0.5];
+alignment = [0.5, 0.5]; // [0:0.1:1]
 
 /* [Magnets] */
 
