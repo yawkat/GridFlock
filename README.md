@@ -53,6 +53,11 @@ For inserting magnets, check out [the jig I designed](https://www.printables.com
     - [Shifting the grid](#shifting-the-grid)
     - [Adding empty space](#adding-empty-space)
     - [Squeezing in extra cells](#squeezing-in-extra-cells)
+  - [Cell override](#cell-override)
+    - [Normal cell](#normal-cell)
+    - [Solid](#solid)
+    - [Empty](#empty)
+    - [Irregular Shapes](#irregular-shapes)
   - [Building from source](#building-from-source)
   - [Why the name?](#why-the-name)
 
@@ -390,6 +395,48 @@ If your plate is slightly too large for where you want to put it, but you don't 
 <img src="docs/images/edge-adjustment-cut.png" alt="Cutting the grid using edge adjustment" />
 
 If you do this, you may of course have trouble fitting bins into the empty space.
+
+## Cell override
+
+For really weird use cases, you can override the content of individual cells using the `cell_override` option. Due to openscad limitations, this option is a string. Each character corresponds to a particular override style. Cells are counted from west to east and then from south to north: For a 2x2 grid, the first character customizes the lower left (SW) cell, the second character the lower right (SE) cell, the third the upper left (NW) cell, and the last character the upper right (NE) cell.
+
+### Normal cell
+
+A character `c` produces a normal cell. The override string is `cccc`:
+
+<!-- openscad -o docs/images/override-normal.png --camera=0,0,0,40,0,20,300 -D plate_size='[104, 104]' -D magnets=false -D 'cell_override="cccc"' -->
+<img src="docs/images/override-normal.png" alt="Normal cell override" />
+
+### Solid
+
+A character `s` produces a solid fill. The override string is `cssc`:
+
+<!-- openscad -o docs/images/override-solid.png --camera=0,0,0,40,0,20,300 -D plate_size='[104, 104]' -D magnets=false -D 'cell_override="cssc"' -->
+<img src="docs/images/override-solid.png" alt="Solid cell override" />
+
+### Empty
+
+A character `s` produces an empty cell. The override string is `ceec`:
+
+<!-- openscad -o docs/images/override-empty.png --camera=0,0,0,40,0,20,300 -D plate_size='[104, 104]' -D magnets=false -D 'cell_override="ceec"' -->
+<img src="docs/images/override-empty.png" alt="Empty cell override" />
+
+### Irregular Shapes
+
+The cell override feature can be used to create grids with irregular shapes. Let's say we want to create a plate with this shape:
+
+<!-- openscad -o docs/images/irregular-base-shape.png --camera=0,0,0,40,0,20,600 -D mode=1 docs/irregular/irregular.scad -->
+<img src="docs/images/irregular-base-shape.png" alt="Base shape for the irregular plate" />
+
+One way to do this is to cut a rectangular base plate with this shape, e.g. in the slicer. But if we do this with a regular base plate, we get this result:
+
+<!-- openscad -o docs/images/irregular-no-override.png --camera=0,0,0,40,0,20,600 -D mode=2 docs/irregular/irregular.scad -->
+<img src="docs/images/irregular-no-override.png" alt="Irregular plate with no cell override" />
+
+With cell overrides, we can selectively fill some of the cells so that only the "full" cells remain.
+
+<!-- openscad -o docs/images/irregular-override.png --camera=0,0,0,40,0,20,600 -D mode=3 docs/irregular/irregular.scad -->
+<img src="docs/images/irregular-override.png" alt="Irregular plate with cell override" />
 
 ## Building from source
 
