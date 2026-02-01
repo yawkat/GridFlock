@@ -110,6 +110,11 @@ thumbscrews = false;
 // Thumb screw cutout diameter
 thumbscrew_diameter = 15.8; // 0.1
 
+/* [Pillars] */
+
+pillar_diameter = 12;
+pillar_height = 10;
+
 /* [Advanced] */
 
 // Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
@@ -708,6 +713,17 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                     }
                 }
             }
+
+            for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, count, padding, [ix, iy], _SOUTH, _WEST) {
+            ti = [ix, iy] + global_cell_index;
+            if (((ti.x + ti.y) % 2) == 0 && 
+            ti.x != 0 && 
+            ti.y != 0 && 
+            ti.x != ceil(global_cell_count.x + 0.25 - 1) && 
+            ti.y != ceil(global_cell_count.y + 0.25 - 1)) {
+                #cylinder(pillar_height, r = pillar_diameter/2);
+            }
+            }
         }
         if (connector_edge_puzzle) {
             translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, count, size, padding, connector);
@@ -740,6 +756,7 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
             } else {
                 if (vertical_screw_other) vertical_screw();
             }
+
         }
     }
 }
