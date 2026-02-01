@@ -118,6 +118,8 @@ plate_corner_radius = 4;
 edge_adjust = [0, 0, 0, 0];
 // In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
 y_row_count_first = [0, 0]; 
+// Override the content of individual cells. Each character in this string modifies one cell. The order goes from west to east, then south to north. A 'c' stands for a normal cell. An 's' stands for a solid plate without a cell cutout. An 'e' stands for an empty square
+cell_override = "";
 // Test patterns
 test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall]
 
@@ -169,6 +171,10 @@ _magnet_border = 2;
 _edge_puzzle_stagger = edge_puzzle_dim.x + 2;
 // Which edges have male connectors?
 _edge_puzzle_direction_male = [true, true, false, false];
+
+_CELL_STYLE_NORMAL = "c";
+_CELL_STYLE_SOLID = "s";
+_CELL_STYLE_EMPTY = "e";
 
 /**
  * @Summary Run some code in each corner, with proper rotation, to add magnets
@@ -659,12 +665,24 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                     }
                     // cells
                     for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, count, padding, [ix, iy]) {
-                        cell([ix == count.x - 0.5, iy == count.y - 0.5], [
-                            connector[_NORTH] && iy == last.y,
-                            connector[_EAST] && ix == last.x,
-                            connector[_SOUTH] && iy == 0,
-                            connector[_WEST] && ix == 0
-                        ]);
+                        half = [ix == count.x - 0.5, iy == count.y - 0.5];
+
+                        seq_index = (iy + global_cell_index.y) * ceil(global_cell_count.x) + (ix + global_cell_index.x);
+                        cell_style = len(cell_override) <= seq_index ? _CELL_STYLE_NORMAL : cell_override[seq_index];
+                        if (cell_style == _CELL_STYLE_NORMAL) {
+                            cell(half, [
+                                connector[_NORTH] && iy == last.y,
+                                connector[_EAST] && ix == last.x,
+                                connector[_SOUTH] && iy == 0,
+                                connector[_WEST] && ix == 0
+                            ]);
+                        } else if (cell_style == _CELL_STYLE_EMPTY) {
+                        } else if (cell_style == _CELL_STYLE_SOLID) {
+                            dim = [BASEPLATE_DIMENSIONS.x * (half.x ? 0.5 : 1), BASEPLATE_DIMENSIONS.y * (half.y ? 0.5 : 1)];
+                            translate([-dim.x/2, -dim.y/2, -_extra_height]) cube([dim.x, dim.y, _total_height]);
+                        } else {
+                            assert(false, str("Unknown cell style: '", cell_style, "'"));
+                        }
                     };
                 };
             };
