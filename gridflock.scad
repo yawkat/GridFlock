@@ -860,10 +860,10 @@ module main() {
         plate_size.y - plate_count.y * BASEPLATE_DIMENSIONS.y
     ];
     plate_padding = [
-        plate_padding_sum.y * alignment.y, // NORTH
-        plate_padding_sum.x * alignment.x, // EAST
-        plate_padding_sum.y * (1 - alignment.y), // SOUTH
-        plate_padding_sum.x * (1 - alignment.x), // WEST
+        plate_padding_sum.y * (1 - alignment.y), // NORTH
+        plate_padding_sum.x * (1 - alignment.x), // EAST
+        plate_padding_sum.y * alignment.y, // SOUTH
+        plate_padding_sum.x * alignment.x, // WEST
     ] + edge_adjust + plate_wall_thickness;
     // keep some margin on the edge of the bed clear for the connectors
     connector_margin = max(connector_intersection_puzzle ? 3.5 : 0, connector_edge_puzzle ? edge_puzzle_dim_c.y + edge_puzzle_dim.y : 0);
