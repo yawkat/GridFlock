@@ -14,6 +14,8 @@ do_half_y = true;
 solid_base = 0;
 // Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
 bottom_chamfer = [0, 0, 0, 0];
+// Padding alignment. The first value is the x direction (east/west), the second value the y direction (north/south). When padding is added to the build plate, this alignment is used to distribute it. A lower value will move the grid towards the west/south direction, adding more padding to the east/north
+alignment = [0.5, 0.5]; // [0:0.1:1]
 
 /* [Magnets] */
 
@@ -858,10 +860,10 @@ module main() {
         plate_size.y - plate_count.y * BASEPLATE_DIMENSIONS.y
     ];
     plate_padding = [
-        plate_padding_sum.y / 2, // NORTH
-        plate_padding_sum.x / 2, // EAST
-        plate_padding_sum.y / 2, // SOUTH
-        plate_padding_sum.x / 2, // WEST
+        plate_padding_sum.y * (1 - alignment.y), // NORTH
+        plate_padding_sum.x * (1 - alignment.x), // EAST
+        plate_padding_sum.y * alignment.y, // SOUTH
+        plate_padding_sum.x * alignment.x, // WEST
     ] + edge_adjust + plate_wall_thickness;
     // keep some margin on the edge of the bed clear for the connectors
     connector_margin = max(connector_intersection_puzzle ? 3.5 : 0, connector_edge_puzzle ? edge_puzzle_dim_c.y + edge_puzzle_dim.y : 0);
