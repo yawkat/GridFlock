@@ -30,6 +30,7 @@ For inserting magnets, check out [the jig I designed](https://www.printables.com
     - [Solid frame](#solid-frame)
   - [Half-sized cells](#half-sized-cells)
   - [Corner radius](#corner-radius)
+  - [Alignment](#alignment)
   - [Custom cell size](#custom-cell-size)
   - [Solid base](#solid-base)
   - [Bottom Chamfer](#bottom-chamfer)
@@ -182,6 +183,25 @@ You can configure the radius with the `plate_corner_radius` property, e.g. 1mm:
 
 <!-- openscad -o docs/images/corner-radius-1.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D magnets=false -D plate_corner_radius=1 -->
 <img src="docs/images/corner-radius-1.png" alt="Corner radius 1mm" />
+
+## Alignment
+
+When the plate size is not a clean multiple of 42mm, the grid is centered by default. You can adjust this using the `alignment` option, which can be configured for each axis. A value of 0.5 will center the grid (the default):
+
+<!-- openscad -o docs/images/align-center.png --camera=0,0,0,40,0,10,200 -D plate_size='[62, 62]' -D magnets=false -->
+<img src="docs/images/align-center.png" alt="Center alignment" />
+
+A lower value will shift the grid to the west/south direction:
+
+<!-- openscad -o docs/images/align-west.png --camera=0,0,0,40,0,10,200 -D plate_size='[62, 62]' -D magnets=false -D alignment='[0,0.2]' -->
+<img src="docs/images/align-west.png" alt="West alignment" />
+
+A higher value will shift the grid to the east/north direction:
+
+<!-- openscad -o docs/images/align-east.png --camera=0,0,0,40,0,10,200 -D plate_size='[62, 62]' -D magnets=false -D alignment='[0.8,1]' -->
+<img src="docs/images/align-east.png" alt="East alignment" />
+
+The plate size remains unchanged.
 
 ## Custom cell size
 
@@ -346,6 +366,9 @@ In some cases, you may want to modify this behavior using the `edge_adjust` prop
 > Because the edge adjustment is added to the padding, it will add or remove from the final plate size!
 
 ### Shifting the grid
+
+> [!NOTE]
+> It is easier to use the alignment option for this.
 
 You may want to move the generated grid so that it is not centered on the plate. In the below example, I've shifted the grid 5mm to the north and 10mm to the east using `edge_adjust=[-5, -10, 5, 10]` Note that the adjustment values for east and west / north and south even out so that the final plate size remains unchanged.
 
