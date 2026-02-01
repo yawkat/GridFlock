@@ -38,7 +38,7 @@ title: (overlay-png "caption-title")
     mogrify -alpha set -channel alpha -fx "g == 1.0 ? 0 : 1" build/title.png
     mogrify -draw 'image SrcOver 0,0 1600,1200 build/caption-title.png' build/title.png
 
-[parallel]
+#[parallel]
 showcase: (animation "animation-size" "11" "80" "-D magnets=false" "caption-size") (animation "animation-magnets" "3" "100" "" "caption-magnets") (animation "animation-size-smooth" "30" "10" "-D magnets=false --camera 0,0,0,40,0,40,400" "caption-size-smooth")
 
 all: paths test title docs
