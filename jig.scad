@@ -8,10 +8,6 @@ $fn = 64;
 show_cross_section = false;
 // Transparency Level
 jig_alpha = 0.8;
-// Disc radius is 10mm (diameter 20mm)
-disc_diameter = 20;
-// Disc height is 3mm
-disc_thickness = 3;
 
 /* [Intrusion Simulation] */
 edge_puzzle_magnet_border_width = 2.5;
@@ -55,51 +51,49 @@ module bin_base_tool_2() {
 
 // 1x1 GridFlock Baseplate Rig (PLATE - Blue)
 module gridflock_baseplate_rig() {
-  color([0.2, 0.5, 1.0, 0.5]) // BLUE
-    segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[true, true, true, true]);
+  segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[true, true, true, true]);
 }
 
 // Solid Disc Body
 module disc_body() {
-  // Height is 3mm, Radius is 10mm
-  cylinder(h=3, r=16);
+  // Height is 3mm, Radius is 16mm (User manual edit)
+  color([0.5, 0.5, 0.5, jig_alpha])
+    cylinder(h=3, r=16);
 }
 
 // --- FINAL ASSEMBLY ---
 
 module assembly() {
-  // "Joined back-to-back" - meeting at Z=0
-  // Bin Base (Red) goes from Z=0 to Z=5 (flipped)
-  // Plate Rig (Blue) goes from Z=0 to Z=5 (flipped)
-  // Disc goes on the very top of the assembly.
+  // Joined back-to-back at Z=0
 
   rotate([180, 0, 0]) {
     difference() {
-      union() {
-        // Red Tool (Nested inside the rig)
-        bin_base_tool_2();
-      }
-
-      // Subtract the Baseplate Rig (Blue)
+      bin_base_tool_2();
       gridflock_baseplate_rig();
     }
-
-    // Disc atop the assembly (at the highest Z point)
-    // Since flipped 180, Z=0 is the "top" of the flat side.
-    // We'll place it slightly above Z=0 so it's on top after rotation.
-
     // Restore visibility of the Blue Rig as a "ghost" (phantom)
     %gridflock_baseplate_rig();
   }
-  
-  disc_body();
+
+  // Disc atop the assembly
+  // We subtract the Z-axis projection of the baseplate from it
+  translate([0, 0, 0])
+    difference() {
+      disc_body();
+      // Projection of the baseplate rig (with its central hole etc.)
+      // We extrude it enough to cut through the 3mm disc
+      translate([0, 0, -1]) // safety margin
+        linear_extrude(height=5)
+          projection()
+            gridflock_baseplate_rig();
+    }
 }
 
 // Main execution
 if (show_cross_section) {
   difference() {
     assembly();
-    translate([0, -disc_diameter, -50]) cube([disc_diameter, disc_diameter * 2, 150]);
+    translate([0, -60, -50]) cube([60, 120, 150]);
   }
 } else {
   assembly();
