@@ -7,7 +7,15 @@ $fn = 64;
 // Visualize Cross Section
 show_cross_section = false;
 // Transparency Level
-jig_alpha = 0.8;
+jig_alpha = 1.0;
+// Height of the functional part of the bin to keep (standard is 4.75-5.0)
+jig_crop_height = 4.75; // [1:0.1:5]
+
+/* [Disc Parameters] */
+// Disc Radius is 16mm
+disc_radius = 16;
+// Disc Height is 3mm
+disc_height = 3;
 
 /* [Intrusion Simulation] */
 edge_puzzle_magnet_border_width = 2.5;
@@ -35,17 +43,23 @@ hole_options_refined = bundle_hole_options(refined_hole=true);
 // 1x1 Bin Base Tool (JIG - Red)
 module bin_base_tool_2() {
   hole_pos = (BASE_TOP_DIMENSIONS.x - 2 * _base_profile_max_mm.x) / 2 - HOLE_DISTANCE_FROM_BOTTOM_EDGE;
+
   color([1.0, 0.2, 0.2, jig_alpha]) // RED
-    difference() {
-      union() {
-        _base_bridge_solid(BASE_TOP_DIMENSIONS);
-        base_solid(BASE_TOP_DIMENSIONS);
+    intersection() {
+      // We only keep the part within jig_crop_height
+      translate([-50, -50, 0]) cube([100, 100, jig_crop_height]);
+
+      difference() {
+        union() {
+          _base_bridge_solid(BASE_TOP_DIMENSIONS);
+          base_solid(BASE_TOP_DIMENSIONS);
+        }
+        for (a = [0, 180]) {
+          rotate([0, 0, a]) translate([hole_pos, hole_pos, 0]) block_base_hole(hole_options_refined);
+          rotate([0, 0, a]) translate([hole_pos, hole_pos, -10]) cylinder(h=25, d=3);
+        }
+        _base_preview_fix();
       }
-      for (a = [0, 180]) {
-        rotate([0, 0, a]) translate([hole_pos, hole_pos, 0]) block_base_hole(hole_options_refined);
-        rotate([0, 0, a]) translate([hole_pos, hole_pos, -10]) cylinder(h=25, d=3);
-      }
-      _base_preview_fix();
     }
 }
 
@@ -56,15 +70,14 @@ module gridflock_baseplate_rig() {
 
 // Solid Disc Body
 module disc_body() {
-  // Height is 3mm, Radius is 16mm (User manual edit)
   color([0.5, 0.5, 0.5, jig_alpha])
-    cylinder(h=3, r=16);
+    cylinder(h=disc_height, r=disc_radius);
 }
 
 // --- FINAL ASSEMBLY ---
 
 module assembly() {
-  // Joined back-to-back at Z=0
+  // Both parts flipped 180 and meeting at Z=0
 
   rotate([180, 0, 0]) {
     difference() {
@@ -75,15 +88,13 @@ module assembly() {
     %gridflock_baseplate_rig();
   }
 
-  // Disc atop the assembly
-  // We subtract the Z-axis projection of the baseplate from it
+  // Disc atop the assembly with projection subtraction
   translate([0, 0, 0])
     difference() {
       disc_body();
-      // Projection of the baseplate rig (with its central hole etc.)
-      // We extrude it enough to cut through the 3mm disc
-      translate([0, 0, -1]) // safety margin
-        linear_extrude(height=5)
+      // Projection of the baseplate rig cut through the disc
+      translate([0, 0, -1])
+        linear_extrude(height=disc_height + 2)
           projection()
             gridflock_baseplate_rig();
     }
@@ -100,3 +111,4 @@ if (show_cross_section) {
 }
 
 echo(str("TOTAL BAR INTRUSION DEPTH: ", edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width, "mm"));
+echo(str("JIG CROP HEIGHT: ", jig_crop_height, "mm"));
