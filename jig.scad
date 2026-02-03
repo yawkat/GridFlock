@@ -80,11 +80,21 @@ module gridflock_baseplate_rig() {
 
 // Solid Disc Body with Top Chamfer
 module disc_body() {
+  hole_pos = (BASE_TOP_DIMENSIONS.x - 2 * _base_profile_max_mm.x) / 2 - HOLE_DISTANCE_FROM_BOTTOM_EDGE;
+
   color([0.5, 0.5, 0.5, jig_alpha])
-    union() {
-      cylinder(h=disc_height - disc_chamfer, r=disc_radius);
-      translate([0, 0, disc_height - disc_chamfer])
-        cylinder(h=disc_chamfer, r1=disc_radius, r2=disc_radius - disc_chamfer);
+    difference() {
+      union() {
+        cylinder(h=disc_height - disc_chamfer, r=disc_radius);
+        translate([0, 0, disc_height - disc_chamfer])
+          cylinder(h=disc_chamfer, r1=disc_radius, r2=disc_radius - disc_chamfer);
+      }
+      for (a = [0, 180]) {
+        mirror([0, 1, 0]) rotate([0, 0, a]) translate([hole_pos, hole_pos, 0])
+              linear_extrude(height=100, center=true)
+                projection()
+                  block_base_hole(hole_options_refined);
+      }
     }
 }
 
