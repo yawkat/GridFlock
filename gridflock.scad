@@ -91,6 +91,8 @@ plate_wall_height = [0, 0];
 vertical_screw_diameter = 3.2; // 0.1
 // Top countersink dimension. First value is the diameter of the screw head, second value the height
 vertical_screw_countersink_top = [0, 0]; // 0.1
+// Top counterbore dimension. First value is the diameter of the screw head, second value the height
+vertical_screw_counterbore_top = [0, 0];
 
 // Enable screws at *plate* corners
 vertical_screw_plate_corners = false;
@@ -570,10 +572,21 @@ module edge_puzzle(positive, male, half) {
  */
 module vertical_screw() {
     // Additional space to clear above the screw. There shouldn't be anything here, but this guards against rounding errors
-    clear_upwards = 10;
+    clear_upwards = 0.01;
     rotate_extrude() {
         translate([0, -_extra_height]) square([vertical_screw_diameter/2, _total_height + clear_upwards]);
-        translate([0, _profile_height]) polygon([[0, 0], [0, clear_upwards], [vertical_screw_countersink_top.x/2, clear_upwards], [vertical_screw_countersink_top.x/2, 0], [vertical_screw_diameter/2, -vertical_screw_countersink_top.y]]);
+        translate([0, _profile_height - vertical_screw_counterbore_top.y]) {
+            // counterbore
+            square([vertical_screw_counterbore_top.x/2, vertical_screw_counterbore_top.y+clear_upwards]);
+            // countersink
+            polygon([
+                [0, 0], 
+                [0, clear_upwards], 
+                [vertical_screw_countersink_top.x/2, clear_upwards], 
+                [vertical_screw_countersink_top.x/2, 0], 
+                [vertical_screw_diameter/2, -vertical_screw_countersink_top.y]
+            ]);
+        }
     }
 }
 

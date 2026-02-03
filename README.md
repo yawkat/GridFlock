@@ -310,6 +310,16 @@ GridFlock can also make space for countersunk screws. The dimensions of the coun
 <!-- openscad -o docs/images/vscrews-countersink.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=false -D vertical_screw_other=true -D vertical_screw_segment_corners=true -D vertical_screw_plate_corners=true -D vertical_screw_countersink_top='[6, 2.5]' -->
 <img src="docs/images/vscrews-countersink.png" alt="Vertical screw countersunk" />
 
+A similar option exists for a counterbore recess.
+
+<!-- openscad -o docs/images/vscrews-counterbore.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=false -D vertical_screw_other=true -D vertical_screw_segment_corners=true -D vertical_screw_plate_corners=true -D vertical_screw_counterbore_top='[6, 2.5]' -->
+<img src="docs/images/vscrews-counterbore.png" alt="Vertical screw counterbore" />
+
+If you combine the two options, the counterbore slot is placed above the countersink slot. You can use this to recess the countersunk head into the grid, to avoid interfering with the wider part of a bin.
+
+<!-- openscad -o docs/images/vscrews-counterboth.png --camera=0,0,0,30,0,10,200 -D plate_size='[105, 63]' -D magnets=false -D vertical_screw_other=true -D vertical_screw_segment_corners=true -D vertical_screw_plate_corners=true -D solid_base=5 -D vertical_screw_counterbore_top='[6, 4]' -D vertical_screw_countersink_top='[6, 2.5]' -->
+<img src="docs/images/vscrews-counterboth.png" alt="Vertical screw counterbore + countersunk" />
+
 ### Screw locations
 
 During the generation process, each intersection is classified into one of five categories. Each of these categories can have screws enabled separately.
