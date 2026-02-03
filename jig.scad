@@ -10,9 +10,7 @@ gridy = 1;
 
 // Magnet hole options
 hole_options = bundle_hole_options(
-  magnet_hole=true,
-  crush_ribs=true,
-  chamfer=true
+  refined_hole=true
 );
 
 // Flip the model 180 degrees to serve as an insertion jig base
