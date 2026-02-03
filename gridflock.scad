@@ -14,6 +14,8 @@ do_half_y = true;
 solid_base = 0;
 // Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
 bottom_chamfer = [0, 0, 0, 0];
+// Chamfer at the top edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
+top_chamfer = [0, 0, 0, 0];
 // Padding alignment. The first value is the x direction (east/west), the second value the y direction (north/south). When padding is added to the build plate, this alignment is used to distribute it. A lower value will move the grid towards the west/south direction, adding more padding to the east/north
 alignment = [0.5, 0.5]; // [0:0.1:1]
 
@@ -724,6 +726,10 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
         if (bottom_chamfer[_WEST] > 0 && !connector[_WEST]) translate([-size.x/2, -size.y/2 - extend, -_extra_height]) rotate([-90, 0, 0]) rotate([0, 0, -90]) linear_extrude(size.y + extend * 2) scale(bottom_chamfer[_WEST]) chamfer_triangle();
         if (bottom_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([size.x/2 + extend, size.y/2, -_extra_height]) rotate([0, -90, 0]) rotate([0, 0, -90]) linear_extrude(size.x + extend * 2) scale(bottom_chamfer[_NORTH]) chamfer_triangle();
         if (bottom_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, -_extra_height]) rotate([90, 0, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(bottom_chamfer[_EAST]) chamfer_triangle(); 
+        if (top_chamfer[_SOUTH] > 0 && !connector[_SOUTH]) translate([-size.x/2 - extend, -size.y/2, _profile_height]) rotate([0, 90, 0]) linear_extrude(size.x + extend * 2) scale(top_chamfer[_SOUTH]) chamfer_triangle();
+        if (top_chamfer[_WEST] > 0 && !connector[_WEST]) translate([-size.x/2, -size.y/2 - extend, _profile_height]) rotate([-90, 0, 0]) linear_extrude(size.y + extend * 2) scale(top_chamfer[_WEST]) chamfer_triangle();
+        if (top_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([-size.x/2, size.y/2, _profile_height]) rotate([0, 90, 0]) rotate([0, 0, -90]) linear_extrude(size.x + extend * 2) scale(top_chamfer[_NORTH]) chamfer_triangle();
+        if (top_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, _profile_height]) rotate([90, -90, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(top_chamfer[_EAST]) chamfer_triangle(); 
 
         // vertical screw holes
         is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
