@@ -8,14 +8,16 @@ $fn = 64;
 show_cross_section = false;
 // Transparency Level
 jig_alpha = 1.0;
-// Height of the functional part of the bin to keep (standard is 4.75-5.0)
-jig_crop_height = 4.75; // [1:0.1:5]
+// Height of the functional part of the bin to keep
+jig_crop_height = 4.75;
 
 /* [Disc Parameters] */
 // Disc Radius is 16mm
 disc_radius = 16;
 // Disc Height is 3mm
 disc_height = 3;
+// Scale of the baseplate projection used to cut the disc (1.0 = exact fit)
+projection_scale = 0.95; // [0.8:0.01:1.5]
 
 /* [Intrusion Simulation] */
 edge_puzzle_magnet_border_width = 2.5;
@@ -46,7 +48,6 @@ module bin_base_tool_2() {
 
   color([1.0, 0.2, 0.2, jig_alpha]) // RED
     intersection() {
-      // We only keep the part within jig_crop_height
       translate([-50, -50, 0]) cube([100, 100, jig_crop_height]);
 
       difference() {
@@ -77,26 +78,24 @@ module disc_body() {
 // --- FINAL ASSEMBLY ---
 
 module assembly() {
-  // Both parts flipped 180 and meeting at Z=0
-
   rotate([180, 0, 0]) {
     difference() {
       bin_base_tool_2();
       gridflock_baseplate_rig();
     }
-    // Restore visibility of the Blue Rig as a "ghost" (phantom)
     %gridflock_baseplate_rig();
   }
 
-  // Disc atop the assembly with projection subtraction
+  // Disc atop the assembly with SCALED projection subtraction
   translate([0, 0, 0])
     difference() {
       disc_body();
-      // Projection of the baseplate rig cut through the disc
+      // We scale the projection from [0,0,0] origin
       translate([0, 0, -1])
         linear_extrude(height=disc_height + 2)
-          projection()
-            gridflock_baseplate_rig();
+          scale([projection_scale, projection_scale, 1])
+            projection()
+              gridflock_baseplate_rig();
     }
 }
 
@@ -111,4 +110,4 @@ if (show_cross_section) {
 }
 
 echo(str("TOTAL BAR INTRUSION DEPTH: ", edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width, "mm"));
-echo(str("JIG CROP HEIGHT: ", jig_crop_height, "mm"));
+echo(str("PROJECTION SCALE: ", projection_scale));
