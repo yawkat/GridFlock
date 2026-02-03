@@ -19,6 +19,7 @@ For inserting magnets, check out [the jig I designed](https://www.printables.com
 - [GridFlock](#gridflock)
   - [Connectors](#connectors)
     - [Intersection Puzzle](#intersection-puzzle)
+      - [Connector Fit](#connector-fit)
     - [Edge Puzzle](#edge-puzzle)
       - [Connector Height](#connector-height)
       - [Connector Count](#connector-count)
@@ -73,6 +74,20 @@ This mode adds small puzzle-style connectors at cell intersections. This is simi
 
 <!-- openscad -o docs/images/intersection-puzzle.png --camera=0,-10,0,40,0,25,300 -D plate_size='[420, 420]' -->
 <img src="docs/images/intersection-puzzle.png" alt="Intersection puzzle" />
+
+#### Connector Fit
+
+The intersection puzzle connector is intentionally tight to produce a secure fit. It may be necessary to use a mallet or hammer to connect plates.
+
+If the puzzle connector is too tight for your print settings, you can use the `intersection_puzzle_fit` parameter to produce a looser fit. A value of 0 produces the loosest fit, while 1 is the tightest. Try multiple settings and see which works best for you. Tight fit example (`intersection_puzzle_fit=1`):
+
+<!-- openscad -o docs/images/intersection-puzzle-tight.png --camera=0,0,0,40,0,25,70 -D plate_size='[84, 84]' -D bed_size='[50, 1000]' -D magnets=false -->
+<img src="docs/images/intersection-puzzle-tight.png" alt="Intersection puzzle (tight)" />
+
+Loose fit example (`intersection_puzzle_fit=0`):
+
+<!-- openscad -o docs/images/intersection-puzzle-loose.png --camera=0,0,0,40,0,25,70 -D plate_size='[84, 84]' -D bed_size='[50, 1000]' -D magnets=false -D intersection_puzzle_fit=0 -->
+<img src="docs/images/intersection-puzzle-loose.png" alt="Intersection puzzle (loose)" />
 
 ### Edge Puzzle
 

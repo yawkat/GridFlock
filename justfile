@@ -47,4 +47,11 @@ title: (overlay-png "caption-title")
 #[parallel]
 showcase: title (animation "animation-size" "11" "80" "-D magnets=false" "caption-size") (animation "animation-magnets" "3" "100" "" "caption-magnets") (animation "animation-size-smooth" "30" "10" "-D magnets=false --camera 0,0,0,40,0,40,400" "caption-size-smooth")
 
+intersection-fit-tester-one fit:
+    mkdir -p build/intersection-fit-tester
+    openscad -o build/intersection-fit-tester/fit-{{fit}}.stl --export-format=binstl -D magnets=false -D BASEPLATE_DIMENSIONS='[15, 42]' -D 'plate_size=[30, 84]' -D 'bed_size=[25, 1000]' -D intersection_puzzle_fit={{fit}} gridflock.scad
+
+intersection-fit-tester: (intersection-fit-tester-one "0.0") (intersection-fit-tester-one "0.2") (intersection-fit-tester-one "0.4") (intersection-fit-tester-one "0.6") (intersection-fit-tester-one "0.8") (intersection-fit-tester-one "1.0")
+
+
 all: paths test showcase docs

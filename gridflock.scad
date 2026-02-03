@@ -38,6 +38,8 @@ magnet_bottom = 0.75; // 0.25
 
 // Enable the intersection puzzle plate connector. This is similar to GridPlates/GRIPS. Small puzzle connectors are added cell intersections.
 connector_intersection_puzzle = true;
+// A value from 0 to 1 to modify the fit of the intersection puzzle connector. 0 is a loose fit, 1 is a tight fit.
+intersection_puzzle_fit = 1; // [0:0.1:1]
 
 /* [Edge Puzzle Connector] */
 
@@ -292,7 +294,7 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
  * Raw polygon for the male puzzle connector. (Note: Only one half)
  */
 module puzzle_male_0() {
-    scale(1/128*4) translate([-128, -128]) polygon(svg_path_puzzle_svg_male);
+    scale(1/128*4) translate([-128, -128]) polygon(svg_path_puzzle_svg_male_tight * intersection_puzzle_fit + svg_path_puzzle_svg_male_loose * (1 - intersection_puzzle_fit));
 }
 
 /**
@@ -314,7 +316,7 @@ module puzzle_male(positive) {
  * Raw polygon for the female connector. (Note: Only one half)
  */
 module puzzle_female_0() {
-    mirror([1, 0]) scale(1/128*4) translate([-128, -128]) polygon(svg_path_puzzle_svg_female);
+    mirror([1, 0]) scale(1/128*4) translate([-128, -128]) polygon(svg_path_puzzle_svg_female_tight * intersection_puzzle_fit + svg_path_puzzle_svg_female_loose * (1 - intersection_puzzle_fit));
 }
 
 /**
