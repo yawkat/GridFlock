@@ -67,7 +67,6 @@ module bin_base_tool_2() {
         }
         for (a = [0, 180]) {
           rotate([0, 0, a]) translate([hole_pos, hole_pos, 0]) block_base_hole(hole_options_refined);
-          rotate([0, 0, a]) translate([hole_pos, hole_pos, -10]) cylinder(h=25, d=3);
         }
         _base_preview_fix();
       }
