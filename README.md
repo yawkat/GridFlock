@@ -35,6 +35,7 @@ For inserting magnets, check out [the jig I designed](https://www.printables.com
   - [Custom cell size](#custom-cell-size)
   - [Solid base](#solid-base)
   - [Bottom Chamfer](#bottom-chamfer)
+  - [Top Chamfer](#top-chamfer)
   - [Numbering](#numbering)
     - [Squeezed number](#squeezed-number)
   - [Plate Wall](#plate-wall)
@@ -245,6 +246,13 @@ You can add a chamfer to the edge of the plate using the `bottom_chamfer` option
 
 <!-- openscad -o docs/images/bottom-chamfer.png --camera=0,0,0,140,0,10,200 -D plate_size='[105, 63]' -D 'bed_size=[70, 70]' -D magnets=false -D bottom_chamfer='[1.5, 1.5, 1.5, 1.5]' -->
 <img src="docs/images/bottom-chamfer.png" alt="Bottom chamfer" />
+
+## Top Chamfer
+
+Similarly, you can add a `top_chamfer` option.
+
+<!-- openscad -o docs/images/top-chamfer.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D 'bed_size=[70, 70]' -D magnets=false -D top_chamfer='[1.5, 1.5, 1.5, 1.5]' -->
+<img src="docs/images/top-chamfer.png" alt="Top chamfer" />
 
 ## Numbering
 
