@@ -14,10 +14,20 @@ jig_crop_height = 4.75;
 /* [Disc Parameters] */
 // Disc Radius is 16mm
 disc_radius = 16;
-// Disc Height is 3mm
+// Disc Height (Thickness) is 3mm
 disc_height = 3;
-// Scale of the baseplate projection used to cut the disc (1.0 = exact fit)
-projection_scale = 0.95; // [0.8:0.01:1.5]
+// Disc Chamfer size (mm) for the outer cylinder
+disc_chamfer = 1.0;
+
+/* [Cutout Refinement] */
+// Rounding radius for the 2D cutouts (the corners)
+cut_rounding = 1.0;
+// Height of the tapered section at the TOP of the cut
+cut_taper_height = 1.0;
+// Scaling of the cut-out shape at the top exit (Set < 1.0 for "inward", > 1.0 for "funnel")
+cut_taper_scale = 0.9;
+// Scale of the straight functional section of the baseplate projection 
+projection_scale = 0.95;
 
 /* [Intrusion Simulation] */
 edge_puzzle_magnet_border_width = 2.5;
@@ -69,10 +79,22 @@ module gridflock_baseplate_rig() {
   segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[true, true, true, true]);
 }
 
-// Solid Disc Body
+// Solid Disc Body with Top Chamfer
 module disc_body() {
   color([0.5, 0.5, 0.5, jig_alpha])
-    cylinder(h=disc_height, r=disc_radius);
+    union() {
+      cylinder(h=disc_height - disc_chamfer, r=disc_radius);
+      translate([0, 0, disc_height - disc_chamfer])
+        cylinder(h=disc_chamfer, r1=disc_radius, r2=disc_radius - disc_chamfer);
+    }
+}
+
+// Base shape for cutting from the disc
+module base_cut_shape() {
+  offset(r=cut_rounding)
+    scale([projection_scale, projection_scale, 1])
+      projection()
+        gridflock_baseplate_rig();
 }
 
 // --- FINAL ASSEMBLY ---
@@ -86,16 +108,24 @@ module assembly() {
     %gridflock_baseplate_rig();
   }
 
-  // Disc atop the assembly with SCALED projection subtraction
+  // Disc atop the assembly with REVERSED compound cutouts
+  // Meeting face (bottom of disc) is Z=0 to Z=2: Straight
+  // Top face is Z=2 to Z=3: Tapered
   translate([0, 0, 0])
     difference() {
       disc_body();
-      // We scale the projection from [0,0,0] origin
-      translate([0, 0, -1])
-        linear_extrude(height=disc_height + 2)
-          scale([projection_scale, projection_scale, 1])
-            projection()
-              gridflock_baseplate_rig();
+
+      translate([0, 0, -0.01]) union() {
+          // 1. Straight Section (Started at the bottom meeting face)
+          linear_extrude(height=disc_height - cut_taper_height + 0.01)
+            base_cut_shape();
+
+          // 2. Tapered Section (at the TOP)
+          // Starts at disc_height - cut_taper_height
+          translate([0, 0, disc_height - cut_taper_height])
+            linear_extrude(height=cut_taper_height + 1, scale=cut_taper_scale)
+              base_cut_shape();
+        }
     }
 }
 
@@ -110,4 +140,3 @@ if (show_cross_section) {
 }
 
 echo(str("TOTAL BAR INTRUSION DEPTH: ", edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width, "mm"));
-echo(str("PROJECTION SCALE: ", projection_scale));
