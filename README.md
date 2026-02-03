@@ -89,6 +89,8 @@ Loose fit example (`intersection_puzzle_fit=0`):
 <!-- openscad -o docs/images/intersection-puzzle-loose.png --camera=0,0,0,40,0,25,70 -D plate_size='[84, 84]' -D bed_size='[50, 1000]' -D magnets=false -D intersection_puzzle_fit=0 -->
 <img src="docs/images/intersection-puzzle-loose.png" alt="Intersection puzzle (loose)" />
 
+You can find small grids with different fit values to calibrate [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files).
+
 ### Edge Puzzle
 
 [Interactive example](https://gridflock.yawk.at/#eyJiZWRfc2l6ZSI6WzUwLDUwXSwicGxhdGVfc2l6ZSI6Wzg0LDg0XSwiY29ubmVjdG9yX2ludGVyc2VjdGlvbl9wdXp6bGUiOmZhbHNlLCJjb25uZWN0b3JfZWRnZV9wdXp6bGUiOnRydWV9)
