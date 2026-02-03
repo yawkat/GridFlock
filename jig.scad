@@ -47,17 +47,23 @@ include <gridfinity-rebuilt-openscad/src/core/standard.scad>
 use <gridfinity-rebuilt-openscad/src/core/base.scad>
 use <gridfinity-rebuilt-openscad/src/core/gridfinity-rebuilt-holes.scad>
 
+// --- Derived Constants ---
+
 // Magnet hole options for Refined style
 hole_options_refined = bundle_hole_options(refined_hole=true);
+
+// Calculate hole position from the bottom edge
+// Depends on variables from gridfinity-rebuilt-openscad
+hole_offset = (BASE_TOP_DIMENSIONS.x - 2 * _base_profile_max_mm.x) / 2 - HOLE_DISTANCE_FROM_BOTTOM_EDGE;
 
 // --- MODULES ---
 
 // 1x1 Bin Base Tool (JIG - Red)
-module bin_base_tool_2() {
-  hole_pos = (BASE_TOP_DIMENSIONS.x - 2 * _base_profile_max_mm.x) / 2 - HOLE_DISTANCE_FROM_BOTTOM_EDGE;
-
+// Represents the functional base of a bin that we want to test against or simulate
+module jig_bin_tool() {
   color([1.0, 0.2, 0.2, jig_alpha]) // RED
     intersection() {
+      // Crop to the specified functional height
       translate([-50, -50, 0]) cube([100, 100, jig_crop_height]);
 
       difference() {
@@ -66,7 +72,7 @@ module bin_base_tool_2() {
           base_solid(BASE_TOP_DIMENSIONS);
         }
         for (a = [0, 180]) {
-          rotate([0, 0, a]) translate([hole_pos, hole_pos, 0]) block_base_hole(hole_options_refined);
+          rotate([0, 0, a]) translate([hole_offset, hole_offset, 0]) block_base_hole(hole_options_refined);
         }
         _base_preview_fix();
       }
@@ -74,14 +80,14 @@ module bin_base_tool_2() {
 }
 
 // 1x1 GridFlock Baseplate Rig (PLATE - Blue)
-module gridflock_baseplate_rig() {
+// The baseplate segment we are testing compatibility with
+module jig_baseplate_rig() {
   segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[true, true, true, true]);
 }
 
 // Solid Disc Body with Top Chamfer
-module disc_body() {
-  hole_pos = (BASE_TOP_DIMENSIONS.x - 2 * _base_profile_max_mm.x) / 2 - HOLE_DISTANCE_FROM_BOTTOM_EDGE;
-
+// The blank disc before any functional cutouts are applied
+module jig_disc_blank() {
   color([0.5, 0.5, 0.5, jig_alpha])
     difference() {
       union() {
@@ -89,8 +95,9 @@ module disc_body() {
         translate([0, 0, disc_height - disc_chamfer])
           cylinder(h=disc_chamfer, r1=disc_radius, r2=disc_radius - disc_chamfer);
       }
+      // Add magnet/screw holes to the disc itself
       for (a = [0, 180]) {
-        mirror([0, 1, 0]) rotate([0, 0, a]) translate([hole_pos, hole_pos, 0])
+        mirror([0, 1, 0]) rotate([0, 0, a]) translate([hole_offset, hole_offset, 0])
               linear_extrude(height=100, center=true)
                 projection()
                   block_base_hole(hole_options_refined);
@@ -99,53 +106,60 @@ module disc_body() {
 }
 
 // Base shape for cutting from the disc
-module base_cut_shape() {
+// Created by protecting the baseplate rig to 2D
+module jig_cutout_profile_2d() {
   offset(r=cut_rounding)
     scale([projection_scale, projection_scale, 1])
       projection()
-        gridflock_baseplate_rig();
+        jig_baseplate_rig();
 }
 
 // --- FINAL ASSEMBLY ---
 
-module assembly() {
+module jig_assembly() {
+  // 1. Visual Assembly of Tool vs Rig
+  // Rotated 180 to show "upside down" usage typical for baseplates?
+  // Or just to orient it nicely for viewing.
   rotate([180, 0, 0]) {
     difference() {
-      bin_base_tool_2();
-      gridflock_baseplate_rig();
+      jig_bin_tool();
+      jig_baseplate_rig();
     }
-    %gridflock_baseplate_rig();
+    %jig_baseplate_rig(); // Ghost of the rig
   }
 
-  // Disc atop the assembly with REVERSED compound cutouts
-  // Meeting face (bottom of disc) is Z=0 to Z=2: Straight
-  // Top face is Z=2 to Z=3: Tapered
+  // 2. The Disc Tool
+  // Disc atop the assembly with REVERSED compound cutouts to fit the baseplate
+  // Meeting face (bottom of disc) is Z=0 to Z=2: Straight cut
+  // Top face is Z=2 to Z=3: Tapered cut
   translate([0, 0, 0])
     difference() {
-      disc_body();
+      jig_disc_blank();
 
       translate([0, 0, -0.01]) union() {
-          // 1. Straight Section (Started at the bottom meeting face)
+          // A. Straight Section (Started at the bottom meeting face)
           linear_extrude(height=disc_height - cut_taper_height + 0.01)
-            base_cut_shape();
+            jig_cutout_profile_2d();
 
-          // 2. Tapered Section (at the TOP)
+          // B. Tapered Section (at the TOP)
           // Starts at disc_height - cut_taper_height
           translate([0, 0, disc_height - cut_taper_height])
             linear_extrude(height=cut_taper_height + 1, scale=cut_taper_scale)
-              base_cut_shape();
+              jig_cutout_profile_2d();
         }
     }
 }
 
-// Main execution
+// --- Main Execution ---
+
 if (show_cross_section) {
   difference() {
-    assembly();
+    jig_assembly();
+    // Cut away half to see inside
     translate([0, -60, -50]) cube([60, 120, 150]);
   }
 } else {
-  assembly();
+  jig_assembly();
 }
 
 echo(str("TOTAL BAR INTRUSION DEPTH: ", edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width, "mm"));
