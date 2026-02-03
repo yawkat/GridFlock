@@ -5,7 +5,7 @@ include <gridflock.scad>
 // Smoothness
 $fn = 64;
 // Visualize Cross Section
-show_cross_section = false;
+show_cross_section = true;
 // Transparency Level
 jig_alpha = 1.0;
 // Height of the functional part of the bin to keep
@@ -155,8 +155,8 @@ module jig_assembly() {
 if (show_cross_section) {
   difference() {
     jig_assembly();
-    // Cut away half to see inside
-    translate([0, -60, -50]) cube([60, 120, 150]);
+    // Cut away half to see inside, rotated 45 degrees
+    rotate([0, 0, 135]) translate([0, -60, -50]) cube([60, 120, 150]);
   }
 } else {
   jig_assembly();
