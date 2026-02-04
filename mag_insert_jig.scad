@@ -18,8 +18,8 @@ jig_crop_height = 4.75;
 /* [Disc Parameters] */
 // Disc Radius is 16mm
 disc_radius = 16;
-// Disc Height (Thickness) is 3mm
-disc_height = 3;
+// Disc Height (Thickness) is 3.5mm
+disc_height = 3.5;
 // Disc Chamfer size (mm) for the outer cylinder
 disc_chamfer = 1.0;
 
