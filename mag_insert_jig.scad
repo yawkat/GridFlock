@@ -1,7 +1,7 @@
 include <gridflock.scad>
 include <gridfinity-rebuilt-openscad/src/core/standard.scad>
 use <gridfinity-rebuilt-openscad/src/core/base.scad>
-use <gridfinity-rebuilt-openscad/src/core/gridfinity-rebuilt-holes.scad>
+include <gridfinity-rebuilt-openscad/src/core/gridfinity-rebuilt-holes.scad>
 
 /* [Export Settings] */
 
@@ -45,7 +45,7 @@ pusher_width = 30;
 pusher_thickness = 4.85;
 pusher_handle_height = 15;
 pusher_stem_height = 1.85;
-pusher_stem_width = 15;
+pusher_stem_width = 12;
 
 /* [Magnet Parameters] */
 
@@ -62,6 +62,7 @@ test_pattern = -1;
 connector_edge_puzzle = true;
 connector_intersection_puzzle = false;
 _edge_puzzle_direction_male = [false, false, false, false];
+REFINED_HOLE_BOTTOM_LAYERS=3;
 
 /* [Hidden] */
 
@@ -178,21 +179,6 @@ module jig_assembly() {
 }
 
 /**
- * @Summary Pusher handle part
- */
-module pusher_handle() {
-  cube([3, 4.85 * 0.8, pusher_handle_height], center=true);
-}
-
-/**
- * @Summary Pusher main cutout shape
-                 */
-module pusher_cutout() {
-  linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
-    square([pusher_width, pusher_thickness], center=true);
-}
-
-/**
  * @Summary Pusher output cutout shape
  */
 module pusher_output_cutout() {
@@ -200,23 +186,68 @@ module pusher_output_cutout() {
     square([pusher_width, magnet_inner_r * 2], center=true);
 }
 
+minkowski_expand = 1;
+
 /**
- * @Summary Pusher main body
+ * @Summary 2D Trapezoid for the main pusher pin, which pushes the magnet in
  */
-module pusher_body() {
-  translate([3, 0, 0]) {
-    linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
-      square([pusher_stem_width, pusher_thickness], center=true);
+module pusher_pin(positive) { 
+  translate([0, magnet_top]) {
+    if (positive) polygon([[-pusher_thickness/2, 0], [-pusher_thickness/2*0.8, pusher_stem_height], [pusher_thickness/2*0.8, pusher_stem_height], [pusher_thickness/2, 0]]);
+    else translate([0, pusher_stem_height/2]) square([pusher_thickness-minkowski_expand, pusher_stem_height-minkowski_expand], center=true);
+  }
+}
+
+// width, height, length
+aux_pin_dim = [5, 3, 13.5];
+aux_pin_off = 4;
+back_pin_dim = [5, 3, 9.5];
+
+/**
+ * @Summary 2D shape of auxiliary pins that absorb some bending force
+ */
+module aux_pins() {
+  for (i = [0,1]) {
+    mirror([i,0,0]) translate([-aux_pin_off, -_profile_height-0.25]) polygon([[0, 0], [0, aux_pin_dim.y], [-aux_pin_dim.x, 0]]);
+  }
+}
+
+frame_strength = 5;
+/**
+ * @Summary Complete pusher assembly
+ */
+module pusher_combined(positive=true) {
+  // main pin
+  rotate([90, 0, 90]) {
+    linear_extrude(pusher_stem_width - pusher_stem_height) pusher_pin(positive);
+    skew = 1.9;
+    translate([0, skew, pusher_stem_width - pusher_stem_height]) linear_extrude(pusher_stem_height, scale=[0.8, 0.7]) translate([0, -skew]) pusher_pin(positive);
+  }
+  // aux pins
+  rotate([90, 0, 90]) linear_extrude(aux_pin_dim.z) aux_pins();
+  // back pin
+  rotate([90, 0, -90]) translate([-back_pin_dim.x/2, -_profile_height-0.25, frame_strength]) {
+    linear_extrude(back_pin_dim.z-back_pin_dim.y) square([back_pin_dim.x, back_pin_dim.y]);
+    translate([0, 0, back_pin_dim.z-back_pin_dim.y]) linear_extrude(back_pin_dim.y, scale=[1, 0.2]) square([back_pin_dim.x, back_pin_dim.y]);
+  }
+  // frame
+  rotate([90, 0, 90]) translate([0, 0, -frame_strength]) linear_extrude(frame_strength) {
+    translate([-pusher_thickness * 0.8 / 2, magnet_top]) square([pusher_thickness * 0.8, pusher_handle_height]);
+    hull() {
+      pusher_pin();
+      aux_pins();
+    }
   }
 }
 
 /**
- * @Summary Complete pusher assembly
- */
-module pusher_combined() {
-  union() {
-    pusher_body();
-    translate([-3, 0, 4 + pusher_stem_height * 2]) pusher_handle();
+ * @Summary Pusher main cutout shape
+                 */
+module pusher_cutout() {
+  minkowski() {
+    union() pusher_combined(positive=false);
+    // this minkowski creates a 1mm gap in all directions
+    rotate([0, -90, 0]) linear_extrude(pusher_stem_width) square([minkowski_expand, minkowski_expand], center=true);
   }
 }
 
@@ -244,20 +275,13 @@ module magnet_hole_cutout() {
 }
 
 /**
- * @Summary Helper to position the pusher for boolean operations
- */
-module pusher_placed() {
-  translate([0, 0, 1.8]) rotate([0, 0, 45]) children();
-}
-
-/**
  * @Summary Complete Jig with Pusher cutouts and Magnets
  */
 module jig_with_pusher() {
   // Magnet position relative to center
   mag_pos_x = 7.3;
   mag_pos_z = (6 - 0.4) + (magnet_hole_height - 10) / 2;
-  mag_pos_z_hole = 8 + (magnet_hole_height - 10) / 2;
+  mag_pos_z_hole = 7.5 + (magnet_hole_height - 10) / 2;
 
   // Cutout positions
   out_pos_x = 22.5;
@@ -271,8 +295,9 @@ module jig_with_pusher() {
     difference() {
       jig_assembly();
 
-      // 1. Pusher Body Cutout (with tolerance)
-      pusher_placed() scale(1.1) pusher_cutout();
+      // 1. Pusher Body Cutout
+      // place snug against the magnet cylinder
+      rotate([0, 0, 45]) translate([3.3, 0]) pusher_cutout();
 
       // 2. Output & Handle Cutouts (rotated frame)
       rotate([0, 0, 45]) {
@@ -281,11 +306,10 @@ module jig_with_pusher() {
         translate([mag_pos_x, 0, mag_pos_z]) magnet_hole_cutout();
         translate([mag_pos_x, 0, mag_pos_z - mag_screw_offset_z]) rotate([180, 0, 0]) block_base_hole(_hole_options_refined);
       }
-      pusher_placed() scale(1.1) translate([pusher_width, 0, pusher_extra_cutout_offset]) pusher_cutout();
     }
 
     // Add Pusher (Ghost/Visual)
-    %translate([0, 0, 1.8]) rotate([0, 0, 45]) translate([-7, 0, 0]) pusher_combined();
+    %rotate([0, 0, 45]) translate([-8.7, 0, 0]) pusher_combined();
 
     // Add Magnet Holes
     difference() {
