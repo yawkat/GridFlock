@@ -934,7 +934,6 @@ module main() {
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
     plan_x = plan_axis_ideal(axis_norm=plate_count.x, bed_norm=(bed_size.x - connector_margin)/BASEPLATE_DIMENSIONS.x, start_padding_norm=plate_padding[_WEST]/BASEPLATE_DIMENSIONS.x, end_padding_norm=plate_padding[_EAST]/BASEPLATE_DIMENSIONS.x);
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
-    echo(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
     plans_y = plan_axis_staggered(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
     for (segix = [0:len(plan_x) - 1]) {
         plan_y = plans_y[segix % 2];
