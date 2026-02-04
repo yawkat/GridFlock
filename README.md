@@ -13,7 +13,7 @@ For inserting magnets, check out [the jig I designed](https://www.printables.com
 <!-- openscad -o docs/images/whole.png --camera=0,-10,0,40,0,10,900 -D plate_size='[420, 420]' -->
 <img src="docs/images/whole.png" alt="Whole plate" />
 
-<!-- openscad -o docs/images/closeup.png --camera=0,-10,0,40,0,25,300 -D plate_size='[420, 420]' -->
+<!-- openscad -o docs/images/closeup.png --camera=0,30,0,40,0,25,300 -D plate_size='[420, 420]' -->
 <img src="docs/images/closeup.png" alt="Closeup" />
 
 - [GridFlock](#gridflock)
@@ -73,7 +73,7 @@ When the plate size exceeds your printer's bed size, GridFlock will split the pl
 
 This mode adds small puzzle-style connectors at cell intersections. This is similar to GridPlates and GRIPS, and relatively easy to print. However, in my experience, these connectors can sometimes lead to gaps between the segments. The shape of these connectors is fixed in [puzzle.svg](https://github.com/yawkat/GridFlock/blob/main/puzzle.svg) and cannot be customized without editing the SVG.
 
-<!-- openscad -o docs/images/intersection-puzzle.png --camera=0,-10,0,40,0,25,300 -D plate_size='[420, 420]' -->
+<!-- openscad -o docs/images/intersection-puzzle.png --camera=0,30,0,40,0,25,300 -D plate_size='[420, 420]' -->
 <img src="docs/images/intersection-puzzle.png" alt="Intersection puzzle" />
 
 #### Connector Fit
@@ -105,7 +105,7 @@ This connector is a good alternative to the intersection puzzle if the plate has
 * To make the female connectors more sturdy and easier to print, an extra "bar" is added at the magnet level, on those edges where a female connector is placed (only if magnets are enabled). You can see it in the screenshot. With this bar, it may be viable to make the connector full-height and avoid the overhang.
 * Unlike the intersection mode, the edge puzzle connectors are highly customizable for your circumstances.
 
-<!-- openscad -o docs/images/edge-puzzle.png --camera=0,-10,0,40,0,25,300 -D plate_size='[420, 420]' -D connector_intersection_puzzle=false -D connector_edge_puzzle=true -->
+<!-- openscad -o docs/images/edge-puzzle.png --camera=0,30,0,40,0,25,300 -D plate_size='[420, 420]' -D connector_intersection_puzzle=false -D connector_edge_puzzle=true -->
 <img src="docs/images/edge-puzzle.png" alt="Edge puzzle" />
 
 #### Connector Height
