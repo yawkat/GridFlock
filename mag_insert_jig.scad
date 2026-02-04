@@ -44,13 +44,14 @@ pusher_width = 30;
 pusher_thickness = 4.85;
 pusher_handle_height = 15;
 pusher_stem_height = 1.85;
-pusher_stem_width =15;
+pusher_stem_width = 15;
 
 /* [Magnet Parameters] */
-magnet_outer_r = 3.8 * 1.1;
-magnet_inner_r = 3.3 * 1.1;
+magnet_clearance = 1.1;
+magnet_outer_r = 3.8 * magnet_clearance;
+magnet_inner_r = 3.3 * magnet_clearance;
 magnet_hole_height = 20;
-magnet_cutout_height = 2.25 * 1.1;
+magnet_cutout_height = 2.25 * magnet_clearance;
 
 // --- Overwrite GridFlock's settings ---
 test_pattern = -1;
@@ -181,36 +182,20 @@ module pusher_handle() {
 }
 
 module pusher_cutout() {
-  union() {
-    translate([0, 0, 0]) {
-      linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
-        square([pusher_width, pusher_thickness], center=true);
-    }
-    ;
-  }
-  ;
+  linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
+    square([pusher_width, pusher_thickness], center=true);
 }
 
 module pusher_output_cutout() {
-  union() {
-    translate([0, 0, 0]) {
-      linear_extrude(height=pusher_stem_height, center=true, scale=[1, 1])
-        square([pusher_width, magnet_inner_r * 2], center=true);
-    }
-    ;
-  }
-  ;
+  linear_extrude(height=pusher_stem_height, center=true, scale=[1, 1])
+    square([pusher_width, magnet_inner_r * 2], center=true);
 }
 
 module pusher_body() {
-  union() {
-    translate([3, 0, 0]) {
-      linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
-        square([pusher_stem_width, pusher_thickness], center=true);
-    }
-    ;
+  translate([3, 0, 0]) {
+    linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
+      square([pusher_stem_width, pusher_thickness], center=true);
   }
-  ;
 }
 
 module pusher_combined() {
