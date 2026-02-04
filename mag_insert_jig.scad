@@ -42,9 +42,9 @@ edge_puzzle_dim_c = [3, 1.2];
 /* [Pusher Parameters] */
 pusher_width = 30;
 pusher_thickness = 4.85;
-pusher_handle_height = 20;
+pusher_handle_height = 15;
 pusher_stem_height = 1.85;
-pusher_stem_width = 20;
+pusher_stem_width =15;
 
 /* [Magnet Parameters] */
 magnet_outer_r = 3.8 * 1.1;
@@ -202,7 +202,7 @@ module pusher_output_cutout() {
 
 module pusher_body() {
   union() {
-    translate([5, 0, 0]) {
+    translate([3, 0, 0]) {
       linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
         square([pusher_stem_width, pusher_thickness], center=true);
     }
@@ -214,13 +214,7 @@ module pusher_body() {
 module pusher_combined() {
   union() {
     pusher_body();
-    translate([2, 0, 7 + pusher_stem_height * 2]) pusher_handle();
-    // Add a triangular gusset
-    translate([-2, 4.85 * 0.8 / 2, -1])
-      scale([1, 1, 2])
-        rotate([90, 0, 0])
-          linear_extrude(height=4.85 * 0.8)
-            polygon([[3, 0.925], [3, 0.925 + 4], [0, 0.925]]);
+    translate([-3, 0, 4 + pusher_stem_height * 2]) pusher_handle();
   }
 }
 
@@ -276,7 +270,7 @@ module jig_with_pusher() {
     }
 
     // Add Pusher
-    //    pusher_placed() pusher_combined();
+    %translate([0, 0, 1.8]) rotate([0, 0, 45]) translate([-7, 0, 0]) pusher_combined();
 
     // Add Magnet Holes
     difference() {
