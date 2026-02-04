@@ -56,11 +56,11 @@ intersection-fit-tester: (intersection-fit-tester-one "0.0") (intersection-fit-t
 
 jig:
     mkdir -p build
-    openscad -o build/jig.stl --export-format=binstl -D part=\"jig\" -D show_cross_section=false jig.scad
+    openscad -o build/jig.stl --export-format=binstl -D part=\"jig\" -D show_cross_section=false mag_insert_jig.scad
 
 pusher:
     mkdir -p build
-    openscad -o build/pusher.stl --export-format=binstl -D part=\"pusher\" jig.scad
+    openscad -o build/pusher.stl --export-format=binstl -D part=\"pusher\" mag_insert_jig.scad
 
 jigs: jig pusher
 
