@@ -37,7 +37,7 @@ cut_taper_height = 1.0;
 // Scaling of the cut-out shape at the top exit (Set < 1.0 for "inward", > 1.0 for "funnel")
 cut_taper_scale = 0.9;
 // Scale of the straight functional section of the baseplate projection 
-projection_scale = 0.99;
+projection_scale = 1;
 
 /* [Pusher Parameters] */
 
@@ -45,7 +45,7 @@ pusher_width = 30;
 pusher_thickness = 4.85;
 pusher_handle_height = 15;
 pusher_stem_height = 1.85;
-pusher_stem_width = 12;
+pusher_stem_width = 11;
 
 /* [Magnet Parameters] */
 
@@ -186,7 +186,7 @@ module pusher_output_cutout() {
     square([pusher_width, magnet_inner_r * 2], center=true);
 }
 
-minkowski_expand = 1;
+minkowski_expand = 0.8;
 
 /**
  * @Summary 2D Trapezoid for the main pusher pin, which pushes the magnet in
@@ -201,7 +201,7 @@ module pusher_pin(positive) {
 // width, height, length
 aux_pin_dim = [5, 3, 13.5];
 aux_pin_off = 4;
-back_pin_dim = [5, 3, 9.5];
+back_pin_dim = [5, 3, 14];
 
 /**
  * @Summary 2D shape of auxiliary pins that absorb some bending force
@@ -226,9 +226,11 @@ module pusher_combined(positive=true) {
   // aux pins
   rotate([90, 0, 90]) linear_extrude(aux_pin_dim.z) aux_pins();
   // back pin
-  rotate([90, 0, -90]) translate([-back_pin_dim.x/2, -_profile_height-0.25, frame_strength]) {
-    linear_extrude(back_pin_dim.z-back_pin_dim.y) square([back_pin_dim.x, back_pin_dim.y]);
-    translate([0, 0, back_pin_dim.z-back_pin_dim.y]) linear_extrude(back_pin_dim.y, scale=[1, 0.2]) square([back_pin_dim.x, back_pin_dim.y]);
+  translate([-frame_strength, -back_pin_dim.x/2, -_profile_height-0.25]) {
+    rotate([0, 0, 90]) linear_extrude(back_pin_dim.y) {
+      square([back_pin_dim.x, back_pin_dim.z - back_pin_dim.x/2]);
+      translate([back_pin_dim.x/2, back_pin_dim.z - back_pin_dim.x/2]) circle(d=back_pin_dim.x);
+    } 
   }
   // frame
   rotate([90, 0, 90]) translate([0, 0, -frame_strength]) linear_extrude(frame_strength) {
@@ -279,7 +281,7 @@ module magnet_hole_cutout() {
  */
 module jig_with_pusher() {
   // Magnet position relative to center
-  mag_pos_x = 7.3;
+  mag_pos_x = 8.2;
   mag_pos_z = (6 - 0.4) + (magnet_hole_height - 10) / 2;
   mag_pos_z_hole = 7.5 + (magnet_hole_height - 10) / 2;
 
@@ -297,7 +299,7 @@ module jig_with_pusher() {
 
       // 1. Pusher Body Cutout
       // place snug against the magnet cylinder
-      rotate([0, 0, 45]) translate([3.3, 0]) pusher_cutout();
+      rotate([0, 0, 45]) translate([5.5-8.2+mag_pos_x, 0]) pusher_cutout();
 
       // 2. Output & Handle Cutouts (rotated frame)
       rotate([0, 0, 45]) {
@@ -309,7 +311,7 @@ module jig_with_pusher() {
     }
 
     // Add Pusher (Ghost/Visual)
-    %rotate([0, 0, 45]) translate([-8.7, 0, 0]) pusher_combined();
+    %rotate([0, 0, 45]) translate([-2.6+mag_pos_x-pusher_stem_width, 0, 0]) pusher_combined();
 
     // Add Magnet Holes
     difference() {
