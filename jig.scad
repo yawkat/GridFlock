@@ -150,16 +150,31 @@ module jig_assembly() {
     }
 }
 
+module pusher_handle() {
+  cube([2, 4, 10], center=true);
+}
+
 module pusher_body() {
-  rotate([0, 0, 45]) union() {
-      translate([0, 0, 0]) {
-        linear_extrude(height=1.85, center=true, scale=[1, 0.8])
-          square([30, 4.85], center=true);
-      }
-      ;
-      // translate([10,0,0]) cube([10,10,10], center=true);
+  union() {
+    translate([0, 0, 0]) {
+      linear_extrude(height=1.85, center=true, scale=[1, 0.8])
+        square([30, 4.85], center=true);
     }
+    ;
+  }
   ;
+}
+
+module pusher_combined() {
+  union() {
+    pusher_body();
+    translate([4, 0, 2 + 1.85 * 2]) pusher_handle();
+    // Add a triangular gusset
+    translate([0, 2, -1])
+      rotate([90, 0, 0])
+        linear_extrude(height=4)
+          polygon([[3, 0.925], [3, 0.925 + 4], [0, 0.925]]);
+  }
 }
 
 // --- Main Execution ---
@@ -171,9 +186,10 @@ if (show_cross_section) {
         union() {
           jig_assembly();
         }
-        translate([0, 0, 2]) scale(1.1) pusher_body();
+        translate([0, 0, 2]) scale(1.1) rotate([0, 0, 45]) pusher_body();
       }
-      translate([0, 0, 2]) pusher_body();
+      //   translate([0, 0, 2]) rotate([0, 0, 45]) pusher_body();
+      translate([0, 0, 2]) rotate([0, 0, 45]) pusher_combined();
     }
 
     // Cut away half to see inside, rotated 45 degrees
@@ -183,5 +199,3 @@ if (show_cross_section) {
   jig_assembly();
   translate([0, 0, 10]) pusher_body();
 }
-
-echo(str("TOTAL BAR INTRUSION DEPTH: ", edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width, "mm"));
