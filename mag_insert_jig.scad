@@ -9,7 +9,7 @@ part = "jig";
 // Smoothness
 $fn = 64;
 // Visualize Cross Section
-show_cross_section = false;
+show_cross_section = true;
 // Transparency Level
 jig_alpha = 1.0;
 // Height of the functional part of the bin to keep
@@ -19,7 +19,7 @@ jig_crop_height = 4.75;
 // Disc Radius is 16mm
 disc_radius = 16;
 // Disc Height (Thickness) is 3.5mm
-disc_height = 3.5;
+disc_height = 4;
 // Disc Chamfer size (mm) for the outer cylinder
 disc_chamfer = 1.0;
 
@@ -31,7 +31,7 @@ cut_taper_height = 1.0;
 // Scaling of the cut-out shape at the top exit (Set < 1.0 for "inward", > 1.0 for "funnel")
 cut_taper_scale = 0.9;
 // Scale of the straight functional section of the baseplate projection 
-projection_scale = 0.95;
+projection_scale = 0.99;
 
 /* [Intrusion Simulation] */
 edge_puzzle_magnet_border_width = 2.5;
@@ -47,10 +47,10 @@ pusher_stem_height = 1.85;
 pusher_stem_width = 20;
 
 /* [Magnet Parameters] */
-magnet_outer_r = 3.8;
-magnet_inner_r = 3.3;
+magnet_outer_r = 3.8 * 1.1;
+magnet_inner_r = 3.3 * 1.1;
 magnet_hole_height = 20;
-magnet_cutout_height = 2.25;
+magnet_cutout_height = 2.25 * 1.1;
 
 // --- Overwrite GridFlock's settings ---
 test_pattern = -1;
@@ -232,7 +232,7 @@ module magnet_hole() {
 }
 
 module magnet_hole_cutout() {
-  translate([0, -2, 0]) cube([0.5, 5, magnet_hole_height], center=true);
+  translate([0, -2, 0]) cube([1, 5, magnet_hole_height], center=true);
   cylinder(h=magnet_hole_height, r=magnet_inner_r, center=true);
   translate([5, 0, -magnet_hole_height / 2 + magnet_cutout_height / 2])
     cube([10, magnet_inner_r * 2, magnet_cutout_height], center=true);
