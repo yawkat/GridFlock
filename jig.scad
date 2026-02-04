@@ -1,6 +1,10 @@
 // Include GridFlock first to get its variables and modules
 include <gridflock.scad>
 
+/* [Export Settings] */
+// Part to export: "jig" or "pusher"
+part = "jig";
+
 /* [Jig Settings] */
 // Smoothness
 $fn = 64;
@@ -284,10 +288,16 @@ module cut_cross_section() {
 
 // --- Main Execution ---
 
-if (show_cross_section) {
-  cut_cross_section() {
+if (part == "jig") {
+  if (show_cross_section) {
+    cut_cross_section() {
+      jig_with_pusher();
+    }
+  } else {
     jig_with_pusher();
   }
+} else if (part == "pusher") {
+  pusher_combined();
 } else {
-  jig_with_pusher();
+  echo("Unknown part selected: ", part);
 }

@@ -54,4 +54,14 @@ intersection-fit-tester-one fit:
 intersection-fit-tester: (intersection-fit-tester-one "0.0") (intersection-fit-tester-one "0.2") (intersection-fit-tester-one "0.4") (intersection-fit-tester-one "0.6") (intersection-fit-tester-one "0.8") (intersection-fit-tester-one "1.0")
 
 
-all: paths test showcase docs
+jig:
+    mkdir -p build
+    openscad -o build/jig.stl --export-format=binstl -D part=\"jig\" -D show_cross_section=false jig.scad
+
+pusher:
+    mkdir -p build
+    openscad -o build/pusher.stl --export-format=binstl -D part=\"pusher\" jig.scad
+
+jigs: jig pusher
+
+all: paths test showcase docs jigs
