@@ -125,7 +125,7 @@ module jig_assembly() {
       jig_bin_tool();
       jig_baseplate_rig();
     }
-    %jig_baseplate_rig(); // Ghost of the rig
+    //jig_baseplate_rig(); // Ghost of the rig
   }
 
   // 2. The Disc Tool
@@ -150,16 +150,38 @@ module jig_assembly() {
     }
 }
 
+module pusher_body() {
+  rotate([0, 0, 45]) union() {
+      translate([0, 0, 0]) {
+        linear_extrude(height=1.85, center=true, scale=[1, 0.8])
+          square([30, 4.85], center=true);
+      }
+      ;
+      // translate([10,0,0]) cube([10,10,10], center=true);
+    }
+  ;
+}
+
 // --- Main Execution ---
 
 if (show_cross_section) {
   difference() {
-    jig_assembly();
+    union() {
+      difference() {
+        union() {
+          jig_assembly();
+        }
+        translate([0, 0, 2]) scale(1.1) pusher_body();
+      }
+      translate([0, 0, 2]) pusher_body();
+    }
+
     // Cut away half to see inside, rotated 45 degrees
     rotate([0, 0, 135]) translate([0, -60, -50]) cube([60, 120, 150]);
   }
 } else {
   jig_assembly();
+  translate([0, 0, 10]) pusher_body();
 }
 
 echo(str("TOTAL BAR INTRUSION DEPTH: ", edge_puzzle_dim.y + edge_puzzle_dim_c.y + edge_puzzle_magnet_border_width, "mm"));
