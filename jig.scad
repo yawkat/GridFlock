@@ -177,6 +177,13 @@ module pusher_combined() {
   }
 }
 
+module magnet_hole() {
+  difference() {
+    cylinder(h=10, r=3.8, center=true);
+    cylinder(h=10, r=3.3, center=true);
+  }
+}
+
 // --- Main Execution ---
 
 if (show_cross_section) {
@@ -186,12 +193,13 @@ if (show_cross_section) {
         union() {
           jig_assembly();
         }
-        translate([0, 0, 2]) scale(1.1) rotate([0, 0, 45]) pusher_body();
+        translate([0, 0, 1.8]) scale(1.1) rotate([0, 0, 45]) pusher_body();
       }
       //   translate([0, 0, 2]) rotate([0, 0, 45]) pusher_body();
-      translate([0, 0, 2]) rotate([0, 0, 45]) pusher_combined();
+      translate([0, 0, 1.8]) rotate([0, 0, 45]) pusher_combined();
+      //   Magnet holes
+      rotate([0, 0, 45]) translate([7.4, 0, 8]) magnet_hole();
     }
-
     // Cut away half to see inside, rotated 45 degrees
     rotate([0, 0, 135]) translate([0, -60, -50]) cube([60, 120, 150]);
   }
