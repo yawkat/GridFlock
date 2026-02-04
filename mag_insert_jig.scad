@@ -213,7 +213,7 @@ module magnet_hole() {
 }
 
 module magnet_hole_cutout() {
-  translate([0, -2, 0]) cube([1, 5, magnet_hole_height], center=true);
+  translate([0, -2, 3/2]) cube([1, 10, magnet_hole_height + 3], center=true);
   cylinder(h=magnet_hole_height, r=magnet_inner_r, center=true);
   translate([5, 0, -magnet_hole_height / 2 + magnet_cutout_height / 2])
     cube([10, magnet_inner_r * 2, magnet_cutout_height], center=true);
