@@ -3,7 +3,7 @@ include <gridflock.scad>
 
 /* [Export Settings] */
 // Part to export: "jig" or "pusher"
-part = "pusher";
+part = "jig";
 
 /* [Jig Settings] */
 // Smoothness
