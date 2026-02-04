@@ -851,7 +851,7 @@ function score_plan_b(plan_a, plan_b) =
         distance_start = abs(plan_a[0] - plan_b[0]),
         distance_end = abs(plan_a[2] - plan_b[2]),
         score = (too_small_start ? 20 : 0) + (too_small_end ? 20 : 0) - distance_start - distance_end
-    ) echo(plan_a, plan_b, score=score) score;
+    ) score;
 
 /**
  * @Summary Get the index of the lowest value in a vector
