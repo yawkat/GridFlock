@@ -192,7 +192,7 @@ minkowski_expand = 0.8;
  * @Summary 2D Trapezoid for the main pusher pin, which pushes the magnet in
  */
 module pusher_pin(positive) { 
-  translate([0, magnet_top]) {
+  translate([0, magnet_top + 0.25]) {
     if (positive) polygon([[-pusher_thickness/2, 0], [-pusher_thickness/2*0.8, pusher_stem_height], [pusher_thickness/2*0.8, pusher_stem_height], [pusher_thickness/2, 0]]);
     else translate([0, pusher_stem_height/2]) square([pusher_thickness-minkowski_expand, pusher_stem_height-minkowski_expand], center=true);
   }
