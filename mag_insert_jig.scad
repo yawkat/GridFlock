@@ -9,7 +9,7 @@ part = "jig";
 // Smoothness
 $fn = 64;
 // Visualize Cross Section
-show_cross_section = true;
+show_cross_section = false;
 // Transparency Level
 jig_alpha = 1.0;
 // Height of the functional part of the bin to keep
@@ -78,22 +78,29 @@ hole_offset = (BASE_TOP_DIMENSIONS.x - 2 * _base_profile_max_mm.x) / 2 - HOLE_DI
 // 1x1 Bin Base Tool (JIG - Red)
 // Represents the functional base of a bin that we want to test against or simulate
 module jig_bin_tool() {
-  color([1.0, 0.2, 0.2, jig_alpha]) // RED
-    intersection() {
-      // Crop to the specified functional height
-      translate([-50, -50, 0]) cube([100, 100, jig_crop_height]);
+  difference() {
+    color([1.0, 0.2, 0.2, jig_alpha]) // RED
+      intersection() {
+        // Crop to the specified functional height
+        translate([-50, -50, 0]) cube([100, 100, jig_crop_height]);
 
-      difference() {
-        union() {
-          _base_bridge_solid(BASE_TOP_DIMENSIONS);
-          base_solid(BASE_TOP_DIMENSIONS);
+        difference() {
+          union() {
+            _base_bridge_solid(BASE_TOP_DIMENSIONS);
+            base_solid(BASE_TOP_DIMENSIONS);
+          }
+          for (a = [0, 180]) {
+            rotate([0, 0, a]) translate([hole_offset, hole_offset, 0]) block_base_hole(hole_options_refined);
+          }
+          translate([0, 10, 4.6]) linear_extrude(height=1) text("Magnet Insertion Jig", size=3, halign="center", valign="center");
+          translate([0, 0, 4.6]) linear_extrude(height=1) text("For", size=3, halign="center", valign="center");
+          translate([0, -10, 4.6]) linear_extrude(height=1) text("Gridfinity GridFlock", size=3.3, halign="center", valign="center");
+
+          _base_preview_fix();
         }
-        for (a = [0, 180]) {
-          rotate([0, 0, a]) translate([hole_offset, hole_offset, 0]) block_base_hole(hole_options_refined);
-        }
-        _base_preview_fix();
       }
-    }
+    // emboss text "jig" on the top of the bin tool
+  }
 }
 
 // 1x1 GridFlock Baseplate Rig (PLATE - Blue)
