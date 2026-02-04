@@ -199,7 +199,7 @@ module pusher_pin(positive) {
 }
 
 // width, height, length
-aux_pin_dim = [5, 3, 13.5];
+aux_pin_dim = [5, 4, 13.5];
 aux_pin_off = 4;
 back_pin_dim = [5, 3, 14];
 
@@ -234,7 +234,8 @@ module pusher_combined(positive=true) {
   }
   // frame
   rotate([90, 0, 90]) translate([0, 0, -frame_strength]) linear_extrude(frame_strength) {
-    translate([-pusher_thickness * 0.8 / 2, magnet_top]) square([pusher_thickness * 0.8, pusher_handle_height]);
+    handle_thickness = pusher_thickness + 2;
+    translate([-handle_thickness / 2, magnet_top]) square([handle_thickness, pusher_handle_height]);
     hull() {
       pusher_pin();
       aux_pins();
