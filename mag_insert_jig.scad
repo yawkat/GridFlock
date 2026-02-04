@@ -3,7 +3,7 @@ include <gridflock.scad>
 
 /* [Export Settings] */
 // Part to export: "jig" or "pusher"
-part = "jig";
+part = "pusher";
 
 /* [Jig Settings] */
 // Smoothness
@@ -42,7 +42,7 @@ edge_puzzle_dim_c = [3, 1.2];
 /* [Pusher Parameters] */
 pusher_width = 30;
 pusher_thickness = 4.85;
-pusher_handle_height = 10;
+pusher_handle_height = 20;
 pusher_stem_height = 1.85;
 pusher_stem_width = 20;
 
@@ -175,7 +175,7 @@ module jig_assembly() {
 }
 
 module pusher_handle() {
-  cube([2, 4, pusher_handle_height], center=true);
+  cube([3, 4.85 * 0.8, pusher_handle_height], center=true);
 }
 
 module pusher_cutout() {
@@ -214,12 +214,13 @@ module pusher_body() {
 module pusher_combined() {
   union() {
     pusher_body();
-    translate([2, 0, 2 + pusher_stem_height * 2]) pusher_handle();
+    translate([2, 0, 7 + pusher_stem_height * 2]) pusher_handle();
     // Add a triangular gusset
-    translate([-2, 1.9, -1])
-      rotate([90, 0, 0])
-        linear_extrude(height=3.8)
-          polygon([[3, 0.925], [3, 0.925 + 4], [0, 0.925]]);
+    translate([-2, 4.85 * 0.8 / 2, -1])
+      scale([1, 1, 2])
+        rotate([90, 0, 0])
+          linear_extrude(height=4.85 * 0.8)
+            polygon([[3, 0.925], [3, 0.925 + 4], [0, 0.925]]);
   }
 }
 
