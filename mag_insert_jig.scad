@@ -48,8 +48,8 @@ pusher_stem_width = 15;
 
 /* [Magnet Parameters] */
 magnet_clearance = 1.1;
-magnet_outer_r = 3.8 * magnet_clearance;
-magnet_inner_r = 3.3 * magnet_clearance;
+magnet_outer_r = 3.8 * 1.05;
+magnet_inner_r = 3.3 * 1.05;
 magnet_hole_height = 20;
 magnet_cutout_height = 2.25 * magnet_clearance;
 
@@ -207,13 +207,16 @@ module pusher_combined() {
 
 module magnet_hole() {
   difference() {
-    cylinder(h=magnet_hole_height, r=magnet_outer_r, center=true);
+    union() {
+      cylinder(h=magnet_hole_height, r=magnet_outer_r, center=true);
+      translate([magnet_outer_r / 2, 0, -2]) cube([magnet_outer_r, 14, 16], center=true);
+    }
     cylinder(h=magnet_hole_height, r=magnet_inner_r, center=true);
   }
 }
 
 module magnet_hole_cutout() {
-  translate([0, -2, 3/2]) cube([1, 10, magnet_hole_height + 3], center=true);
+  translate([0, -2, 3 / 2]) cube([1, 10, magnet_hole_height + 3], center=true);
   cylinder(h=magnet_hole_height, r=magnet_inner_r, center=true);
   translate([5, 0, -magnet_hole_height / 2 + magnet_cutout_height / 2])
     cube([10, magnet_inner_r * 2, magnet_cutout_height], center=true);
