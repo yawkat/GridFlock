@@ -822,8 +822,8 @@ function plan_axis_incremental_vars(axis_norm, bed_norm, start_padding_norm, end
         mid = floor(bed_norm),
         // make a preliminary end segment
         end_p = (axis_norm - first_p - 0.25) % mid + 0.25,
-        // is the end segment too small, i.e. a single half-cell?
-        shift = end_p < 1,
+        // is the end segment too small, i.e. a single half-cell, or too big?
+        shift = end_p < 1 || (end_p + end_padding_norm) > bed_norm,
         // if the end segment was too small, shrink the first segment a bit to give the end segment a better size
         first = shift ? first_p - 1 : first_p,
         // recalculate end segment size
@@ -840,6 +840,26 @@ function vars_to_incremental(axis_norm, vars) = let(
         end = vars[2]
     ) mid == -1 ? [first] : [for(i = 0, pos = 0; pos < axis_norm; i = i + 1, pos = first + mid * (i - 1)) 
         i == 0 ? first : pos + mid >= axis_norm ? end : mid];
+
+/**
+ * @Summary Score plan_b, assuming plan_a is fixed. Lower value is better
+ */
+function score_plan_b(plan_a, plan_b) =
+    let(
+        too_small_start = plan_b[0] == 1,
+        too_small_end = plan_b[2] == 1,
+        distance_start = abs(plan_a[0] - plan_b[0]),
+        distance_end = abs(plan_a[2] - plan_b[2]),
+        score = (too_small_start ? 20 : 0) + (too_small_end ? 20 : 0) - distance_start - distance_end
+    ) echo(plan_a, plan_b, score=score) score;
+
+/**
+ * @Summary Get the index of the lowest value in a vector
+ */
+function least_index(vec, start=0) =
+    assert(len(vec) > start) len(vec) == start + 1 ? start : let(
+        suggest = least_index(vec, start + 1)
+    ) vec[suggest] > vec[start] ? start : suggest;
 
 /**
  * @Summary Calculate two axis plans that are staggered so that segment corners don't intersect
@@ -875,12 +895,17 @@ function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padd
         // first, plan with a minimum shift as a baseline.
         plan_b_shift1 = plan_vars(plan_a2[0] - 1),
         // then, iterate all possible shifts, until we hit one that requires an additional segment compared to plan_b_shift1
-        plan_b_shift = [for (shift = 1, plan = plan_b_shift1, best_size = plan_size(plan); shift < plan_a2[0] && plan_size(plan) <= best_size; shift = shift + 1, plan = plan_vars(plan_a2[0] - shift)) 0],
-        max_unsplit_shift = len(plan_b_shift),
-        // separately, calculate an "optimum shift", where the 3-way intersections are as far apart as possible
-        optimum_shift = plan_a2[0] <= 3 ? 1 : floor(plan_a2[0] / 2),
-        // our final shift is the minimum of the two.
-        shift = min(optimum_shift, max_unsplit_shift)
+        // for each plan, compute the score using score_plan_b
+        plan_b_shift = [for (
+            // initialize with shift=1, and assign that to the best_size
+            shift = 1, plan = plan_b_shift1, best_size = plan_size(plan); 
+            // check that the current shift is still within best_size
+            shift < plan_a2[0] && plan_size(plan) <= best_size; 
+            // compute the next plan and shift
+            shift = shift + 1, plan = plan_vars(plan_a2[0] - shift)
+        ) score_plan_b(plan_a2, plan)],
+        // pick the shift with the best score
+        shift = least_index(plan_b_shift) + 1
     ) [vars_to_incremental(axis_norm, plan_a2), vars_to_incremental(axis_norm, plan_vars(plan_a2[0] - shift))];
 
 /**
@@ -909,6 +934,7 @@ module main() {
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
     plan_x = plan_axis_ideal(axis_norm=plate_count.x, bed_norm=(bed_size.x - connector_margin)/BASEPLATE_DIMENSIONS.x, start_padding_norm=plate_padding[_WEST]/BASEPLATE_DIMENSIONS.x, end_padding_norm=plate_padding[_EAST]/BASEPLATE_DIMENSIONS.x);
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
+    echo(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
     plans_y = plan_axis_staggered(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
     for (segix = [0:len(plan_x) - 1]) {
         plan_y = plans_y[segix % 2];
