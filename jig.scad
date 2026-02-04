@@ -35,6 +35,19 @@ edge_puzzle_magnet_border = true;
 edge_puzzle_dim = [10, 2.5];
 edge_puzzle_dim_c = [3, 1.2];
 
+/* [Pusher Parameters] */
+pusher_width = 30;
+pusher_thickness = 4.85;
+pusher_handle_height = 10;
+pusher_stem_height = 1.85;
+pusher_stem_width = 20;
+
+/* [Magnet Parameters] */
+magnet_outer_r = 3.8;
+magnet_inner_r = 3.3;
+magnet_hole_height = 10;
+magnet_cutout_height = 2.25;
+
 // --- Overwrite GridFlock's settings ---
 test_pattern = -1;
 connector_edge_puzzle = true;
@@ -151,14 +164,14 @@ module jig_assembly() {
 }
 
 module pusher_handle() {
-  cube([2, 4, 10], center=true);
+  cube([2, 4, pusher_handle_height], center=true);
 }
 
 module pusher_cutout() {
   union() {
     translate([0, 0, 0]) {
-      linear_extrude(height=1.85, center=true, scale=[1, 0.8])
-        square([30, 4.85], center=true);
+      linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
+        square([pusher_width, pusher_thickness], center=true);
     }
     ;
   }
@@ -168,8 +181,8 @@ module pusher_cutout() {
 module pusher_output_cutout() {
   union() {
     translate([0, 0, 0]) {
-      linear_extrude(height=1.85, center=true, scale=[1, 1])
-        square([30, 3.3*2], center=true);
+      linear_extrude(height=pusher_stem_height, center=true, scale=[1, 1])
+        square([pusher_width, magnet_inner_r * 2], center=true);
     }
     ;
   }
@@ -179,8 +192,8 @@ module pusher_output_cutout() {
 module pusher_body() {
   union() {
     translate([5, 0, 0]) {
-      linear_extrude(height=1.85, center=true, scale=[1, 0.8])
-        square([20, 4.85], center=true);
+      linear_extrude(height=pusher_stem_height, center=true, scale=[1, 0.8])
+        square([pusher_stem_width, pusher_thickness], center=true);
     }
     ;
   }
@@ -190,26 +203,27 @@ module pusher_body() {
 module pusher_combined() {
   union() {
     pusher_body();
-    translate([2, 0, 2 + 1.85 * 2]) pusher_handle();
+    translate([2, 0, 2 + pusher_stem_height * 2]) pusher_handle();
     // Add a triangular gusset
-    translate([-2, 2, -1])
+    translate([-2, 1.9, -1])
       rotate([90, 0, 0])
-        linear_extrude(height=4)
+        linear_extrude(height=3.8)
           polygon([[3, 0.925], [3, 0.925 + 4], [0, 0.925]]);
   }
 }
 
 module magnet_hole() {
   difference() {
-    cylinder(h=10, r=3.8, center=true);
-    cylinder(h=10, r=3.3, center=true);
+    cylinder(h=magnet_hole_height, r=magnet_outer_r, center=true);
+    cylinder(h=magnet_hole_height, r=magnet_inner_r, center=true);
   }
 }
 
 module magnet_hole_cutout() {
-   translate([0,-2,0]) cube([0.5,5,10], center=true);
-   cylinder(h=10, r=3.3, center=true);
-   translate([5,0,-10/2+2.25/2]) cube([10, 3.3*2, 2.25], center=true);
+  translate([0, -2, 0]) cube([0.5, 5, magnet_hole_height], center=true);
+  cylinder(h=magnet_hole_height, r=magnet_inner_r, center=true);
+  translate([5, 0, -magnet_hole_height / 2 + magnet_cutout_height / 2])
+    cube([10, magnet_inner_r * 2, magnet_cutout_height], center=true);
 }
 
 // --- Scenes & Visualization ---
@@ -219,23 +233,39 @@ module pusher_placed() {
 }
 
 module jig_with_pusher() {
+  // Magnet position relative to center
+  mag_pos_x = 7.3;
+  mag_pos_z = 6 - 0.4;
+  mag_pos_z_hole = 8;
+
+  // Cutout positions
+  out_pos_x = 22.5;
+  out_handle_pos_z = 2 * pusher_stem_height;
+
   union() {
     difference() {
       jig_assembly();
-      // Cutout for pusher with tolerance (1.1 scale)
-      pusher_placed() scale(1.1) pusher_cutout();
-      rotate([0,0,45]) translate([22.5, 0, 1.85]) scale(1) pusher_output_cutout();
-      rotate([0,0,45]) translate([-5, 0, 2*1.85]) cube([20,4.25,1.85], center=true);
-      // magnet hole cutout
-          rotate([0, 0, 45]) translate([7.3, 0, 6-0.4]) magnet_hole_cutout();
 
+      // 1. Pusher Body Cutout (with tolerance)
+      pusher_placed() scale(1.1) pusher_cutout();
+
+      // 2. Output & Handle Cutouts (rotated frame)
+      rotate([0, 0, 45]) {
+        translate([out_pos_x, 0, pusher_stem_height]) scale(1) pusher_output_cutout();
+        translate([-5, 0, out_handle_pos_z]) cube([20, 4.25, pusher_stem_height], center=true);
+        translate([mag_pos_x, 0, mag_pos_z]) magnet_hole_cutout();
+        translate([mag_pos_x, 0, mag_pos_z - 5]) rotate([180, 0, 0]) block_base_hole(hole_options_refined);
+      }
+      pusher_placed() scale(1.1) translate([30, 0, -2.25]) pusher_cutout();
     }
-    pusher_placed() pusher_combined();
-    
-    // Magnet holes
+
+    // Add Pusher
+    //    pusher_placed() pusher_combined();
+
+    // Add Magnet Holes
     difference() {
-    rotate([0, 0, 45]) translate([7.3, 0, 8]) magnet_hole();
-              rotate([0, 0, 45]) translate([7.3, 0, 6-0.4]) magnet_hole_cutout();
+      rotate([0, 0, 45]) translate([mag_pos_x, 0, mag_pos_z_hole]) magnet_hole();
+      rotate([0, 0, 45]) translate([mag_pos_x, 0, mag_pos_z]) magnet_hole_cutout();
     }
   }
 }
