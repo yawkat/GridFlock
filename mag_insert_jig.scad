@@ -9,7 +9,7 @@ part = "jig";
 // Smoothness
 $fn = 64;
 // Visualize Cross Section
-show_cross_section = true;
+show_cross_section = false;
 // Transparency Level
 jig_alpha = 1.0;
 // Height of the functional part of the bin to keep
@@ -92,9 +92,11 @@ module jig_bin_tool() {
           for (a = [0, 180]) {
             rotate([0, 0, a]) translate([hole_offset, hole_offset, 0]) block_base_hole(hole_options_refined);
           }
-          translate([0, 10, 4.6]) linear_extrude(height=1) text("Magnet Insertion Jig", size=3, halign="center", valign="center");
-          translate([0, 0, 4.6]) linear_extrude(height=1) text("For", size=3, halign="center", valign="center");
-          translate([0, -10, 4.6]) linear_extrude(height=1) text("Gridfinity GridFlock", size=3.3, halign="center", valign="center");
+          translate([0, 10, 4.4]) linear_extrude(height=2) text("Magnet Insertion", size=3.5, halign="center", valign="center");
+          translate([0, 5, 4.4]) linear_extrude(height=2) text("Jig", size=3.5, halign="center", valign="center");
+          translate([0, 0, 4.4]) linear_extrude(height=2) text("For", size=3.5, halign="center", valign="center");
+          translate([0, -7.5, 4.4]) linear_extrude(height=2) text("Gridfinity", size=5, halign="center", valign="center");
+          translate([0, -15, 4.4]) linear_extrude(height=2) text("GridFlock", size=5, halign="center", valign="center");
 
           _base_preview_fix();
         }
