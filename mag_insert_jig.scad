@@ -49,7 +49,7 @@ pusher_stem_width = 20;
 /* [Magnet Parameters] */
 magnet_outer_r = 3.8;
 magnet_inner_r = 3.3;
-magnet_hole_height = 10;
+magnet_hole_height = 20;
 magnet_cutout_height = 2.25;
 
 // --- Overwrite GridFlock's settings ---
@@ -239,15 +239,15 @@ module pusher_placed() {
 module jig_with_pusher() {
   // Magnet position relative to center
   mag_pos_x = 7.3;
-  mag_pos_z = 6 - 0.4;
-  mag_pos_z_hole = 8;
+  mag_pos_z = (6 - 0.4) + (magnet_hole_height - 10) / 2;
+  mag_pos_z_hole = 8 + (magnet_hole_height - 10) / 2;
 
   // Cutout positions
   out_pos_x = 22.5;
   out_handle_pos_z = 2 * pusher_stem_height;
 
   // New offsets
-  mag_screw_offset_z = 5;
+  mag_screw_offset_z = magnet_hole_height / 2;
   pusher_extra_cutout_offset = -magnet_cutout_height;
 
   union() {
