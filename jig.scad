@@ -242,6 +242,10 @@ module jig_with_pusher() {
   out_pos_x = 22.5;
   out_handle_pos_z = 2 * pusher_stem_height;
 
+  // New offsets
+  mag_screw_offset_z = 5;
+  pusher_extra_cutout_offset = -magnet_cutout_height;
+
   union() {
     difference() {
       jig_assembly();
@@ -254,9 +258,9 @@ module jig_with_pusher() {
         translate([out_pos_x, 0, pusher_stem_height]) scale(1) pusher_output_cutout();
         translate([-5, 0, out_handle_pos_z]) cube([20, 4.25, pusher_stem_height], center=true);
         translate([mag_pos_x, 0, mag_pos_z]) magnet_hole_cutout();
-        translate([mag_pos_x, 0, mag_pos_z - 5]) rotate([180, 0, 0]) block_base_hole(hole_options_refined);
+        translate([mag_pos_x, 0, mag_pos_z - mag_screw_offset_z]) rotate([180, 0, 0]) block_base_hole(hole_options_refined);
       }
-      pusher_placed() scale(1.1) translate([30, 0, -2.25]) pusher_cutout();
+      pusher_placed() scale(1.1) translate([pusher_width, 0, pusher_extra_cutout_offset]) pusher_cutout();
     }
 
     // Add Pusher
