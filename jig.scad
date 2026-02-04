@@ -206,6 +206,12 @@ module magnet_hole() {
   }
 }
 
+module magnet_hole_cutout() {
+   translate([0,-2,0]) cube([0.5,5,10], center=true);
+   cylinder(h=10, r=3.3, center=true);
+   translate([5,0,-10/2+2.25/2]) cube([10, 3.3*2, 2.25], center=true);
+}
+
 // --- Scenes & Visualization ---
 
 module pusher_placed() {
@@ -221,13 +227,16 @@ module jig_with_pusher() {
       rotate([0,0,45]) translate([22.5, 0, 1.85]) scale(1) pusher_output_cutout();
       rotate([0,0,45]) translate([-5, 0, 2*1.85]) cube([20,4.25,1.85], center=true);
       // magnet hole cutout
-          rotate([0, 0, 45]) translate([7.3, 0, 6.5/1.1])     cylinder(h=10, r=3.3, center=true);
+          rotate([0, 0, 45]) translate([7.3, 0, 6-0.4]) magnet_hole_cutout();
 
     }
-//    pusher_placed() pusher_combined();
-
+    pusher_placed() pusher_combined();
+    
     // Magnet holes
+    difference() {
     rotate([0, 0, 45]) translate([7.3, 0, 8]) magnet_hole();
+              rotate([0, 0, 45]) translate([7.3, 0, 6-0.4]) magnet_hole_cutout();
+    }
   }
 }
 
