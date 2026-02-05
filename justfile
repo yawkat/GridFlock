@@ -63,8 +63,8 @@ dir_source := "build/printables/OpenSCAD Source"
 
 printables-zip: clean-printables-zip paths (intersection-fit-tester-one "0.0") (intersection-fit-tester-one "0.2") (intersection-fit-tester-one "0.4") (intersection-fit-tester-one "0.6") (intersection-fit-tester-one "0.8") (intersection-fit-tester-one "1.0")
     mkdir -p "{{dir_magnet_insertion}}"
-    openscad -o "{{dir_magnet_insertion}}"mag_insert_jig.stl -D part='"jig"' -D show_cross_section=false mag_insert_jig.scad
-    openscad -o "{{dir_magnet_insertion}}"/mag_insert_pusher.stl -D part='"pusher"' mag_insert_jig.scad
+    openscad -o "{{dir_magnet_insertion}}"/jig.stl --export-format=binstl -D part='"jig"' -D show_cross_section=false mag_insert_jig.scad
+    openscad -o "{{dir_magnet_insertion}}"/pusher.stl --export-format=binstl -D part='"pusher"' mag_insert_jig.scad
     mkdir -p "{{dir_source}}"
     cp -r paths gridflock.scad "{{dir_source}}"
     rm -f build/printables.zip
