@@ -8,7 +8,7 @@ Similar projects include GridPlates (DMCA'd) and GRIPS, but GridFlock is an inde
 
 GridFlock uses [Gridfinity Rebuilt](https://github.com/kennetek/gridfinity-rebuilt-openscad) (under MIT license) for the baseplate cutter.
 
-For inserting magnets, check out [the jig I designed](https://www.printables.com/model/1515309-magnet-insertion-jig-for-gridfinity-gridplates) for GridPlates. It is also compatible with GridFlock.
+For inserting magnets, check out [the jig designed by @nelsonjchen](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files).
 
 <!-- openscad -o docs/images/whole.png --camera=0,-10,0,40,0,10,900 -D plate_size='[420, 420]' -->
 <img src="docs/images/whole.png" alt="Whole plate" />
@@ -144,7 +144,7 @@ It is possible to disable magnets altogether to save filament and vertical space
 
 ### Press-Fit magnets
 
-Press-fit magnets require no glue. The magnets are simply pressed into the pockets from the side. A jig for easily inserting magnets is available [on printables](https://www.printables.com/model/1515309-magnet-insertion-jig-for-gridfinity-gridplates).
+Press-fit magnets require no glue. The magnets are simply pressed into the pockets from the side. A jig for easily inserting magnets is available [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files) (thanks @nelsonjchen!).
 
 <!-- openscad -o docs/images/magnets-press-fit.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=true -->
 <img src="docs/images/magnets-press-fit.png" alt="Press-fit magnets" />

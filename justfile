@@ -47,11 +47,28 @@ title: (overlay-png "caption-title")
 #[parallel]
 showcase: title (animation "animation-size" "11" "80" "-D magnets=false" "caption-size") (animation "animation-magnets" "3" "100" "" "caption-magnets") (animation "animation-size-smooth" "30" "10" "-D magnets=false --camera 0,0,0,40,0,40,400" "caption-size-smooth")
 
+dir_intersection_fit := "build/printables/Intersection connector fit calibration files"
+
 intersection-fit-tester-one fit:
-    mkdir -p build/intersection-fit-tester
-    openscad -o build/intersection-fit-tester/fit-{{fit}}.stl --export-format=binstl -D magnets=false -D BASEPLATE_DIMENSIONS='[15, 42]' -D 'plate_size=[30, 84]' -D 'bed_size=[25, 1000]' -D intersection_puzzle_fit={{fit}} gridflock.scad
+    mkdir -p "{{dir_intersection_fit}}"
+    openscad -o "{{dir_intersection_fit}}/fit-{{fit}}.stl" --export-format=binstl -D magnets=false -D BASEPLATE_DIMENSIONS='[15, 42]' -D 'plate_size=[30, 84]' -D 'bed_size=[25, 1000]' -D intersection_puzzle_fit={{fit}} gridflock.scad
 
 intersection-fit-tester: (intersection-fit-tester-one "0.0") (intersection-fit-tester-one "0.2") (intersection-fit-tester-one "0.4") (intersection-fit-tester-one "0.6") (intersection-fit-tester-one "0.8") (intersection-fit-tester-one "1.0")
 
+clean-printables-zip:
+    rm -rf build/printables
 
-all: paths test showcase docs
+dir_magnet_insertion := "build/printables/Magnet Insertion Jig"
+dir_source := "build/printables/OpenSCAD Source"
+
+printables-zip: clean-printables-zip paths (intersection-fit-tester-one "0.0") (intersection-fit-tester-one "0.2") (intersection-fit-tester-one "0.4") (intersection-fit-tester-one "0.6") (intersection-fit-tester-one "0.8") (intersection-fit-tester-one "1.0")
+    mkdir -p "{{dir_magnet_insertion}}"
+    openscad -o "{{dir_magnet_insertion}}"/jig.stl --export-format=binstl -D part='"jig"' -D show_cross_section=false mag_insert_jig.scad
+    openscad -o "{{dir_magnet_insertion}}"/pusher.stl --export-format=binstl -D part='"pusher"' mag_insert_jig.scad
+    mkdir -p "{{dir_source}}"
+    cp -r paths gridflock.scad "{{dir_source}}"
+    rm -f build/printables.zip
+    cd build/printables && zip -r ../printables.zip .
+    
+
+all: paths test showcase docs printables-zip
