@@ -8,7 +8,7 @@ Similar projects include GridPlates (DMCA'd) and GRIPS, but GridFlock is an inde
 
 GridFlock uses [Gridfinity Rebuilt](https://github.com/kennetek/gridfinity-rebuilt-openscad) (under MIT license) for the baseplate cutter.
 
-For inserting magnets, check out [the jig designed by @nelsonjchen](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files).
+For inserting magnets, check out [the jig](#jig).
 
 <!-- openscad -o docs/images/whole.png --camera=0,-10,0,40,0,10,900 -D plate_size='[420, 420]' -->
 <img src="docs/images/whole.png" alt="Whole plate" />
@@ -26,6 +26,7 @@ For inserting magnets, check out [the jig designed by @nelsonjchen](https://www.
   - [Magnets](#magnets)
     - [No Magnets](#no-magnets)
     - [Press-Fit magnets](#press-fit-magnets)
+      - [Jig](#jig)
     - [Glued magnets](#glued-magnets)
     - [Rounded corner frame](#rounded-corner-frame)
     - [Solid frame](#solid-frame)
@@ -157,6 +158,36 @@ On the bottom side of the plate there is a slot so you can push out any inserted
 The layers above and below the magnet can be configured using the `magnet_top` and `magnet_bottom` options. 
 
 Because the distance to the bin magnets is larger, press-fit magnets make for a weaker connection than glue-in magnets.
+
+#### Jig
+
+GridFlock includes a magnet insertion jig that makes pressing in magnets easy and fast (thanks @nelsonjchen!). You can download the jig [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files).
+
+The jig prints in two pieces, a main frame and a pusher. The pusher needs to be printed with supports, and should have a high infill percentage.
+
+<img src="docs/jig-images/parts.jpg" alt="Jig parts"/>
+
+First, insert the reference magnet. The reference magnet will make sure that any magnets you put into the plate will have the right orientation, and it helps with pulling the magnets into place. Make sure it has the right orientation – see the below instructions on how the jig is used to figure it out. Place the reference magnet in the circled slot:
+
+<img src="docs/jig-images/reference-magnet-circle.jpg" alt="The jig with a circle around the reference magnet slot"/>
+
+Next, push the reference magnet into the jig until it is fully seated. Here you can see it halfway:
+
+<img src="docs/jig-images/reference-magnet-half.jpg" alt="Reference magnet inserted half-way"/>
+
+Now, place the jig on top of the pusher to finish assembly:
+
+<img src="docs/jig-images/assembled.jpg" alt="Assembled jig"/>
+
+Now that the jig is assembled, you can start using it to populate your baseplate. Load a stack of magnets into the jig, and then place the baseplate upside down on the jig:
+
+<img src="docs/jig-images/placement-before.jpg" alt="Baseplate on top of the jig"/>
+
+Now you can use the pusher to insert the magnet into the baseplate:
+
+<img src="docs/jig-images/placement-after.jpg" alt="Baseplate on top of the jig with magnet pushed in"/>
+
+Pull the pusher back into its original position to release the baseplate. You can now turn the jig by 90° to insert the next magnet, and then move the baseplate to fill the next square with magnets.
 
 ### Glued magnets
 
