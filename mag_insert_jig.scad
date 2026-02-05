@@ -94,11 +94,7 @@ module jig_bin_tool() {
             rotate([0, 0, a]) translate([_hole_offset, _hole_offset, 0]) block_base_hole(_hole_options_refined);
           }
           translate([0, 0, 4.4]) {
-            translate([0, 15, 0]) linear_extrude(height=2) text("Magnet Insertion", size=3.5, halign="center", valign="center");
-            translate([0, 7.5, 0]) linear_extrude(height=2) text("Jig", size=3.5, halign="center", valign="center");
-            translate([0, 0, 0]) linear_extrude(height=2) text("For", size=3.5, halign="center", valign="center");
-            translate([0, -7.5, 0]) linear_extrude(height=2) text("Gridfinity", size=5, halign="center", valign="center");
-            translate([0, -15, 0]) linear_extrude(height=2) text("GridFlock", size=5, halign="center", valign="center");
+            rotate([0, 0, -45]) translate([0, 11]) linear_extrude(2) text("GridFlock", size=4.5, valign="bottom", halign="center");
           }
           _base_preview_fix();
         }
