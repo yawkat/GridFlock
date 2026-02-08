@@ -229,14 +229,20 @@ module pusher_combined(positive=true) {
     } 
   }
   // frame
+  handle_chamfer = 0.75;
+  handle_thickness = pusher_thickness + 2;
   rotate([90, 0, 90]) translate([0, 0, -frame_strength]) linear_extrude(frame_strength) {
-    handle_thickness = pusher_thickness + 2;
-    translate([-handle_thickness / 2, magnet_top]) square([handle_thickness, pusher_handle_height]);
+    translate([-handle_thickness / 2, magnet_top]) square([handle_thickness, pusher_handle_height - handle_chamfer]);
     hull() {
       pusher_pin();
       aux_pins();
     }
   }
+  // top of the handle gets a chamfer
+  chamfer_square = [frame_strength, handle_thickness];
+  translate([-frame_strength/2, 0, magnet_top + pusher_handle_height - handle_chamfer]) 
+    linear_extrude(handle_chamfer, scale=[1-handle_chamfer*2/chamfer_square.x, 1-handle_chamfer*2/chamfer_square.y]) 
+    square(chamfer_square, center=true);
 }
 
 /**
