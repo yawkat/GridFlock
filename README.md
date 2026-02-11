@@ -52,6 +52,9 @@ For inserting magnets, check out [the jig](#jig).
       - [Other intersections](#other-intersections)
       - [Combined](#combined)
   - [Thumb Screw](#thumb-screw)
+  - [Segmentation](#segmentation)
+    - [Horizontal](#horizontal)
+    - [Vertical](#vertical)
   - [Edge Adjustment](#edge-adjustment)
     - [Shifting the grid](#shifting-the-grid)
     - [Adding empty space](#adding-empty-space)
@@ -423,6 +426,45 @@ Or you can use press-fit magnets with a solid base:
 <img src="docs/images/thumb-screw-base-magnet.png" alt="Thumb screw with solid base and press-fit magnets" />
 
 For the last option, a longer screw design is required, for example the stackable screw design from Gridfinity Refined.
+
+## Segmentation
+
+To produce models that fit the print bed, GridFlock splits the baseplate into _segments_. The segmentation algorithms compromise between different priorities in segment sizing.
+
+The base plate is first split along the x axis (horizontally) and those pieces are further split along the y axis (vertically).
+
+### Horizontal
+
+Along the x axis, the plate is split into roughly equally sized segments by default. This is called the "ideal" algorithm.
+
+<!-- openscad -o docs/images/segment-x-ideal.png --camera=0,0,0,40,0,10,400 -D plate_size='[252, 84]' -D bed_size='[180, 180]' -D magnets=false -D connector_intersection_puzzle=false -->
+<img src="docs/images/segment-x-ideal.png" alt="Ideal segmentation algorithm" />
+
+With the `x_segment_algorithm` property, you can also select the "incremental" algorithm. With this algorithm, the plate is split into pieces that are as large as possible, and the last piece is sized to use the remaining space. In this example, the printer can print four cells at a time, so the first segment is four cells wide:
+
+<!-- openscad -o docs/images/segment-x-incremental.png --camera=0,0,0,40,0,10,400 -D plate_size='[252, 84]' -D bed_size='[180, 180]' -D magnets=false -D connector_intersection_puzzle=false -D x_segment_algorithm=1 -->
+<img src="docs/images/segment-x-incremental.png" alt="Incremental segmentation algorithm" />
+
+When using the incremental algorithm, you can also override the size of the first segment using the `x_column_count_first` property.
+
+<!-- openscad -o docs/images/segment-x-incremental-override.png --camera=0,0,0,40,0,10,400 -D plate_size='[252, 84]' -D bed_size='[180, 180]' -D magnets=false -D connector_intersection_puzzle=false -D x_segment_algorithm=1 -D x_column_count_first=1 -->
+<img src="docs/images/segment-x-incremental-override.png" alt="Incremental segmentation alogirthm with cell count override (x splitting)" />
+
+Note that the incremental algorithm has a few extra constraints, such as forbidding a last segment without cells. These constraints are satisfied by shrinking the first segment, so the first segment may not be the maximum size in all cases.
+
+### Vertical
+
+Vertical splitting is more complicated. The goal here is to avoid intersections where four segments meet at a corner. For this reason, there are actually two different segmentations on the y direction, which alternate. These segmentations never have a separation at the same position (they are _staggered_).
+
+Both segmentations are planned using the incremental algorithm described above, with some adjustments to avoid single-cell segments where possible.
+
+<!-- openscad -o docs/images/segment-y.png --camera=0,0,0,40,0,10,600 -D plate_size='[84, 252]' -D bed_size='[50, 180]' -D magnets=false -D connector_intersection_puzzle=false -->
+<img src="docs/images/segment-y.png" alt="Y axis segementation" />
+
+You can override the cell count for the first segment of each plan using the `y_row_count_first` property.
+
+<!-- openscad -o docs/images/segment-y-override.png --camera=0,0,0,40,0,10,600 -D plate_size='[84, 252]' -D bed_size='[50, 180]' -D magnets=false -D connector_intersection_puzzle=false -D y_row_count_first='[1, 1]' -->
+<img src="docs/images/segment-y-override.png" alt="Incremental segmentation alogirthm with cell count override (y splitting)" />
 
 ## Edge Adjustment
 
