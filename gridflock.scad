@@ -116,14 +116,21 @@ thumbscrews = false;
 // Thumb screw cutout diameter
 thumbscrew_diameter = 15.8; // 0.1
 
+/* [Segmentation] */
+
+// Select the algorithm for splitting the baseplate into segments along the x axis. The default ideal algorithm splits the plate into roughly equally-sized segments. The incremental algorithm produces as many maximum-size segments as possible, and one smaller segment for the remaining cells.
+x_segment_algorithm = 0; // [0:Ideal, 1:Incremental]
+// In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
+y_row_count_first = [0, 0]; 
+// If the 'incremental' x segment algorithm is chosen, this can be used to override the column count in the first segment.
+x_column_count_first = 0;
+
 /* [Advanced] */
 
 // Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
 plate_corner_radius = 4;
 // Edge adjustment values (clockwise: north, east, south, west). These values are *added* to the plate size as padding, i.e. the final plate will end up different than configured in plate_size. This allows you to customize the padding to be asymmetrical. You can also use negative values to "cut" the plate edges if you want to squeeze an extra square out of limited space.
 edge_adjust = [0, 0, 0, 0];
-// In the y direction, segment sizes are determined by a simple algorithm that only resizes the first and last segments. The number of rows for the first segment alternate to avoid 4-way intersections. You can override the number of rows in the start segment for the odd and even columns with this property 
-y_row_count_first = [0, 0]; 
 // Override the content of individual cells. Each character in this string modifies one cell. The order goes from west to east, then south to north. A 'c' stands for a normal cell. An 's' stands for a solid plate without a cell cutout. An 'e' stands for an empty square
 cell_override = "";
 // Test patterns
@@ -181,6 +188,9 @@ _edge_puzzle_direction_male = [true, true, false, false];
 _CELL_STYLE_NORMAL = "c";
 _CELL_STYLE_SOLID = "s";
 _CELL_STYLE_EMPTY = "e";
+
+_SEGMENT_ALGORITHM_IDEAL = 0;
+_SEGMENT_ALGORITHM_INCREMENTAL = 1;
 
 /**
  * @Summary Run some code in each corner, with proper rotation, to add magnets
@@ -931,10 +941,24 @@ module main() {
     ] + edge_adjust + plate_wall_thickness;
     // keep some margin on the edge of the bed clear for the connectors
     connector_margin = max(connector_intersection_puzzle ? 3.5 : 0, connector_edge_puzzle ? edge_puzzle_dim_c.y + edge_puzzle_dim.y : 0);
+    bed_norm = [
+        (bed_size.x - connector_margin)/BASEPLATE_DIMENSIONS.x,
+        (bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y
+    ];
+    start_padding_norm = [
+        plate_padding[_WEST]/BASEPLATE_DIMENSIONS.x,
+        plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y
+    ];
+    end_padding_norm = [
+        plate_padding[_EAST]/BASEPLATE_DIMENSIONS.x,
+        plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y
+    ];
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
-    plan_x = plan_axis_ideal(axis_norm=plate_count.x, bed_norm=(bed_size.x - connector_margin)/BASEPLATE_DIMENSIONS.x, start_padding_norm=plate_padding[_WEST]/BASEPLATE_DIMENSIONS.x, end_padding_norm=plate_padding[_EAST]/BASEPLATE_DIMENSIONS.x);
+    plan_x = x_segment_algorithm == _SEGMENT_ALGORITHM_IDEAL ? 
+        plan_axis_ideal(axis_norm=plate_count.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x) :
+        vars_to_incremental(plate_count.x, plan_axis_incremental_vars(axis_norm=plate_count.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x, force_first=x_column_count_first == 0 ? undef : x_column_count_first));
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
-    plans_y = plan_axis_staggered(axis_norm=plate_count.y, bed_norm=(bed_size.y - connector_margin)/BASEPLATE_DIMENSIONS.y, start_padding_norm=plate_padding[_SOUTH]/BASEPLATE_DIMENSIONS.y, end_padding_norm=plate_padding[_NORTH]/BASEPLATE_DIMENSIONS.y);
+    plans_y = plan_axis_staggered(axis_norm=plate_count.y, bed_norm=bed_norm.y, start_padding_norm=start_padding_norm.y, end_padding_norm=end_padding_norm.y);
     for (segix = [0:len(plan_x) - 1]) {
         plan_y = plans_y[segix % 2];
         for (segiy = [0:len(plan_y) - 1]) {
