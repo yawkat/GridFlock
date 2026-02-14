@@ -898,8 +898,8 @@ function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padd
     )
     // manual override
     y_row_count_first[1] > 0 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_vars(y_row_count_first[1]))] :
-    // shortcut: if we don't need to split at all, we don't need to worry about staggering
-    plan_a1[1] == -1 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_a1)] : 
+    // shortcut: if we don't need to split at all, or we can't change the split, we don't need to worry about staggering
+    plan_a1[1] <= 1 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_a1)] : 
     let(
         // now, we determine the optimal shift of the second column.
         // first, plan with a minimum shift as a baseline.
