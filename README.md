@@ -2,7 +2,7 @@
 
 A gridfinity-compatible baseplate generator for small printer beds. Cuts the base plate into pieces that fit the printer bed and can be linked together using puzzle-style locking connectors. 
 
-An online generator for the latest version version of GridFlock is available [here](https://gridflock.yawk.at). You can also use [the perplexinglabs generator](https://gridfinity.perplexinglabs.com/pr/gridflock/0/0) which is a bit more stable. Please also support the model page [on Printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator).
+An online generator for the latest version version of GridFlock is available [here](https://gridflock.yawk.at/?utm_source=github&utm_campaign=readme_gridflock). You can also use [the perplexinglabs generator](https://gridfinity.perplexinglabs.com/pr/gridflock/0/0) which is a bit more stable. Please also support the model page [on Printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator).
 
 Similar projects include GridPlates (DMCA'd) and GRIPS, but GridFlock is an independent, open-source, clean-room implementation. My goal is truly open community development. If you are missing a feature that is available in GridPlates or GRIPS, please create a GitHub ticket.
 
@@ -73,7 +73,7 @@ When the plate size exceeds your printer's bed size, GridFlock will split the pl
 
 ### Intersection Puzzle
 
-[Interactive example](https://gridflock.yawk.at/#eyJiZWRfc2l6ZSI6WzUwLDUwXSwicGxhdGVfc2l6ZSI6Wzg0LDg0XX0%3D)
+[Interactive example](https://gridflock.yawk.at/?utm_source=github&utm_campaign=readme_gridflock_example#eyJiZWRfc2l6ZSI6WzUwLDUwXSwicGxhdGVfc2l6ZSI6Wzg0LDg0XX0%3D)
 
 This mode adds small puzzle-style connectors at cell intersections. This is similar to GridPlates and GRIPS, and relatively easy to print. However, in my experience, these connectors can sometimes lead to gaps between the segments. The shape of these connectors is fixed in [puzzle.svg](https://github.com/yawkat/GridFlock/blob/main/puzzle.svg) and cannot be customized without editing the SVG.
 
@@ -98,7 +98,7 @@ You can find small grids with different fit values to calibrate [on printables](
 
 ### Edge Puzzle
 
-[Interactive example](https://gridflock.yawk.at/#eyJiZWRfc2l6ZSI6WzUwLDUwXSwicGxhdGVfc2l6ZSI6Wzg0LDg0XSwiY29ubmVjdG9yX2ludGVyc2VjdGlvbl9wdXp6bGUiOmZhbHNlLCJjb25uZWN0b3JfZWRnZV9wdXp6bGUiOnRydWV9)
+[Interactive example](https://gridflock.yawk.at/?utm_source=github&utm_campaign=readme_gridflock_example#eyJiZWRfc2l6ZSI6WzUwLDUwXSwicGxhdGVfc2l6ZSI6Wzg0LDg0XSwiY29ubmVjdG9yX2ludGVyc2VjdGlvbl9wdXp6bGUiOmZhbHNlLCJjb25uZWN0b3JfZWRnZV9wdXp6bGUiOnRydWV9)
 
 The edge puzzle mode uses larger connectors placed at the edges of cells, instead of intersections. This leads to a more accurate fit, but is a bit harder to print, and uses more filament.
 
@@ -194,12 +194,19 @@ Pull the pusher back into its original position to release the baseplate. You ca
 
 ### Glued magnets
 
-Magnets can also be glued in from the top.
+Magnets can also be glued in from the top:
 
 <!-- openscad -o docs/images/magnets-glue-in.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=true -D magnet_style=0 -->
-<img src="docs/images/magnets-glue-in.png" alt="Glued magnets" />
+<img src="docs/images/magnets-glue-in.png" alt="Glued magnets (top)" />
 
 The `magnet_bottom` option is identical to the press-fit version, but the `magnet_top` option is ignored.
+
+Or they can be glued from the bottom:
+
+<!-- openscad -o docs/images/magnets-glue-in-bottom.png --camera=0,0,0,140,0,10,200 -D plate_size='[105, 63]' -D magnets=true -D magnet_style=2 -->
+<img src="docs/images/magnets-glue-in-bottom.png" alt="Glued magnets (bottom)" />
+
+By tuning the magnet size, this last magnet style can also be used to press-fit magnets from the bottom, similar to Gridfinity Refined.
 
 ### Rounded corner frame
 
