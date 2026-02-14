@@ -6,27 +6,53 @@ test:
     openscad -o /dev/null --export-format=stl test.scad
 
 clean-docs:
-    rm -rf docs/images
+    # docs task will delete any images it didn't write
     mkdir -p docs/images
 
-docs: clean-docs
+docs:
     #!/usr/bin/env -S uv run --script
     import re
     import shlex
     import subprocess
+    import os
+    import asyncio
+
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
-    for line in open("README.md"):
-        match = openscad_pattern.match(line)
-        if match:
-            cmd = ["openscad", "--projection=ortho", "--colorscheme=Starnight", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1))]
-            # use gridflock.scad if no other file specified
-            for c in cmd:
-                if ".scad" in c:
-                    break
-            else:
-                cmd.append("gridflock.scad")
+    concurrency = asyncio.Semaphore(8)
+
+    async def run(cmd, output):
+        async with concurrency:
             print("Running: " + shlex.join(cmd))
-            subprocess.run(cmd, check=True)
+            proc = await asyncio.create_subprocess_exec(*cmd)
+            await proc.wait()
+            assert proc.returncode == 0
+        if os.path.getsize(output) == 7763:
+            # render failure, retry
+            print(f"Render failure for `{shlex.join(cmd)}`, retrying")
+            await run(cmd, output)
+    
+    async def main():
+        tasks = []
+        written = []
+        for line in open("README.md"):
+            match = openscad_pattern.match(line)
+            if match:
+                cmd = ["openscad", "--projection=ortho", "--colorscheme=Starnight", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1))]
+                # use gridflock.scad if no other file specified
+                for c in cmd:
+                    if ".scad" in c:
+                        break
+                else:
+                    cmd.append("gridflock.scad")
+                output = cmd[cmd.index("-o") + 1]
+                tasks.append(run(cmd, output))
+                written.append(output)
+        for f in os.listdir("docs/images"):
+            if os.path.join("docs/images", f) not in written:
+                os.unlink(f)
+        await asyncio.gather(*tasks)
+
+    asyncio.run(main())
 
 overlay-png name:
     inkscape -w 1600 -h 1200 docs/{{name}}.svg -o build/{{name}}.png
