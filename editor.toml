@@ -3,7 +3,7 @@ name = "GridFlock"
 uri = "https://github.com/yawkat/GridFlock"
 export-filename-prefix = "GridFlock"
 mode = "single"
-head-extra = '<script defer src="https://umami.yawk.at/script.js" data-website-id="a6973286-5213-4f72-a99f-b746b613909f"></script>'
+head-extra = '<script defer src="https://um.yawk.at/script.js" data-website-id="a6973286-5213-4f72-a99f-b746b613909f"></script>'
 
 [[model]]
 file = "gridflock.scad"
