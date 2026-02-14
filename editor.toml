@@ -1,0 +1,12 @@
+[project]
+name = "GridFlock"
+uri = "https://github.com/yawkat/GridFlock"
+export-filename-prefix = "GridFlock"
+mode = "single"
+head-extra = '<script defer src="https://umami.yawk.at/script.js" data-website-id="a6973286-5213-4f72-a99f-b746b613909f"></script>'
+
+[[model]]
+file = "GridFlock.scad"
+description-extra-html = 'For detailed documentation, check the <a href="https://github.com/yawkat/GridFlock/blob/main/README.md">README</a>'
+umami-track-render = []
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle"]
