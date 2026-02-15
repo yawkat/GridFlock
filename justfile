@@ -10,7 +10,7 @@ clean-docs:
     mkdir -p docs/images
 
 banner name:
-    inkscape -w 1600 -h 1200 docs/{{name}}.svg -o docs/{{name}}.png
+    inkscape -w 500 -h 375 docs/{{name}}.svg -o docs/{{name}}.png
 
 banners: (banner "banner-generator-yawkat") (banner "banner-generator-perplexinglabs")
 
