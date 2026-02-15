@@ -26,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="352.85714"
+     inkscape:cx="353.57143"
      inkscape:cy="549.28571"
      inkscape:document-units="px"
      inkscape:showpageshadow="2"
@@ -37,7 +37,8 @@
      inkscape:window-x="1920"
      inkscape:window-y="20"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg1" />
+     inkscape:current-layer="svg1"
+     showgrid="false" />
   <metadata
      id="metadata1">
     <rdf:RDF>
@@ -51,17 +52,17 @@
   </metadata>
   <text
      xml:space="preserve"
-     style="font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#dd5c2b;fill-opacity:1;stroke:#ffffff;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+     style="font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#dd5c2b;fill-opacity:1;stroke:#ffffff;stroke-width:6.99999997;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
      x="6.8035712"
      y="27.970238"
      id="text1"><tspan
        sodipodi:role="line"
        id="tspan1"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:26.4583px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#dd5c2b;fill-opacity:1;stroke:#ffffff;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:26.4583px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#dd5c2b;fill-opacity:1;stroke:#ffffff;stroke-width:6.99999997;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
        x="6.8035712"
        y="27.970238">Baseplate Generator</tspan><tspan
        sodipodi:role="line"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:18.5208px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#dd5c2b;fill-opacity:1;stroke:#ffffff;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:18.5208px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#dd5c2b;fill-opacity:1;stroke:#ffffff;stroke-width:6.99999997;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
        x="6.8035712"
        y="53.820976"
        id="tspan2">with click connectors, magnets &amp; more</tspan></text>
