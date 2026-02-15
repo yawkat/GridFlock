@@ -3,7 +3,7 @@
 A gridfinity-compatible baseplate generator for small printer beds. Cuts the base plate into pieces that fit the printer bed and can be linked together using puzzle-style locking connectors. 
 
 <div align="center">
-  <a href="https://gridflock.yawk.at/?utm_source=github&utm_campaign=readme_gridflock_banner"><img src="docs/banner-generator-yawkat.png" width="48%" alt="Advanced Online Generator"></a>
+  <a href="https://gridflock.yawk.at/?utm_source=github&utm_campaign=readme_gridflock_banner"><img src="docs/banner-generator-yawkat.png" width="48%" alt="Official Generator: Advanced Features"></a>
   <a href="https://gridfinity.perplexinglabs.com/pr/gridflock/0/0"><img src="docs/banner-generator-perplexinglabs.png" width="48%" alt="Perplexinglabs Generator"></a>
 </div>
 
