@@ -40,7 +40,7 @@
        width="423.33332"
        height="317.5"
        preserveAspectRatio="none"
-       style="opacity:0.8;image-rendering:optimizeSpeed;"
+       style="opacity:0.8;image-rendering:optimizeQuality"
        xlink:href="screenshot-generator-perplexinglabs.png"
        id="image1"
        x="0"
