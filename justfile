@@ -9,6 +9,11 @@ clean-docs:
     # docs task will delete any images it didn't write
     mkdir -p docs/images
 
+banner name:
+    inkscape -w 500 -h 375 docs/{{name}}.svg -o docs/{{name}}.png
+
+banners: (banner "banner-generator-yawkat") (banner "banner-generator-perplexinglabs")
+
 docs:
     #!/usr/bin/env -S uv run --script
     import re
@@ -97,4 +102,4 @@ printables-zip: clean-printables-zip paths (intersection-fit-tester-one "0.0") (
     cd build/printables && zip -r ../printables.zip .
     
 
-all: paths test showcase docs printables-zip
+all: paths test showcase docs printables-zip banners
