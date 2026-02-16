@@ -7,6 +7,6 @@ head-extra = '<script defer src="https://um.yawk.at/script.js" data-website-id="
 
 [[model]]
 file = "gridflock.scad"
-description-extra-html = 'For detailed documentation, check the <a href="https://github.com/yawkat/GridFlock/blob/main/README.md">README</a>'
+description-extra-html = "<br>For detailed documentation, check the <a href='https://github.com/yawkat/GridFlock/blob/main/README.md'>README</a>.<br><b>Feb 16: I've turned off magnets by default because most people don't use them.</b> If you've saved a design with magnets, you will have to manually turn them on again below."
 umami-track-render = []
 umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle"]
