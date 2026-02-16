@@ -22,3 +22,44 @@ text = "Printer Presets"
 "Bambu Lab X1/P1/A1" = [256, 256]
 "Bambu Lab H2D" = [350, 320]
 "Bambu Lab A1 Mini" = [180, 180]
+
+[model.param-metadata.magnet_style]
+display-condition = {js = "magnets"}
+[model.param-metadata.magnet_frame_style]
+display-condition = {js = "magnets"}
+[model.param-metadata.magnet_diameter]
+display-condition = {js = "magnets"}
+[model.param-metadata.magnet_height]
+display-condition = {js = "magnets"}
+[model.param-metadata.magnet_top]
+display-condition = {js = "magnets"}
+[model.param-metadata.magnet_bottom]
+display-condition = {js = "magnets"}
+[model.param-metadata.intersection_puzzle_fit]
+display-condition = {js = "connector_intersection_puzzle"}
+[model.param-metadata.edge_puzzle_count]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_dim]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_dim_c]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_gap]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_magnet_border]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_magnet_border_width]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_height_female]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.edge_puzzle_height_male_delta]
+display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.number_depth]
+display-condition = {js = "numbering"}
+[model.param-metadata.number_size]
+display-condition = {js = "numbering"}
+[model.param-metadata.number_font]
+display-condition = {js = "numbering"}
+[model.param-metadata.number_squeeze_size]
+display-condition = {js = "numbering"}
+[model.param-metadata.thumbscrew_diameter]
+display-condition = {js = "thumbscrews"}
