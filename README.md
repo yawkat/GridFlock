@@ -114,7 +114,7 @@ This connector is a good alternative to the intersection puzzle if the plate has
 * To make the female connectors more sturdy and easier to print, an extra "bar" is added at the magnet level, on those edges where a female connector is placed (only if magnets are enabled). You can see it in the screenshot. With this bar, it may be viable to make the connector full-height and avoid the overhang.
 * Unlike the intersection mode, the edge puzzle connectors are highly customizable for your circumstances.
 
-<!-- openscad -o docs/images/edge-puzzle.png --camera=0,30,0,40,0,25,300 -D plate_size='[420, 420]' -D connector_intersection_puzzle=false -D connector_edge_puzzle=true -->
+<!-- openscad -o docs/images/edge-puzzle.png --camera=0,30,0,40,0,25,300 -D plate_size='[420, 420]' -D connector_intersection_puzzle=false -D connector_edge_puzzle=true -D magnets=true -->
 <img src="docs/images/edge-puzzle.png" alt="Edge puzzle" />
 
 #### Connector Height

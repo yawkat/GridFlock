@@ -22,7 +22,7 @@ alignment = [0.5, 0.5]; // [0:0.1:1]
 /* [Magnets] */
 
 // Whether to enable friction-fit magnets for each grid cell
-magnets = true;
+magnets = false;
 // Magnet style
 magnet_style = 1; // [0:Glue from top, 1:Press-Fit, 2:Glue from bottom]
 // Style of the magnet level
