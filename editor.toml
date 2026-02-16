@@ -9,4 +9,16 @@ head-extra = '<script defer src="https://um.yawk.at/script.js" data-website-id="
 file = "gridflock.scad"
 description-extra-html = "<br>For detailed documentation, check the <a href='https://github.com/yawkat/GridFlock/blob/main/README.md'>README</a>.<br><b>Feb 16: I've turned off magnets by default because most people don't use them.</b> If you've saved a design with magnets, you will have to manually turn them on again below."
 umami-track-render = []
-umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle"]
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size"]
+
+[model.param-metadata.bed_size.presets]
+text = "Printer Presets"
+[model.param-metadata.bed_size.presets.values]
+"Prusa Core One/+/MK4/S" = [250, 220]
+"Prusa Core One L" = [300, 330]
+"Prusa Core One XL" = [360, 360]
+"Prusa MK3S" = [250, 210]
+"Prusa MINI+" = [180, 180]
+"Bambu Lab X1/P1/A1" = [256, 256]
+"Bambu Lab H2D" = [350, 320]
+"Bambu Lab A1 Mini" = [180, 180]
