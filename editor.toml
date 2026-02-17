@@ -19,13 +19,42 @@ text = "Printer Presets"
 "Prusa Core One XL" = [360, 360]
 "Prusa MK3S" = [250, 210]
 "Prusa MINI+" = [180, 180]
-"Bambu Lab X1/P1/A1" = [256, 256]
-"Bambu Lab H2D" = [350, 320]
+"Bambu Lab X1/P1/P2/A1" = [256, 256]
+"Bambu Lab H2C/H2D" = [300, 320]
+"Bambu Lab H2S" = [340, 340]
 "Bambu Lab A1 Mini" = [180, 180]
+"Creality Ender 3 / Ender 5 / K1 / CR-10 / CR-20" = [220, 220]
+"Creality Hi" = [260, 300]
+"Creality K2" = [260, 260]
+"Creality K2 SE" = [220, 215]
+"Creality Ender 7" = [250, 250]
+"Creality Ender 3 Plus / K1 Max / K2 Pro" = [300, 300]
+"Creality Ender 5 Max" = [400, 400]
+"Creality CR-200B Pro" = [200, 200]
+"Elegoo Neptune 4 / Neptune 4 Pro" = [225, 225]
+"Elegoo Neptune 4 Plus" = [320, 320]
+"Elegoo Neptune 4 Max" = [420, 420]
+"Elegoo Centauri Carbon" = [256, 256]
 
+[model.param-metadata.do_half_x]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#half-sized-cells"
+[model.param-metadata.do_half_y]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#half-sized-cells"
+[model.param-metadata.solid_base]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#solid-base"
+[model.param-metadata.bottom_chamfer]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-chamfer"
+[model.param-metadata.top_chamfer]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#top-chamfer"
+[model.param-metadata.alignment]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#alignment"
+[model.param-metadata.magnets]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnets"
 [model.param-metadata.magnet_style]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnets"
 display-condition = {js = "magnets"}
 [model.param-metadata.magnet_frame_style]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#rounded-corner-frame"
 display-condition = {js = "magnets"}
 [model.param-metadata.magnet_diameter]
 display-condition = {js = "magnets"}
@@ -35,9 +64,15 @@ display-condition = {js = "magnets"}
 display-condition = {js = "magnets"}
 [model.param-metadata.magnet_bottom]
 display-condition = {js = "magnets"}
+[model.param-metadata.connector_intersection_puzzle]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#intersection-puzzle"
 [model.param-metadata.intersection_puzzle_fit]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-fit"
 display-condition = {js = "connector_intersection_puzzle"}
+[model.param-metadata.connector_edge_puzzle]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#edge-puzzle"
 [model.param-metadata.edge_puzzle_count]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-count"
 display-condition = {js = "connector_edge_puzzle"}
 [model.param-metadata.edge_puzzle_dim]
 display-condition = {js = "connector_edge_puzzle"}
@@ -50,9 +85,12 @@ display-condition = {js = "connector_edge_puzzle"}
 [model.param-metadata.edge_puzzle_magnet_border_width]
 display-condition = {js = "connector_edge_puzzle"}
 [model.param-metadata.edge_puzzle_height_female]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-height"
 display-condition = {js = "connector_edge_puzzle"}
 [model.param-metadata.edge_puzzle_height_male_delta]
 display-condition = {js = "connector_edge_puzzle"}
+[model.param-metadata.numbering]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#numbering"
 [model.param-metadata.number_depth]
 display-condition = {js = "numbering"}
 [model.param-metadata.number_size]
@@ -60,6 +98,46 @@ display-condition = {js = "numbering"}
 [model.param-metadata.number_font]
 display-condition = {js = "numbering"}
 [model.param-metadata.number_squeeze_size]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#squeezed-number"
 display-condition = {js = "numbering"}
+[model.param-metadata.plate_wall_thickness]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
+[model.param-metadata.plate_wall_height]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
+[model.param-metadata.vertical_screw_diameter]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
+[model.param-metadata.vertical_screw_countersink_top]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
+[model.param-metadata.vertical_screw_counterbore_top]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
+[model.param-metadata.vertical_screw_plate_corners]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-corners"
+[model.param-metadata.vertical_screw_plate_corner_inset]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-corners"
+[model.param-metadata.vertical_screw_plate_edges]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-edges"
+[model.param-metadata.vertical_screw_segment_corners]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-corners"
+[model.param-metadata.vertical_screw_segment_corner_inset]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-corners"
+[model.param-metadata.vertical_screw_segment_edges]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-edges"
+[model.param-metadata.vertical_screw_other]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-intersections"
+[model.param-metadata.thumbscrews]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#thumb-screw"
 [model.param-metadata.thumbscrew_diameter]
 display-condition = {js = "thumbscrews"}
+[model.param-metadata.x_segment_algorithm]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
+[model.param-metadata.y_row_count_first]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
+[model.param-metadata.x_column_count_first]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#vertical"
+[model.param-metadata.plate_corner_radius]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#corner-radius"
+[model.param-metadata.edge_adjust]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#edge-adjustment"
+[model.param-metadata.cell_override]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#cell-override"
+[model.param-metadata.test_pattern]
