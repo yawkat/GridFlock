@@ -116,6 +116,19 @@ thumbscrews = false;
 // Thumb screw cutout diameter
 thumbscrew_diameter = 15.8; // 0.1
 
+/* [Click latch] */
+
+// Enable the click latch. 
+click1 = true;
+click1_distance = 1; // .1
+click1_steepness = 1; // .1
+click1_outer_length = 30;
+click1_inner_length = 0;
+click1_steps = 10;
+click1_height = 3; // .1
+click1_strength = 1.6; // .1
+click1_wall_strength = 1; // .1
+
 /* [Segmentation] */
 
 // Select the algorithm for splitting the baseplate into segments along the x axis. The default ideal algorithm splits the plate into roughly equally-sized segments. The incremental algorithm produces as many maximum-size segments as possible, and one smaller segment for the remaining cells.
@@ -134,7 +147,7 @@ edge_adjust = [0, 0, 0, 0];
 // Override the content of individual cells. Each character in this string modifies one cell. The order goes from west to east, then south to north. A 'c' stands for a normal cell. An 's' stands for a solid plate without a cell cutout. An 'e' stands for an empty square
 cell_override = "";
 // Test patterns
-test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall]
+test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall, 5:Click]
 
 /* [Hidden] */
 
@@ -245,6 +258,20 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                         }
                     }
                 }
+                if (click1) translate([0, 0, _profile_height/2]) {
+                    if (!half.x) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
+                    if (!half.y) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
+                }
+            }
+            if (click1) {
+                if (!half.x) {
+                    translate([0, -size.y/2, 0.001]) rotate([90, 0, -90]) do_sweep(_click1_sweep, convexity=4);
+                    translate([0, size.y/2, 0.001]) rotate([90, 0, 90]) do_sweep(_click1_sweep, convexity=4);
+                }
+                if (!half.y) {
+                    translate([-size.x/2, 0, 0.001]) rotate([90, 0, 180]) do_sweep(_click1_sweep, convexity=4);
+                    translate([size.x/2, 0, 0.001]) rotate([90, 0, 0]) do_sweep(_click1_sweep, convexity=4);
+                }
             }
             if (magnets) {
                 translate([0, 0, -_magnet_level_height]) linear_extrude(height = _magnet_level_height) {
@@ -352,6 +379,89 @@ module puzzle_female(positive) {
         puzzle_female_0();
     }
 }
+
+/**
+ * @Summary Prepare geometry for do_sweep, which sweeps a polygon along a path
+ * @param polygon The polygon to sweep. Array of 2D points
+ * @param path The path to sweep along. Array of 3D points
+ * @return Geometry data to pass to do_sweep
+ */
+function prepare_sweep(polygon, path) = let(
+    ring_faces = function (base_index) [for (i = [0:len(polygon)-1]) [base_index + i, base_index + len(polygon) + i, base_index + len(polygon) + (i + 1) % len(polygon), base_index + (i + 1) % len(polygon)]],
+    points = [for (pt_path = path) each [for (pt_poly = polygon) pt_path + [pt_poly.x, pt_poly.y, 0]]],
+    first_face = [each [0:len(polygon)-1]],
+    last_face = reverse([each [len(polygon)*(len(path)-1):len(polygon)*len(path)-1]]),
+    faces = [
+        first_face,
+        for (i = [0:len(path)-2]) each ring_faces(i * len(polygon)),
+        last_face
+    ]
+) [points, faces];
+
+/**
+ * @Summary Display a sweep prepared by prepare_sweep
+ * @param sweep The value returned by prepare_sweep
+ */
+module do_sweep(prep, convexity=2) {
+    polyhedron(points = prep[0], faces = prep[1], convexity = convexity);
+}
+
+/**
+ * @Summary Clip a polygon along an edge (one step of the Sutherland-Hodgman algorithm)
+ * @param polygon The input polygon to clip
+ * @param contains A lambda taking a single point that returns whether that point is clipped or not
+ * @param find_intersection A lambda taking a point inside and outside the result area (in that order), that returns the point where the line between those points intersects the start of the clipping region
+ * @return The clipped polygon, potentially with duplicate points
+ */
+function clip_polygon_edge(polygon, contains, find_intersection) = 
+    [for (i = [0:len(polygon)-1]) let (
+        here = polygon[i],
+        prev = i == 0 ? polygon[len(polygon) - 1] : polygon[i - 1],
+        here_inside = contains(here),
+        prev_inside = contains(prev),
+    ) each
+        here_inside ?
+            prev_inside ? [here] : [find_intersection(here, prev), here] :
+            prev_inside ? [find_intersection(prev, here)] : []
+    ];
+
+/**
+ * @Summary Clip a polygon using the Sutherland-Hodgman algorithm so that all resulting points satisfy `pt.x <= max.x && pt.y <= max.y`
+ * @param polygon The polygon to clip
+ * @param max The bounds to clip to
+ * @return The clipped polygon, with no duplicate points
+ */
+function clip_polygon_max(polygon, max) = let(
+    step = function(dimension, pg) clip_polygon_edge(pg, function (pt) pt[dimension] <= max[dimension], function (inside, outside) let (factor = (max[dimension] - inside[dimension]) / (outside[dimension] - inside[dimension])) inside + (outside - inside) * factor),
+    clipped = step(0, step(1, polygon)),
+    deduplicated = [for (i = 0, prev = clipped[len(clipped) - 1]; i < len(clipped); prev = clipped[i], i = i + 1) each clipped[i] == prev ? [] : [clipped[i]]]
+) echo(clipped) deduplicated;
+
+// the maximum width of the baseplate profile (at the very bottom of the profile)
+_baseplate_max_strength = _BASEPLATE_PROFILE[3].x;
+// the full polygon of the baseplate profile
+_baseplate_polygon = [
+    [0, 0],
+    for (pt = _BASEPLATE_PROFILE) pt + [-_baseplate_max_strength, 0]
+];
+
+_click1_polygon = let(shiftx = _baseplate_max_strength-click1_strength) [for (pt = clip_polygon_max([for (pt = _baseplate_polygon) [pt.x+shiftx, pt.y]], [0, click1_height])) [pt.x-shiftx, pt.y]];
+/**
+ * @Summary Logistic function used for the click1 arc
+ * @param x coordinate
+ */
+function click1_path_base(x) = 1/(1+exp(-click1_steepness*x));
+_click1_path = let (
+    arc_length = (click1_outer_length - click1_inner_length) / 2,
+    low = click1_path_base(-arc_length/2),
+    high = click1_path_base(arc_length/2),
+    scale = click1_distance / (high - low),
+    arc = [for (x = [-arc_length/2:arc_length/click1_steps:arc_length/2]) [-(click1_path_base(x)-low)*scale, 0, x - (click1_outer_length-arc_length)/2]]
+) [
+    each arc,
+    for (pt = reverse(arc)) [pt.x, pt.y, -pt.z]
+];
+_click1_sweep = prepare_sweep(_click1_polygon, _click1_path);
 
 /**
  * @Summary Get the index of the last cell in a segment
@@ -659,6 +769,11 @@ module chamfer_triangle() {
     polygon([[-extend, -extend], [1 + extend, -extend], [-extend, 1 + extend]]);
 }
 
+function compute_segment_size(count, padding) = [
+    BASEPLATE_DIMENSIONS.x * count.x + padding[_EAST] + padding[_WEST],
+    BASEPLATE_DIMENSIONS.y * count.y + padding[_NORTH] + padding[_SOUTH],
+];
+
 /**
  * @Summary Model a segment, which is piece of the plate without breaks
  * @param count The number of cells in this segment, on each axis
@@ -669,10 +784,7 @@ module chamfer_triangle() {
  * @param global_cell_count If applicable, the global cell count. This is used for vertical screws at plate corners
  */
 module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, false, false], global_segment_index=undef, global_cell_index=[0, 0], global_cell_count=[0, 0]) {
-    size = [
-        BASEPLATE_DIMENSIONS.x * count.x + padding[_EAST] + padding[_WEST],
-        BASEPLATE_DIMENSIONS.y * count.y + padding[_NORTH] + padding[_SOUTH],
-    ];
+    size = compute_segment_size(count, padding);
     _edge_puzzle_height_male = edge_puzzle_height_female - edge_puzzle_height_male_delta;
     // whether to cut the male edge puzzle connector to make room for the bin in the next cell. For really short connectors this is not necessary, but there's also no good reason to turn this off, so it's not user configurable at the moment
     _edge_puzzle_overlap = true;
@@ -1014,6 +1126,19 @@ module test_pattern_wall() {
     segment(count = [2, 2], connector=[false, false, false, false], padding=[5, 5, 5, 5]);
 }
 
+module test_pattern_click() {
+    count = [1, 3];
+    // this should give similar wall strength as a neighbouring cell
+    padding = [12, click1_wall_strength, click1_wall_strength, click1_wall_strength];
+    segment(count = count, connector=[false, false, false, false], padding=padding);
+    format_small = function (d) d < 1 ? str(".", d*10) : (d % 1) == 0 ? str(d) : str(d * 10);
+    txt = click1 ? str(format_small(click1_distance), "|", format_small(click1_steepness), "|", format_small(click1_height), "|", format_small(click1_strength), "|", format_small(click1_wall_strength)) : "off";
+    navigate_edge(size = compute_segment_size(count, padding), count = count, padding = padding, index = [0, 2], dir = _NORTH) 
+        translate([0, padding[_NORTH]/2, _profile_height]) 
+        linear_extrude(0.5) 
+        scale([0.7, 1]) text(txt, halign="center", valign="center", size=8);
+}
+
 if (test_pattern == 0) {
     main();
 } else if (test_pattern == 1) {
@@ -1024,4 +1149,6 @@ if (test_pattern == 0) {
     test_pattern_numbering();
 } else if (test_pattern == 4) {
     test_pattern_wall();
+} else if (test_pattern == 5) {
+    test_pattern_click();
 }
