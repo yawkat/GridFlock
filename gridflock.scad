@@ -36,6 +36,25 @@ magnet_top = 0.5; // 0.25
 // Floor below the magnet. Not structurally important, should be small to minimize filament use
 magnet_bottom = 0.75; // 0.25
 
+/* [Click latch (Experimental)] */
+
+// Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
+click1 = false;
+// Distance that the click latch extends into the bin area
+click1_distance = 1; // .1
+// Steepness of the click latch arc
+click1_steepness = 1; // .1
+// Length of the full click latch
+click1_outer_length = 30;
+// Length of the straight piece in the middle of the click latch. The arced pieces take up the remaining space
+click1_inner_length = 0;
+// Height of the click latch
+click1_height = 3; // .1
+// Thickness of the click latch. This is measured from the bottom of the baseplate profile
+click1_strength = 1.6; // .1
+// Thickness of the non-bending wall behind the click latch. This wall provides stability and prevents the click latch from bending too far
+click1_wall_strength = 1; // .1
+
 /* [Intersection Puzzle Connector] */
 
 // Enable the intersection puzzle plate connector. This is similar to GridPlates/GRIPS. Small puzzle connectors are added cell intersections.
@@ -115,25 +134,6 @@ vertical_screw_other = false;
 thumbscrews = false;
 // Thumb screw cutout diameter
 thumbscrew_diameter = 15.8; // 0.1
-
-/* [Click latch] */
-
-// Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
-click1 = false;
-// Distance that the click latch extends into the bin area
-click1_distance = 1; // .1
-// Steepness of the click latch arc
-click1_steepness = 1; // .1
-// Length of the full click latch
-click1_outer_length = 30;
-// Length of the straight piece in the middle of the click latch. The arced pieces take up the remaining space
-click1_inner_length = 0;
-// Height of the click latch
-click1_height = 3; // .1
-// Thickness of the click latch. This is measured from the bottom of the baseplate profile
-click1_strength = 1.6; // .1
-// Thickness of the non-bending wall behind the click latch. This wall provides stability and prevents the click latch from bending too far
-click1_wall_strength = 1; // .1
 
 /* [Segmentation] */
 
