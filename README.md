@@ -35,6 +35,13 @@ For inserting magnets, check out [the jig](#jig).
     - [Glued magnets](#glued-magnets)
     - [Rounded corner frame](#rounded-corner-frame)
     - [Solid frame](#solid-frame)
+  - [Click Latch](#click-latch)
+    - [Length](#length)
+    - [Distance](#distance)
+    - [Latch Strength](#latch-strength)
+    - [Latch Wall Strength](#latch-wall-strength)
+    - [Height](#height)
+    - [Steepness](#steepness)
   - [Half-sized cells](#half-sized-cells)
   - [Corner radius](#corner-radius)
   - [Alignment](#alignment)
@@ -228,6 +235,80 @@ Using the `magnet_frame_style` option, you can change the magnet layer to be ful
 
 <!-- openscad -o docs/images/magnets-solid.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=true -D magnet_style=0 -D magnet_frame_style=0 -->
 <img src="docs/images/magnets-solid.png" alt="Solid magnet frame" />
+
+## Click Latch
+
+If you do not wish to use magnets, but still want a more secure fit for your bins, a click latch is an option. A click latch grips the bottom of the bin.
+
+> [!WARNING]
+> When a bin is placed on the baseplate, the click latch is under constant mechanical stress. This causes the plastic to deform over time ("creep"), reducing the grip strength. _PLA is very susceptible to this._ PETG is more resistant, but long-term tests are still scarce, so _consider this feature experimental_.
+
+<!-- openscad -o docs/images/click1.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D click1=true -->
+<img src="docs/images/click1.png" alt="Click latch" />
+
+There are various parameters you can use to tune the click latch mechanism.
+
+### Length
+
+The latch is composed of two arcs at each end, and an optional middle straight section. The total length of the latch is configured using the `click1_outer_length` property:
+
+<!-- openscad -o docs/images/click1-outer-length-20.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_outer_length=20 -->
+<img src="docs/images/click1-outer-length-20.png" alt="Click latch with click1_outer_length=20" />
+
+The length of the straight section is configured using `click1_inner_length`, which is 0 by default (no straight section). Here is an example with a 20mm straight section:
+
+<!-- openscad -o docs/images/click1-inner-length-20.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_inner_length=20 -->
+<img src="docs/images/click1-inner-length-20.png" alt="Click latch with click1_inner_length=20" />
+
+### Distance
+
+The `click1_distance` property changes the distance that the latch protudes into the bin area. A larger distance can increase grip strength, but makes the bin more difficult to place into the baseplate. Zero distance:
+
+<!-- openscad -o docs/images/click1-distance-0.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_distance=0 -->
+<img src="docs/images/click1-distance-0.png" alt="Click latch with click1_distance=0" />
+
+5mm distance (don't do this):
+
+<!-- openscad -o docs/images/click1-distance-5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_distance=5 -->
+<img src="docs/images/click1-distance-5.png" alt="Click latch with click1_distance=5" />
+
+### Latch Strength
+
+The `click1_strength` property controls the thickness of the latch itself. This is measured from the very bottom of the latch which, if you look at the gridfinity specification, has a chamfer of 0.7mm, so the strength needs to be higher than this to get any reasonable latch height. Here's an example with `click1_strength=2.5` (and `click1_wall_strength=0`, or else there would not be enough space):
+
+<!-- openscad -o docs/images/click1-strength-2.5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_strength=2.5 -D click1_wall_strength=0 -->
+<img src="docs/images/click1-strength-2.5.png" alt="Click latch with click1_strength=2.5" />
+
+### Latch Wall Strength
+
+The `click1_wall_strength` property controls the thickness of the wall behind the latch. This wall serves two purposes: It adds rigidity to the baseplate, and it prevents the click latch from bending too far. Note that the wall is measured per cell, so if you have two neighbouring cells, the actual wall thickness will be double this value. An example with `click1_wall_strength=2` (and reduced `click1_strength`):
+
+<!-- openscad -o docs/images/click1-wall-strength-2.png --camera=0,0,0,40,0,10,100 -D plate_size='[84, 42]' -D click1=true -D click1_strength=0.8 -D click1_wall_strength=2 -->
+<img src="docs/images/click1-wall-strength-2.png" alt="Click latch with click1_wall_strength=2" />
+
+Setting the wall strength to 0 disables the backing wall entirely:
+
+<!-- openscad -o docs/images/click1-wall-strength-0.png --camera=0,0,0,40,0,10,100 -D plate_size='[84, 42]' -D click1=true -D click1_wall_strength=0 -->
+<img src="docs/images/click1-wall-strength-0.png" alt="Click latch with click1_wall_strength=0" />
+
+### Height
+
+The `click1_height` property controls the height of the latch.
+
+<!-- openscad -o docs/images/click1-height-0.5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_height=0.5 -->
+<img src="docs/images/click1-height-0.5.png" alt="Click latch with click1_height=0" />
+
+### Steepness
+
+The arcs of the click latch follow a logistic curve, and `click1_steepness` changes the steepness of that curve. Steepness 0.1:
+
+<!-- openscad -o docs/images/click1-steepness-0.1.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_steepness=0.1 -->
+<img src="docs/images/click1-steepness-0.1.png" alt="Click latch with click1_steepness=0.1" />
+
+Steepness 5:
+
+<!-- openscad -o docs/images/click1-steepness-5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_steepness=5 -->
+<img src="docs/images/click1-steepness-5.png" alt="Click latch with click1_steepness=5" />
 
 ## Half-sized cells
 

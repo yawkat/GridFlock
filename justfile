@@ -54,7 +54,7 @@ docs:
                 written.append(output)
         for f in os.listdir("docs/images"):
             if os.path.join("docs/images", f) not in written:
-                os.unlink(f)
+                os.unlink(os.path.join("docs/images", f))
         await asyncio.gather(*tasks)
 
     asyncio.run(main())

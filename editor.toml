@@ -9,7 +9,7 @@ head-extra = '<script defer src="https://um.yawk.at/script.js" data-website-id="
 file = "gridflock.scad"
 description-extra-html = "<br>For detailed documentation, check the <a href='https://github.com/yawkat/GridFlock/blob/main/README.md'>README</a>.<br><b>Feb 16: I've turned off magnets by default because most people don't use them.</b> If you've saved a design with magnets, you will have to manually turn them on again below."
 umami-track-render = []
-umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size"]
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click1"]
 
 [model.param-metadata.bed_size.presets]
 text = "Printer Presets"
@@ -128,6 +128,29 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-inter
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#thumb-screw"
 [model.param-metadata.thumbscrew_diameter]
 display-condition = {js = "thumbscrews"}
+[model.param-metadata.click1]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#click-latch"
+[model.param-metadata.click1_distance]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#distance"
+[model.param-metadata.click1_steepness]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#steepness"
+[model.param-metadata.click1_outer_length]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#length"
+[model.param-metadata.click1_inner_length]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#length"
+[model.param-metadata.click1_height]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#height"
+[model.param-metadata.click1_strength]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch_strength"
+[model.param-metadata.click1_wall_strength]
+display-condition = {js = "click1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch_wall_strength"
 [model.param-metadata.x_segment_algorithm]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 [model.param-metadata.y_row_count_first]

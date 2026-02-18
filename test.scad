@@ -26,4 +26,8 @@ assert_eq([3, 6, 1], plan_axis_incremental_vars(axis_norm=10, bed_norm=6.1, star
 assert_eq([2, 6, 2], plan_axis_incremental_vars(axis_norm=10, bed_norm=6.1, start_padding_norm=0.2, end_padding_norm=0.2, force_first=2));
 assert_eq([1, 6, 3], plan_axis_incremental_vars(axis_norm=10, bed_norm=6.1, start_padding_norm=0.2, end_padding_norm=0.2, force_first=1));
 
+assert_eq([[0, 1], [0, 0], [1, 0], [1, 1]], clip_polygon_max([[0, 0], [2, 0], [0, 2]], [1, 1]));
+assert_eq([[1, 1], [0, 1], [0, 0], [1, 0]], clip_polygon_max([[0, 2], [0, 0], [2, 0]], [1, 1]));
+assert_eq([[1, 0], [1, 1], [0, 1], [0, 0]], clip_polygon_max([[2, 0], [0, 2], [0, 0]], [1, 1]));
+
 cube([1, 1, 1]);
