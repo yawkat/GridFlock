@@ -118,15 +118,21 @@ thumbscrew_diameter = 15.8; // 0.1
 
 /* [Click latch] */
 
-// Enable the click latch. 
+// Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
 click1 = false;
+// Distance that the click latch extends into the bin area
 click1_distance = 1; // .1
+// Steepness of the click latch arc
 click1_steepness = 1; // .1
+// Length of the full click latch
 click1_outer_length = 30;
+// Length of the straight piece in the middle of the click latch. The arced pieces take up the remaining space
 click1_inner_length = 0;
-click1_steps = 10;
+// Height of the click latch
 click1_height = 3; // .1
+// Thickness of the click latch. This is measured from the bottom of the baseplate profile
 click1_strength = 1.6; // .1
+// Thickness of the non-bending wall behind the click latch. This wall provides stability and prevents the click latch from bending too far
 click1_wall_strength = 1; // .1
 
 /* [Segmentation] */
@@ -150,6 +156,9 @@ cell_override = "";
 test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall, 5:Click]
 
 /* [Hidden] */
+
+// Resolution of the click latch.
+click1_steps = 15;
 
 _MAGNET_GLUE_TOP = 0;
 _MAGNET_PRESS_FIT = 1;
@@ -442,7 +451,7 @@ function clip_polygon_max(polygon, max) = let(
     step = function(dimension, pg) clip_polygon_edge(pg, function (pt) pt[dimension] <= max[dimension], function (inside, outside) let (factor = (max[dimension] - inside[dimension]) / (outside[dimension] - inside[dimension])) inside + (outside - inside) * factor),
     clipped = step(0, step(1, polygon)),
     deduplicated = [for (i = 0, prev = clipped[len(clipped) - 1]; i < len(clipped); prev = clipped[i], i = i + 1) each clipped[i] == prev ? [] : [clipped[i]]]
-) echo(clipped) deduplicated;
+) deduplicated;
 
 // the maximum width of the baseplate profile (at the very bottom of the profile)
 _baseplate_max_strength = _BASEPLATE_PROFILE[3].x;
