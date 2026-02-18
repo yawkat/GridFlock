@@ -265,12 +265,12 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
             }
             if (click1) {
                 if (!half.x) {
-                    translate([0, -size.y/2, 0.001]) rotate([90, 0, -90]) do_sweep(_click1_sweep, convexity=4);
-                    translate([0, size.y/2, 0.001]) rotate([90, 0, 90]) do_sweep(_click1_sweep, convexity=4);
+                    translate([0, -size.y/2, 0]) rotate([90, 0, -90]) do_sweep(_click1_sweep, convexity=4);
+                    translate([0, size.y/2, 0]) rotate([90, 0, 90]) do_sweep(_click1_sweep, convexity=4);
                 }
                 if (!half.y) {
-                    translate([-size.x/2, 0, 0.001]) rotate([90, 0, 180]) do_sweep(_click1_sweep, convexity=4);
-                    translate([size.x/2, 0, 0.001]) rotate([90, 0, 0]) do_sweep(_click1_sweep, convexity=4);
+                    translate([-size.x/2, 0, 0]) rotate([90, 0, 180]) do_sweep(_click1_sweep, convexity=4);
+                    translate([size.x/2, 0, 0]) rotate([90, 0, 0]) do_sweep(_click1_sweep, convexity=4);
                 }
             }
             if (magnets) {
@@ -387,10 +387,17 @@ module puzzle_female(positive) {
  * @return Geometry data to pass to do_sweep
  */
 function prepare_sweep(polygon, path) = let(
-    ring_faces = function (base_index) [for (i = [0:len(polygon)-1]) [base_index + i, base_index + len(polygon) + i, base_index + len(polygon) + (i + 1) % len(polygon), base_index + (i + 1) % len(polygon)]],
+    ring_faces = function (base_index) [
+            for (i = [0:len(polygon)-1]) [
+                base_index + (i + 1) % len(polygon), 
+                base_index + len(polygon) + (i + 1) % len(polygon), 
+                base_index + len(polygon) + i, 
+                base_index + i
+            ]
+        ],
     points = [for (pt_path = path) each [for (pt_poly = polygon) pt_path + [pt_poly.x, pt_poly.y, 0]]],
-    first_face = [each [0:len(polygon)-1]],
-    last_face = reverse([each [len(polygon)*(len(path)-1):len(polygon)*len(path)-1]]),
+    first_face = reverse([each [0:len(polygon)-1]]),
+    last_face = [each [len(polygon)*(len(path)-1):len(polygon)*len(path)-1]],
     faces = [
         first_face,
         for (i = [0:len(path)-2]) each ring_faces(i * len(polygon)),
