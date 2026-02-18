@@ -119,7 +119,7 @@ thumbscrew_diameter = 15.8; // 0.1
 /* [Click latch] */
 
 // Enable the click latch. 
-click1 = true;
+click1 = false;
 click1_distance = 1; // .1
 click1_steepness = 1; // .1
 click1_outer_length = 30;
