@@ -44,8 +44,13 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-cham
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#top-chamfer"
 [model.param-metadata.alignment]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#alignment"
-[model.param-metadata.magnets]
+
+[model.tab-metadata."Magnets"]
+control-boolean = "magnets"
+description-html = "Magnets for holding bins in place. <a href='https://github.com/yawkat/GridFlock/blob/main/README.md#jig'>Magnet insertion jig</a>"
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnets"
+[model.param-metadata.magnets]
+display-condition = {fixed = false}
 [model.param-metadata.magnet_style]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnets"
 display-condition = {js = "magnets"}
@@ -60,13 +65,23 @@ display-condition = {js = "magnets"}
 display-condition = {js = "magnets"}
 [model.param-metadata.magnet_bottom]
 display-condition = {js = "magnets"}
-[model.param-metadata.connector_intersection_puzzle]
+
+[model.tab-metadata."Intersection Puzzle Connector"]
+control-boolean = "connector_intersection_puzzle"
+description-html = "This is similar to GridPlates/GRIPS. Small puzzle connectors are added cell intersections."
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#intersection-puzzle"
+[model.param-metadata.connector_intersection_puzzle]
+display-condition = {fixed = false}
 [model.param-metadata.intersection_puzzle_fit]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-fit"
 display-condition = {js = "connector_intersection_puzzle"}
-[model.param-metadata.connector_edge_puzzle]
+
+[model.tab-metadata."Edge Puzzle Connector"]
+control-boolean = "connector_edge_puzzle"
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#edge-puzzle"
+description-html = "This connector is a bit cleaner, but is harder to print, especially when magnets are disabled (not enough vertical space). It's also more customizable, so you can tune the fit to your printer."
+[model.param-metadata.connector_edge_puzzle]
+display-condition = {fixed = false}
 [model.param-metadata.edge_puzzle_count]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-count"
 display-condition = {js = "connector_edge_puzzle"}
@@ -85,6 +100,9 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-h
 display-condition = {js = "connector_edge_puzzle"}
 [model.param-metadata.edge_puzzle_height_male_delta]
 display-condition = {js = "connector_edge_puzzle"}
+
+[model.tab-metadata."Filler"]
+collapsed = true
 [model.param-metadata.filler_x]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#filler"
 [model.param-metadata.filler_y]
@@ -95,8 +113,11 @@ display-condition = {js = "filler_x == 1 || filler_y == 1"}
 [model.param-metadata.filler_minimum_size]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#dynamic"
 display-condition = {js = "filler_x == 2 || filler_y == 2"}
-[model.param-metadata.numbering]
+
+[model.tab-metadata."Numbering"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#numbering"
+collapsed = true
+[model.param-metadata.numbering]
 [model.param-metadata.number_depth]
 display-condition = {js = "numbering"}
 [model.param-metadata.number_size]
@@ -106,10 +127,16 @@ display-condition = {js = "numbering"}
 [model.param-metadata.number_squeeze_size]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#squeezed-number"
 display-condition = {js = "numbering"}
+
+[model.tab-metadata."Plate wall"]
+collapsed = true
 [model.param-metadata.plate_wall_thickness]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
 [model.param-metadata.plate_wall_height]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
+
+[model.tab-metadata."Vertical Screws"]
+collapsed = true
 [model.param-metadata.vertical_screw_diameter]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
 [model.param-metadata.vertical_screw_countersink_top]
@@ -130,12 +157,22 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-cor
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-edges"
 [model.param-metadata.vertical_screw_other]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-intersections"
-[model.param-metadata.thumbscrews]
+
+[model.tab-metadata."Thumb Screw"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#thumb-screw"
+control-boolean = "thumbscrews"
+description-html = "Generate thumb screw cutouts compatible with 'Gridfinity Refined'. This requires solid_base or magnets with solid frame style"
+[model.param-metadata.thumbscrews]
+display-condition = {fixed = false}
 [model.param-metadata.thumbscrew_diameter]
 display-condition = {js = "thumbscrews"}
-[model.param-metadata.click1]
+
+[model.tab-metadata."Click Latch (Experimental)"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#click-latch"
+control-boolean = "click1"
+description-html = "Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet"
+[model.param-metadata.click1]
+display-condition = {fixed = false}
 [model.param-metadata.click1_distance]
 display-condition = {js = "click1"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#distance"
@@ -157,12 +194,18 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch_stren
 [model.param-metadata.click1_wall_strength]
 display-condition = {js = "click1"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch_wall_strength"
+
+[model.tab-metadata."Segmentation"]
+collapsed = true
 [model.param-metadata.x_segment_algorithm]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 [model.param-metadata.y_row_count_first]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 [model.param-metadata.x_column_count_first]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#vertical"
+
+[model.tab-metadata."Advanced"]
+collapsed = true
 [model.param-metadata.plate_corner_radius]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#corner-radius"
 [model.param-metadata.edge_adjust]
