@@ -42,7 +42,10 @@ For inserting magnets, check out [the jig](#jig).
     - [Latch Wall Strength](#latch-wall-strength)
     - [Height](#height)
     - [Steepness](#steepness)
-  - [Half-sized cells](#half-sized-cells)
+  - [Filler](#filler)
+    - [None](#none)
+    - [Integer Fraction](#integer-fraction)
+    - [Dynamic](#dynamic)
   - [Corner radius](#corner-radius)
   - [Alignment](#alignment)
   - [Custom cell size](#custom-cell-size)
@@ -310,17 +313,50 @@ Steepness 5:
 <!-- openscad -o docs/images/click1-steepness-5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click1=true -D click1_steepness=5 -->
 <img src="docs/images/click1-steepness-5.png" alt="Click latch with click1_steepness=5" />
 
-## Half-sized cells
+## Filler
 
-By default, if there isn't enough room for a full cell on the plate, GridFlock will attempt to fill up remaining space with half-sized cells.
+If the baseplate is not a multiple of 42mm, there's some room that can't be used for a full-sized cell. There are different options for what to do with this space.
 
-<!-- openscad -o docs/images/half.png --camera=0,0,0,40,0,10,400 -D plate_size='[147, 147]' -D magnets=false -->
-<img src="docs/images/half.png" alt="Half cell" />
+The filler algorithm can be configured with the `filler_x` and `filler_y` properties.
 
-You can turn off this behavior with the `do_half_x` and `do_half_y` options.
+### None
 
-<!-- openscad -o docs/images/halfx.png --camera=0,0,0,40,0,10,400 -D plate_size='[147, 147]' -D magnets=false -D do_half_y=false -->
-<img src="docs/images/halfx.png" alt="Half cell, x only" />
+In `None` mode, the remaining space is simply filled with padding.
+
+<!-- openscad -o docs/images/filler-none.png --camera=0,0,0,40,0,10,150 -D plate_size='[71, 42]' -D filler_x=0 -->
+<img src="docs/images/filler-none.png" alt="No filler" />
+
+### Integer Fraction
+
+In `Integer Fraction` mode, the remaining space is filled with reduced-size cells that are an integer fraction of the standard cell size. This is the default, configured to use half-size cells.
+
+<!-- openscad -o docs/images/filler-half.png --camera=0,0,0,40,0,10,150 -D plate_size='[71, 42]' -D filler_x=1 -->
+<img src="docs/images/filler-half.png" alt="Half-cell filler" />
+
+> [!NOTE]
+> The old `do_half_x` and `do_half_y` options have been removed.
+
+You can change the fraction using the `filler_fraction` option, for example the value "3" for one-third size cells:
+
+<!-- openscad -o docs/images/filler-third.png --camera=0,0,0,40,0,10,150 -D plate_size='[71, 42]' -D filler_x=1 -D filler_fraction=[3,3] -->
+<img src="docs/images/filler-third.png" alt="Third-cell filler" />
+
+### Dynamic
+
+In `Dynamic` mode, the remaining space is used up completely by a flexibly size cell.
+
+<!-- openscad -o docs/images/filler-dynamic.png --camera=0,0,0,40,0,10,150 -D plate_size='[71, 42]' -D filler_x=2 -->
+<img src="docs/images/filler-dynamic.png" alt="Dynamic filler" />
+
+Note that there is a minimum size of the dynamic filler cell, configured by `filler_minimum_size`. This ensures that the filler does not become so small that the geometry breaks. If the cell is too small, it will be added to the last cell instead, creating a cell that is slightly bigger than 42mm:
+
+<!-- openscad -o docs/images/filler-dynamic-expand.png --camera=0,0,0,40,0,10,150 -D plate_size='[88, 42]' -D filler_x=2 -->
+<img src="docs/images/filler-dynamic-expand.png" alt="Dynamic filler expanded" />
+
+If you wish to only create larger cells, not smaller cells, you can set the minimum size to 42:
+
+<!-- openscad -o docs/images/filler-dynamic-expand-always.png --camera=0,0,0,40,0,10,150 -D plate_size='[120, 42]' -D filler_x=2 -D filler_minimum_size=[42,42] -->
+<img src="docs/images/filler-dynamic-expand-always.png" alt="Dynamic filler always expanded" />
 
 ## Corner radius
 

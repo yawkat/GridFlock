@@ -6,10 +6,6 @@ include <paths/puzzle.scad>
 plate_size = [371, 254];
 // The bed size of the printer, e.g. 250x220 for the Prusa Core One
 bed_size = [250, 220];
-// If there's not enough space for a full grid cell, squeeze in a half cell (x direction)
-do_half_x = true;
-// If there's not enough space for a full grid cell, squeeze in a half cell (y direction)
-do_half_y = true;
 // Thickness of the optional solid base
 solid_base = 0;
 // Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
@@ -83,6 +79,16 @@ edge_puzzle_magnet_border_width = 2.5; // 0.1
 edge_puzzle_height_female = 2.25; // 0.25
 // Male side of the edge puzzle connector is smaller than the female side by this amount
 edge_puzzle_height_male_delta = 0.25; // 0.25
+
+/* [Filler] */
+
+filler_x = 1; // [0:None, 1:Integer Fraction, 2:Dynamic]
+
+filler_y = 1; // [0:None, 1:Integer Fraction, 2:Dynamic]
+
+filler_fraction = [2, 2];
+
+filler_minimum_size = [15, 15];
 
 /* [Numbering] */
 
@@ -171,9 +177,6 @@ assert(!magnets || magnet_frame_style != _MAGNET_SOLID || magnet_style != _MAGNE
 
 assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGNET_SOLID), "Thumbscrew holes require some sort of solid base, such as magnet_style solid, or an explicit solid_base.");
 
-// openscad does not support boolean vectors in the customizer
-do_half = [do_half_x, do_half_y];
-
 $fn=40;
 
 // dimensions of the magnet extraction slot
@@ -214,6 +217,10 @@ _CELL_STYLE_EMPTY = "e";
 
 _SEGMENT_ALGORITHM_IDEAL = 0;
 _SEGMENT_ALGORITHM_INCREMENTAL = 1;
+
+_FILLER_NONE = 0;
+_FILLER_INTEGER = 1;
+_FILLER_DYNAMIC = 2;
 
 /**
  * @Summary Run some code in each corner, with proper rotation, to add magnets
@@ -788,9 +795,6 @@ function compute_segment_size(trace, padding) = [
     BASEPLATE_DIMENSIONS.y * cumulate(trace.y)[len(trace.y)] + padding[_NORTH] + padding[_SOUTH],
 ];
 
-// TODO
-function half_to_unit_cell(half) = [half.x ? 0.5 : 1, half.y ? 0.5 : 1];
-
 /**
  * @Summary Model a segment, which is piece of the plate without breaks
  * @param trace The cell sizes, in grid units, on each axis
@@ -953,9 +957,9 @@ function plan_axis_ideal(trace, bed_norm, start_padding_norm=0, end_padding_norm
  * @param start_padding_norm The extra padding at the start of the axis, normalized by cell size
  * @param start_padding_norm The extra padding at the end of the axis, normalized by cell size
  * @param force_first If set, forcibly change the size of the first segment
- * @return A vector in the format: [start, mid, end], where the start is the size of the first segment, end the size of the last segment, and mid the size of all other segments
+ * @return A vector in the format: [start, mid, end], where the start is the number of cells in the first segment, end the number of cells in the last segment, and mid the number of cells in all other segments
  */
-function plan_axis_incremental_vars(trace, bed_norm, start_padding_norm, end_padding_norm, force_first=undef) = 
+function plan_axis_incremental_vars(trace, bed_norm, start_padding_norm=0, end_padding_norm=0, force_first=undef) = 
     assert(bed_norm > 1)
     assert(start_padding_norm != undef)
     assert(end_padding_norm != undef)
@@ -968,14 +972,14 @@ function plan_axis_incremental_vars(trace, bed_norm, start_padding_norm, end_pad
         mid = floor(bed_norm),
 
         // for a given first segment size, compute the last segment size
-        compute_end = function (first) let(e = (cumulated[len(trace)] - first) % mid) e == 0 ? mid : e,
+        compute_end = function (first) let(e = (len(trace) - first) % mid) e == 0 ? mid : e,
 
         // make a preliminary first segement
         first_p = force_first == undef ? floor(bed_norm - start_padding_norm) : force_first,
         // make a preliminary end segment
         end_p = compute_end(first_p),
         // is the end segment too small, i.e. a single half-cell, or too big?
-        shift = end_p < 1 || (end_p + end_padding_norm) > bed_norm,
+        shift = (end_p == 1 && trace[len(trace) - 1] < 1) || (cumulated[len(trace)] - cumulated[len(trace) - end_p] + end_padding_norm) > bed_norm,
         // if the end segment was too small, shrink the first segment a bit to give the end segment a better size
         first = shift ? first_p - 1 : first_p,
         // recalculate end segment size
@@ -1068,14 +1072,27 @@ function sum_sub_vector(vector, until) =
 
 function slice(vector, start, length) = [for (i = [0:len(vector)]) each (i >= start && i < start + length) ? [vector[i]] : []];
 
+function compute_global_trace_fraction(integer_fraction, length_norm) = let(
+    scaled = floor(length_norm * integer_fraction),
+    whole = floor(scaled / integer_fraction),
+    part = scaled - whole * integer_fraction
+) [for (i = [0:whole-1]) 1, for (i = [0:part-1]) 1/integer_fraction];
+
+function compute_global_trace_dynamic(minimum_size_norm, length_norm) = let(
+    dyn = length_norm % 1,
+    expand_last = dyn < minimum_size_norm,
+    total = floor(length_norm) + (expand_last ? 0 : 1)
+) [for (i = [0:total-2]) 1, (length_norm % 1) + (expand_last ? 1 : 0)];
+
+function compute_global_trace(algorithm, integer_fraction, minimum_size_norm, length_norm) = 
+    algorithm == _FILLER_NONE ? [for (i = [0:floor(length_norm)-1]) 1] :
+    algorithm == _FILLER_INTEGER ? compute_global_trace_fraction(integer_fraction, length_norm) :
+    compute_global_trace_dynamic(minimum_size_norm, length_norm); 
+
 module main() {
-    plate_count = [
-        floor(plate_size.x / BASEPLATE_DIMENSIONS.x * (do_half.x ? 2 : 1)) / (do_half.x ? 2 : 1),
-        floor(plate_size.y / BASEPLATE_DIMENSIONS.y * (do_half.y ? 2 : 1)) / (do_half.y ? 2 : 1)
-    ];
     global_trace = [
-        [for (i = [0:plate_count.x-0.5]) i == plate_count.x - 0.5 ? 0.5 : 1],
-        [for (i = [0:plate_count.y-0.5]) i == plate_count.y - 0.5 ? 0.5 : 1]
+        compute_global_trace(filler_x, filler_fraction.x, filler_minimum_size.x/BASEPLATE_DIMENSIONS.x, plate_size.x/BASEPLATE_DIMENSIONS.x),
+        compute_global_trace(filler_y, filler_fraction.y, filler_minimum_size.y/BASEPLATE_DIMENSIONS.y, plate_size.y/BASEPLATE_DIMENSIONS.y)
     ];
     global_trace_cumulated = [cumulate(global_trace.x), cumulate(global_trace.y)];
     plate_padding_sum = [
@@ -1145,7 +1162,7 @@ module main() {
                 segix != 0
             ], global_segment_index=segiy + ceil(segix / 2) * len(plans_y[0]) + floor(segix / 2) * len(plans_y[1]),
             global_cell_index=[sum_sub_vector(plan_x, segix), sum_sub_vector(plan_y, segiy)],
-            global_cell_count=plate_count);
+            global_cell_count=[len(global_trace.x), len(global_trace.y)]);
         }
     }
 }
