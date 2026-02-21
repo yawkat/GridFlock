@@ -107,7 +107,7 @@ module jig_bin_tool() {
  * @Details The baseplate segment we are testing compatibility with
  */
 module jig_baseplate_rig() {
-  segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[true, true, true, true]);
+  segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[true, true, true, true]);
 }
 
 /**
