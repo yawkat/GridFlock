@@ -170,7 +170,7 @@ display-condition = {js = "thumbscrews"}
 [model.tab-metadata."Click Latch (Experimental)"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#click-latch"
 control-boolean = "click1"
-description-html = "Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet"
+description-collapsible-html = "Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet"
 [model.param-metadata.click1]
 display-condition = {fixed = false}
 [model.param-metadata.click1_distance]
