@@ -6,10 +6,6 @@ include <paths/puzzle.scad>
 plate_size = [371, 254];
 // The bed size of the printer, e.g. 250x220 for the Prusa Core One
 bed_size = [250, 220];
-// If there's not enough space for a full grid cell, squeeze in a half cell (x direction)
-do_half_x = true;
-// If there's not enough space for a full grid cell, squeeze in a half cell (y direction)
-do_half_y = true;
 // Thickness of the optional solid base
 solid_base = 0;
 // Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
@@ -36,7 +32,7 @@ magnet_top = 0.5; // 0.25
 // Floor below the magnet. Not structurally important, should be small to minimize filament use
 magnet_bottom = 0.75; // 0.25
 
-/* [Click latch (Experimental)] */
+/* [Click Latch (Experimental)] */
 
 // Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
 click1 = false;
@@ -83,6 +79,16 @@ edge_puzzle_magnet_border_width = 2.5; // 0.1
 edge_puzzle_height_female = 2.25; // 0.25
 // Male side of the edge puzzle connector is smaller than the female side by this amount
 edge_puzzle_height_male_delta = 0.25; // 0.25
+
+/* [Filler] */
+
+filler_x = 1; // [0:None, 1:Integer Fraction, 2:Dynamic]
+
+filler_y = 1; // [0:None, 1:Integer Fraction, 2:Dynamic]
+
+filler_fraction = [2, 2];
+
+filler_minimum_size = [15, 15];
 
 /* [Numbering] */
 
@@ -171,9 +177,6 @@ assert(!magnets || magnet_frame_style != _MAGNET_SOLID || magnet_style != _MAGNE
 
 assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGNET_SOLID), "Thumbscrew holes require some sort of solid base, such as magnet_style solid, or an explicit solid_base.");
 
-// openscad does not support boolean vectors in the customizer
-do_half = [do_half_x, do_half_y];
-
 $fn=40;
 
 // dimensions of the magnet extraction slot
@@ -215,37 +218,42 @@ _CELL_STYLE_EMPTY = "e";
 _SEGMENT_ALGORITHM_IDEAL = 0;
 _SEGMENT_ALGORITHM_INCREMENTAL = 1;
 
+_FILLER_NONE = 0;
+_FILLER_INTEGER = 1;
+_FILLER_DYNAMIC = 2;
+
 /**
  * @Summary Run some code in each corner, with proper rotation, to add magnets
  * @Details From the children's perspective, we are centered at the corner, and 
  *          the center of the cell is in the north-east (+x and +y)
- * @param half Whether this is a half cell, for each direction
+ * @param unit_size Size of the cell, in grid units, in each direction
  */
-module each_cell_corner(half=[false, false]) {
-    if (half.x && half.y) {
-        translate([-BASEPLATE_DIMENSIONS.x/4, BASEPLATE_DIMENSIONS.y/4]) rotate([0, 0, 270]) children();
-    } else if (half.x) {
+module each_cell_corner(unit_size) {
+    size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
+    if (unit_size.x < 1 && unit_size.y < 1) {
+        translate([-size.x/2, size.y/2]) rotate([0, 0, 270]) children();
+    } else if (unit_size.x < 1) {
         // these corners are chosen so that a half-size bin will fit both a vertical and a horizontal half-width slot
-        translate([BASEPLATE_DIMENSIONS.x/4, -BASEPLATE_DIMENSIONS.y/2]) rotate([0, 0, 90]) children();
-        translate([-BASEPLATE_DIMENSIONS.x/4, BASEPLATE_DIMENSIONS.y/2]) rotate([0, 0, 270]) children();
-    } else if (half.y) {
-        translate([-BASEPLATE_DIMENSIONS.x/2, -BASEPLATE_DIMENSIONS.y/4]) children();
-        translate([BASEPLATE_DIMENSIONS.x/2, BASEPLATE_DIMENSIONS.y/4]) rotate([0, 0, 180]) children();
+        translate([size.x/2, -size.y/2]) rotate([0, 0, 90]) children();
+        translate([-size.x/2, size.y/2]) rotate([0, 0, 270]) children();
+    } else if (unit_size.y < 1) {
+        translate([-size.x/2, -size.y/2]) children();
+        translate([size.x/2, size.y/2]) rotate([0, 0, 180]) children();
     } else {
-        translate([-BASEPLATE_DIMENSIONS.x/2, -BASEPLATE_DIMENSIONS.y/2]) children();
-        translate([BASEPLATE_DIMENSIONS.x/2, -BASEPLATE_DIMENSIONS.y/2]) rotate([0, 0, 90]) children();
-        translate([-BASEPLATE_DIMENSIONS.x/2, BASEPLATE_DIMENSIONS.y/2]) rotate([0, 0, 270]) children();
-        translate([BASEPLATE_DIMENSIONS.x/2, BASEPLATE_DIMENSIONS.y/2]) rotate([0, 0, 180]) children();
+        translate([-size.x/2, -size.y/2]) children();
+        translate([size.x/2, -size.y/2]) rotate([0, 0, 90]) children();
+        translate([-size.x/2, size.y/2]) rotate([0, 0, 270]) children();
+        translate([size.x/2, size.y/2]) rotate([0, 0, 180]) children();
     }
 }
 
 /**
  * @Summary Draw a grid cell centered on 0,0
- * @param half Whether this is a half cell, for each direction
+ * @param unit_size Size of the cell, in grid units, in each direction
  * @param positive This flag is false when this cell is used for cutting instead of additively. When cutting, we can simplify the geometry in ways that would waste filament for additive mode
  */
-module cell(half=[false, false], connector=[false, false, false, false], positive=true) {
-    size = [BASEPLATE_DIMENSIONS.x/(half.x?2:1), BASEPLATE_DIMENSIONS.y/(half.y?2:1)];
+module cell(unit_size=[1, 1], connector=[false, false, false, false], positive=true) {
+    size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
     difference() {
         union() {
             difference() {
@@ -268,16 +276,16 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                     }
                 }
                 if (click1) translate([0, 0, _profile_height/2]) {
-                    if (!half.x) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
-                    if (!half.y) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
+                    if (unit_size.x == 1) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
+                    if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
                 }
             }
             if (click1) {
-                if (!half.x) {
+                if (unit_size.x == 1) {
                     translate([0, -size.y/2, 0]) rotate([90, 0, -90]) do_sweep(_click1_sweep, convexity=4);
                     translate([0, size.y/2, 0]) rotate([90, 0, 90]) do_sweep(_click1_sweep, convexity=4);
                 }
-                if (!half.y) {
+                if (unit_size.y == 1) {
                     translate([-size.x/2, 0, 0]) rotate([90, 0, 180]) do_sweep(_click1_sweep, convexity=4);
                     translate([size.x/2, 0, 0]) rotate([90, 0, 0]) do_sweep(_click1_sweep, convexity=4);
                 }
@@ -287,7 +295,7 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                     if (positive && magnet_frame_style != _MAGNET_SOLID) {
                         // round corners
                         if (magnet_frame_style == _MAGNET_ROUND_CORNERS) {
-                            each_cell_corner(half) {
+                            each_cell_corner(unit_size) {
                                 total_bounds = _magnet_location + magnet_diameter/2 + _magnet_border;
                                 square([_magnet_location, total_bounds]);
                                 square([total_bounds, _magnet_location]);
@@ -313,9 +321,9 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
             }
         }
         if (magnets) {
-            each_cell_corner(half) {
+            each_cell_corner(unit_size) {
                 translate([_magnet_location, _magnet_location]) {
-                    rot_slot = half.x == half.y ? -45 : -90;
+                    rot_slot = (unit_size == [1, 1] || (unit_size.x < 1 && unit_size.y < 1)) ? -45 : -90;
                     // magnet slot
                     if (magnet_style == _MAGNET_GLUE_BOTTOM) {
                         translate([0, 0, -_extra_height]) cylinder(d=magnet_diameter, h=_extra_height-magnet_top); 
@@ -337,7 +345,7 @@ module cell(half=[false, false], connector=[false, false, false, false], positiv
                 }
             }
         }
-        if (thumbscrews && !half.x && !half.y) rotate_extrude() {
+        if (thumbscrews && unit_size == [1, 1]) rotate_extrude() {
             top = magnets && magnet_frame_style != _MAGNET_SOLID ? -_magnet_level_height : 0;
             height = 100;
             polygon([[0, top], [thumbscrew_diameter/2, top], [thumbscrew_diameter/2 + height, top-height], [0, top-height]]);
@@ -480,75 +488,75 @@ _click1_path = let (
 _click1_sweep = prepare_sweep(_click1_polygon, _click1_path);
 
 /**
- * @Summary Get the index of the last cell in a segment
- * @param count The number of cells on each axis
+ * @Summary Cumulate the entries of an array. e.g. [1, 1, 0.5] -> [0, 1, 2, 2.5]
  */
-function last_cell(count) = 
-    assert(count.x % 0.5 == 0)
-    assert(count.y % 0.5 == 0)
-    [floor(count.x - 0.25), floor(count.y - 0.25)];
+function cumulate(trace) =
+    assert(is_list(trace))
+    [for (i = 0, cumulated = 0; i <= len(trace); cumulated = cumulated + (i >= len(trace) ? 0 : assert(is_num(trace[i])) trace[i]), i = i + 1) cumulated];
 
 /**
  * @Summary Get the position of a particular cell on one axis (1D)
  * @param dimension The cell dimension on this axis
  * @param size The segment size on this axis
- * @param count The number of cells on this axis
+ * @param trace The array of cell sizes on this axis
  * @param padding_start The start padding on this axis
  * @param index The index of this cell on this axis (may be < 0 or >= size also)
  */
-function cell_axis_position(dimension, size, count, padding_start, index) =
+function cell_axis_position(dimension, size, trace, padding_start, index) =
     let(
-        half = index == count - 0.5,
-        // if we go outside the count, and we have a half cell, we need to go back half a cell
-        adj = index > count && (count % 1) == 0.5 ? 0.5 : 0
-    ) -size/2 + padding_start + (index + (half ? 0.25 : 0.5) - adj) * dimension;
+        cumulated = cumulate(trace),
+        start_pos_norm = 
+            index < 0 ? index : 
+            index >= len(trace) ? cumulated[len(trace)] + (index - len(trace)) :
+            cumulated[index],
+        own_size_norm = index < 0 || index >= len(trace) ? 1 : trace[index],
+        final = -size/2 + padding_start + (start_pos_norm + own_size_norm / 2) * dimension
+    ) final;
 
 /**
  * @Summary In the segment coordinate system, translate to the center of a particular cell
  * @param size The size of the segment
- * @param count The number of cells on each axis
+ * @param trace The cell sizes on each axis
  * @param padding The padding of the segment (for each edge)
  * @param index The index of the cell (can also be negative or >= count)
  */
-module navigate_cell(size, count, padding, index) {
+module navigate_cell(size, trace, padding, index) {
     translate([
-        cell_axis_position(BASEPLATE_DIMENSIONS.x, size.x, count.x, padding[_WEST], index.x), 
-        cell_axis_position(BASEPLATE_DIMENSIONS.y, size.y, count.y, padding[_SOUTH], index.y)
+        cell_axis_position(BASEPLATE_DIMENSIONS.x, size.x, trace.x, padding[_WEST], index.x), 
+        cell_axis_position(BASEPLATE_DIMENSIONS.y, size.y, trace.y, padding[_SOUTH], index.y)
     ]) children();
 }
 
 /**
  * @Summary In the segment coordinate system, translate to a corner of a particular cell
  * @param size The size of the segment
- * @param count The number of cells on each axis
+ * @param trace The cell sizes on each axis
  * @param padding The padding of the segment (for each edge)
  * @param index The index of the cell
  * @param diry The y direction of the corner (north or south)
  * @param dirx The x direction of the corner (east or west)
  */
-module navigate_corner(size, count, padding, index, diry, dirx) {
+module navigate_corner(size, trace, padding, index, diry, dirx) {
     assert(diry == _NORTH || diry == _SOUTH);
     assert(dirx == _EAST || dirx == _WEST);
-    half = [index.x == count.x - 0.5, index.y == count.y - 0.5];
-    navigate_cell(size, count, padding, index) translate([
-        dirx == _WEST ? -BASEPLATE_DIMENSIONS.x/(half.x?4:2) : BASEPLATE_DIMENSIONS.x/(half.x?4:2), 
-        diry == _SOUTH ? -BASEPLATE_DIMENSIONS.y/(half.y?4:2) : BASEPLATE_DIMENSIONS.y/(half.y?4:2)
+    navigate_cell(size, trace, padding, index) translate([
+        (dirx == _WEST ? -1 : 1) * BASEPLATE_DIMENSIONS.x * (index.x < 0 || index.x >= len(trace.x) ? 1 : trace.x[index.x]) / 2, 
+        (diry == _SOUTH ? -1 : 1) * BASEPLATE_DIMENSIONS.y * (index.y < 0 || index.y >= len(trace.y) ? 1 : trace.y[index.y]) / 2
     ]) children();
 }
 
 /**
  * @Summary In the segment coordinate system, translate to an edge of a particular cell
  * @param size The size of the segment
- * @param count The number of cells on each axis
+ * @param trace The cell sizes on each axis
  * @param padding The padding of the segment (for each edge)
  * @param index The index of the cell
  * @param dir The edge to navigate to (N/E/S/W)
  */
-module navigate_edge(size, count, padding, index, dir) {
-    half = [index.x == count.x - 0.5, index.y == count.y - 0.5];
-    navigate_cell(size, count, padding, index) translate([
-        (dir == _WEST ? -1 : dir == _EAST ? 1 : 0) * BASEPLATE_DIMENSIONS.x / (half.x ? 4 : 2),
-        (dir == _SOUTH ? -1 : dir == _NORTH ? 1 : 0) * BASEPLATE_DIMENSIONS.y / (half.y ? 4 : 2)
+module navigate_edge(size, trace, padding, index, dir) {
+    navigate_cell(size, trace, padding, index) translate([
+        (dir == _WEST ? -1 : dir == _EAST ? 1 : 0) * BASEPLATE_DIMENSIONS.x * (index.x < 0 || index.x >= len(trace.x) ? 1 : trace.x[index.x]) / 2,
+        (dir == _SOUTH ? -1 : dir == _NORTH ? 1 : 0) * BASEPLATE_DIMENSIONS.y * (index.y < 0 || index.y >= len(trace.y) ? 1 : trace.y[index.y]) / 2
     ]) children();
 }
 
@@ -559,37 +567,36 @@ module navigate_edge(size, count, padding, index, dir) {
  *          pass cuts out room from the plate, and the positive pass adds the 
             tabs.
  * @param positive true if this is the positive pass
- * @param count The number of cells on each axis
+ * @param trace The cell sizes on each axis
  * @param size The size of the segment (incl. padding)
  * @param padding The padding of the segment (for each edge)
  * @param connector The connector configuration (for each edge)
  */
-module segment_intersection_connectors(positive, count, size, padding, connector) {
-    last = last_cell(count);
+module segment_intersection_connectors(positive, trace, size, padding, connector) {
+    last = [len(trace.x) - 1, len(trace.y) - 1];
     // for the normal case, we iterate over the cells at the edge of the segment, and add two half-connectors for each cell.
     for (ix = [0:1:last.x]) {
         // north and south connectors
         skip_first = ix == 0 && connector[_WEST];
         skip_last = ix == last.x && connector[_EAST];
         if (connector[_SOUTH]) {
-            if (!skip_first) navigate_corner(size, count, padding, [ix, 0], _SOUTH, _WEST) mirror([1, 0]) rotate([0, 0, -90]) puzzle_female(positive);
-            if (!skip_last) navigate_corner(size, count, padding, [ix, 0], _SOUTH, _EAST) rotate([0, 0, -90]) puzzle_female(positive);
+            if (!skip_first) navigate_corner(size, trace, padding, [ix, 0], _SOUTH, _WEST) mirror([1, 0]) rotate([0, 0, -90]) puzzle_female(positive);
+            if (!skip_last) navigate_corner(size, trace, padding, [ix, 0], _SOUTH, _EAST) rotate([0, 0, -90]) puzzle_female(positive);
         }
         if (connector[_NORTH]) {
-            if (!skip_first) navigate_corner(size, count, padding, [ix, last.y], _NORTH, _WEST) rotate([0, 0, 90]) puzzle_male(positive);
-            if (!skip_last) navigate_corner(size, count, padding, [ix, last.y], _NORTH, _EAST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive);
+            if (!skip_first) navigate_corner(size, trace, padding, [ix, last.y], _NORTH, _WEST) rotate([0, 0, 90]) puzzle_male(positive);
+            if (!skip_last) navigate_corner(size, trace, padding, [ix, last.y], _NORTH, _EAST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive);
         }
     }
     for (iy = [0:1:last.y]) {
         // east and west connectors
-        halfy = iy == count.y - 0.5;
         if (connector[_WEST]) {
-            navigate_corner(size, count, padding, [0, iy], _SOUTH, _WEST) rotate([0, 0, 180]) puzzle_female(positive);
-            navigate_corner(size, count, padding, [0, iy], _NORTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
+            navigate_corner(size, trace, padding, [0, iy], _SOUTH, _WEST) rotate([0, 0, 180]) puzzle_female(positive);
+            navigate_corner(size, trace, padding, [0, iy], _NORTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
         }
         if (connector[_EAST]) {
-            navigate_corner(size, count, padding, [last.x, iy], _SOUTH, _EAST) mirror([0, 1]) puzzle_male(positive);
-            navigate_corner(size, count, padding, [last.x, iy], _NORTH, _EAST) puzzle_male(positive);
+            navigate_corner(size, trace, padding, [last.x, iy], _SOUTH, _EAST) mirror([0, 1]) puzzle_male(positive);
+            navigate_corner(size, trace, padding, [last.x, iy], _NORTH, _EAST) puzzle_male(positive);
         }
     }
     // At the corners of the segment, we now only have half-connectors. But if we have padding, there may be space for a full connector after all.
@@ -609,12 +616,12 @@ module segment_intersection_connectors(positive, count, size, padding, connector
         translate([bounds_min.x, -size.y/2 - 20]) square([bounds_max.x - bounds_min.x, size.y + 40]);
         union() {
             if (!connector[_WEST]) {
-                if (connector[_SOUTH]) navigate_corner(size, count, padding, [0, 0], _SOUTH, _WEST) rotate([0, 0, -90]) puzzle_female(positive);
-                if (connector[_NORTH]) navigate_corner(size, count, padding, [0, last.y], _NORTH, _WEST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive);
+                if (connector[_SOUTH]) navigate_corner(size, trace, padding, [0, 0], _SOUTH, _WEST) rotate([0, 0, -90]) puzzle_female(positive);
+                if (connector[_NORTH]) navigate_corner(size, trace, padding, [0, last.y], _NORTH, _WEST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive);
             }
             if (!connector[_EAST]) {
-                if (connector[_SOUTH]) navigate_corner(size, count, padding, [last.x, 0], _SOUTH, _EAST) mirror([1, 0]) rotate([0, 0, -90]) puzzle_female(positive);
-                if (connector[_NORTH]) navigate_corner(size, count, padding, [last.x, last.y], _NORTH, _EAST) rotate([0, 0, 90]) puzzle_male(positive);
+                if (connector[_SOUTH]) navigate_corner(size, trace, padding, [last.x, 0], _SOUTH, _EAST) mirror([1, 0]) rotate([0, 0, -90]) puzzle_female(positive);
+                if (connector[_NORTH]) navigate_corner(size, trace, padding, [last.x, last.y], _NORTH, _EAST) rotate([0, 0, 90]) puzzle_male(positive);
             }
         }
     }
@@ -622,12 +629,12 @@ module segment_intersection_connectors(positive, count, size, padding, connector
         translate([-size.x/2 - 20, bounds_min.y]) square([size.x + 40, bounds_max.y - bounds_min.y]);
         union() {
             if (!connector[_SOUTH]) {
-                if (connector[_WEST]) navigate_corner(size, count, padding, [0, 0], _SOUTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
-                if (connector[_EAST]) navigate_corner(size, count, padding, [last.x, 0], _SOUTH, _EAST) puzzle_male(positive);
+                if (connector[_WEST]) navigate_corner(size, trace, padding, [0, 0], _SOUTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
+                if (connector[_EAST]) navigate_corner(size, trace, padding, [last.x, 0], _SOUTH, _EAST) puzzle_male(positive);
             }
             if (!connector[_NORTH]) {
-                if (connector[_WEST]) navigate_corner(size, count, padding, [0, last.y], _NORTH, _WEST) rotate([0, 0, 180]) puzzle_female(positive);
-                if (connector[_EAST]) navigate_corner(size, count, padding, [last.x, last.y], _NORTH, _EAST) mirror([0, 1]) puzzle_male(positive);
+                if (connector[_WEST]) navigate_corner(size, trace, padding, [0, last.y], _NORTH, _WEST) rotate([0, 0, 180]) puzzle_female(positive);
+                if (connector[_EAST]) navigate_corner(size, trace, padding, [last.x, last.y], _NORTH, _EAST) mirror([0, 1]) puzzle_male(positive);
             }
         }
     }
@@ -640,22 +647,20 @@ module segment_intersection_connectors(positive, count, size, padding, connector
  *          pass cuts out room from the plate, and the positive pass adds the 
             tabs.
  * @param positive true if this is the positive pass
- * @param count The number of cells on each axis
+ * @param trace The cell sizes on each axis
  * @param size The size of the segment (incl. padding)
  * @param padding The padding of the segment (for each edge)
  * @param connector The connector configuration (for each edge)
  */
-module segment_edge_connectors(positive, count, size, padding, connector) {
-    last = last_cell(count);
+module segment_edge_connectors(positive, trace, size, padding, connector) {
+    last = [len(trace.x) - 1, len(trace.y) - 1];
     for (ix = [0:1:last.x]) {
-        half = ix == count.x - 0.5;
-        if (connector[_SOUTH]) navigate_edge(size, count, padding, [ix, 0], _SOUTH) edge_puzzle(positive, _edge_puzzle_direction_male[_SOUTH], half);
-        if (connector[_NORTH]) navigate_edge(size, count, padding, [ix, last.y], _NORTH) mirror([0, 1]) edge_puzzle(positive, _edge_puzzle_direction_male[_NORTH], half);
+        if (connector[_SOUTH]) navigate_edge(size, trace, padding, [ix, 0], _SOUTH) edge_puzzle(positive, _edge_puzzle_direction_male[_SOUTH], trace.x[ix]);
+        if (connector[_NORTH]) navigate_edge(size, trace, padding, [ix, last.y], _NORTH) mirror([0, 1]) edge_puzzle(positive, _edge_puzzle_direction_male[_NORTH], trace.x[ix]);
     }
     for (iy = [0:1:last.y]) {
-        half = iy == count.y - 0.5;
-        if (connector[_WEST]) navigate_edge(size, count, padding, [0, iy], _WEST) mirror([1, 0]) rotate([0, 0, 90]) edge_puzzle(positive, _edge_puzzle_direction_male[_WEST], half);
-        if (connector[_EAST]) navigate_edge(size, count, padding, [last.x, iy], _EAST) rotate([0, 0, 90]) edge_puzzle(positive, _edge_puzzle_direction_male[_EAST], half);
+        if (connector[_WEST]) navigate_edge(size, trace, padding, [0, iy], _WEST) mirror([1, 0]) rotate([0, 0, 90]) edge_puzzle(positive, _edge_puzzle_direction_male[_WEST], trace.y[iy]);
+        if (connector[_EAST]) navigate_edge(size, trace, padding, [last.x, iy], _EAST) rotate([0, 0, 90]) edge_puzzle(positive, _edge_puzzle_direction_male[_EAST], trace.y[iy]);
     }
 }
 
@@ -688,10 +693,10 @@ module round_bar_x_neg(size) {
  * @Details This function operates as if on the south edge: The male side extends into the south direction, the female goes into the north direction. For other orientations, rotate/mirror as needed
  * @param positive Whether this is the positive pass of the edge puzzle drawing
  * @param male Whether this side has a male connector
- * @param half Whether this edge is half size
+ * @param size Size of this cell edge in grid units
  */
-module edge_puzzle(positive, male, half) {
-    count_here = half ? max(1, floor(edge_puzzle_count/2)) : edge_puzzle_count;
+module edge_puzzle(positive, male, size) {
+    count_here = size < 1 ? max(1, floor(edge_puzzle_count/2)) : edge_puzzle_count;
     for (i = [0:1:count_here-1]) translate([(-(count_here-1)/2+i)*_edge_puzzle_stagger, 0]) {
         if (male) {
             if (positive) {
@@ -785,26 +790,26 @@ module chamfer_triangle() {
     polygon([[-extend, -extend], [1 + extend, -extend], [-extend, 1 + extend]]);
 }
 
-function compute_segment_size(count, padding) = [
-    BASEPLATE_DIMENSIONS.x * count.x + padding[_EAST] + padding[_WEST],
-    BASEPLATE_DIMENSIONS.y * count.y + padding[_NORTH] + padding[_SOUTH],
+function compute_segment_size(trace, padding) = [
+    BASEPLATE_DIMENSIONS.x * cumulate(trace.x)[len(trace.x)] + padding[_EAST] + padding[_WEST],
+    BASEPLATE_DIMENSIONS.y * cumulate(trace.y)[len(trace.y)] + padding[_NORTH] + padding[_SOUTH],
 ];
 
 /**
  * @Summary Model a segment, which is piece of the plate without breaks
- * @param count The number of cells in this segment, on each axis
+ * @param trace The cell sizes, in grid units, on each axis
  * @param padding The padding, for each side
  * @param connector Whether to add a connector, for each side
  * @param global_segment_index If applicable, the global index of this segment. This is used to emboss numbering
  * @param global_cell_index If applicable, the global cell index of this segment. This is used for vertical screws at plate corners
  * @param global_cell_count If applicable, the global cell count. This is used for vertical screws at plate corners
  */
-module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, false, false], global_segment_index=undef, global_cell_index=[0, 0], global_cell_count=[0, 0]) {
-    size = compute_segment_size(count, padding);
+module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, false, false], global_segment_index=undef, global_cell_index=[0, 0], global_cell_count=[0, 0]) {
+    size = compute_segment_size(trace, padding);
     _edge_puzzle_height_male = edge_puzzle_height_female - edge_puzzle_height_male_delta;
     // whether to cut the male edge puzzle connector to make room for the bin in the next cell. For really short connectors this is not necessary, but there's also no good reason to turn this off, so it's not user configurable at the moment
     _edge_puzzle_overlap = true;
-    last = last_cell(count);
+    last = [len(trace.x)-1, len(trace.y)-1];
     difference() {
         union() {
             intersection() {
@@ -812,7 +817,7 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                     // basic plate with rounded corners
                     segment_rectangle(size, connector, include_wall=false);
                     if (connector_intersection_puzzle) {
-                        segment_intersection_connectors(false, count, size, padding, connector);
+                        segment_intersection_connectors(false, trace, size, padding, connector);
                     }
                 }
                 union() {
@@ -824,13 +829,13 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                         if (padding[_WEST] > 0) translate([-size.x/2, -size.y/2]) cube([padding[_WEST], size.y, _total_height]);
                     }
                     // cells
-                    for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, count, padding, [ix, iy]) {
-                        half = [ix == count.x - 0.5, iy == count.y - 0.5];
+                    for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                        cell_size = [trace.x[ix], trace.y[iy]];
 
                         seq_index = (iy + global_cell_index.y) * ceil(global_cell_count.x) + (ix + global_cell_index.x);
                         cell_style = len(cell_override) <= seq_index ? _CELL_STYLE_NORMAL : cell_override[seq_index];
                         if (cell_style == _CELL_STYLE_NORMAL) {
-                            cell(half, [
+                            cell(cell_size, [
                                 connector[_NORTH] && iy == last.y,
                                 connector[_EAST] && ix == last.x,
                                 connector[_SOUTH] && iy == 0,
@@ -838,7 +843,7 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                             ]);
                         } else if (cell_style == _CELL_STYLE_EMPTY) {
                         } else if (cell_style == _CELL_STYLE_SOLID) {
-                            dim = [BASEPLATE_DIMENSIONS.x * (half.x ? 0.5 : 1), BASEPLATE_DIMENSIONS.y * (half.y ? 0.5 : 1)];
+                            dim = [BASEPLATE_DIMENSIONS.x * cell_size.x, BASEPLATE_DIMENSIONS.y * cell_size.y];
                             translate([-dim.x/2, -dim.y/2, -_extra_height]) cube([dim.x, dim.y, _total_height]);
                         } else {
                             assert(false, str("Unknown cell style: '", cell_style, "'"));
@@ -852,29 +857,29 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
                 segment_rectangle(size, connector, include_wall=false);
             }
             
-            if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, count, size, padding, connector);
+            if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, trace, size, padding, connector);
             if (connector_edge_puzzle) {
                 intersection() {
-                    translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+_edge_puzzle_height_male) segment_edge_connectors(true, count, size, padding, connector);
+                    translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+_edge_puzzle_height_male) segment_edge_connectors(true, trace, size, padding, connector);
                     if (_edge_puzzle_overlap) union() {
                         for (ix = [0:1:last.x]) {
-                            if (connector[_SOUTH]) navigate_cell(size, count, padding, [ix, -1]) cell([ix == count.x - 0.5, false], positive=false);
-                            if (connector[_NORTH]) navigate_cell(size, count, padding, [ix, last.y+1]) cell([ix == count.x - 0.5, false], positive=false);
+                            if (connector[_SOUTH]) navigate_cell(size, trace, padding, [ix, -1]) cell([trace.x[ix], 1], positive=false);
+                            if (connector[_NORTH]) navigate_cell(size, trace, padding, [ix, last.y+1]) cell([trace.x[ix], 1], positive=false);
                         }
                         for (iy = [0:1:last.y]) {
-                            if (connector[_WEST]) navigate_cell(size, count, padding, [-1, iy]) cell([false, iy == count.y - 0.5], positive=false);
-                            if (connector[_EAST]) navigate_cell(size, count, padding, [last.x+1, iy]) cell([false, iy == count.y - 0.5], positive=false);
+                            if (connector[_WEST]) navigate_cell(size, trace, padding, [-1, iy]) cell([1, trace.y[iy]], positive=false);
+                            if (connector[_EAST]) navigate_cell(size, trace, padding, [last.x+1, iy]) cell([1, trace.y[iy]], positive=false);
                         }
                     }
                 }
             }
         }
         if (connector_edge_puzzle) {
-            translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, count, size, padding, connector);
+            translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, trace, size, padding, connector);
         }
         if (numbering && global_segment_index != undef) {
-            squeeze = count.x <= 1;
-            navigate_cell(size, count, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x/(count.x == 0.5 ? 4 : 2)-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
+            squeeze = len(trace.x) <= 1;
+            navigate_cell(size, trace, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x*trace.x[0]/2-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
         }
         // extend a bit beyond the segment edges to make sure we cut any overhang
         extend = 10;
@@ -891,15 +896,15 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
         is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
         is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
         is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
-        for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, count, padding, [ix, iy], _SOUTH, _WEST) {
+        for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, trace, padding, [ix, iy], _SOUTH, _WEST) {
             segment_index = [ix, iy];
             if (is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset)) {
                 if (vertical_screw_plate_corners) vertical_screw();
             } else if (is_edge(segment_index + global_cell_index, global_cell_count)) {
                 if (vertical_screw_plate_edges) vertical_screw();
-            } else if (is_corner(segment_index, count, vertical_screw_segment_corner_inset)) {
+            } else if (is_corner(segment_index, [len(trace.x), len(trace.y)], vertical_screw_segment_corner_inset)) {
                 if (vertical_screw_segment_corners) vertical_screw();
-            } else if (is_edge(segment_index, count)) {
+            } else if (is_edge(segment_index, [len(trace.x), len(trace.y)])) {
                 if (vertical_screw_segment_edges) vertical_screw();
             } else {
                 if (vertical_screw_other) vertical_screw();
@@ -910,74 +915,83 @@ module segment(count=[1, 1], padding=[0, 0, 0, 0], connector=[false, false, fals
 
 /**
  * @Summary Calculate the minimum number of segments required to print this axis
- * @param axis_norm The number of cells in this axis, may have 0.5 added to indicate a half cell
+ * @param trace The cell sizes on this axis
  * @param bed_norm The bed size, normalized by cell size
  * @param start_padding_norm The extra padding at the start of the axis, normalized by cell size
  * @param start_padding_norm The extra padding at the end of the axis, normalized by cell size
  */
-function segments_per_axis(axis_norm, bed_norm, start_padding_norm, end_padding_norm) = 
-    axis_norm + start_padding_norm + end_padding_norm <= bed_norm ? 1 :
+function segments_per_axis(trace, bed_norm, start_padding_norm=0, end_padding_norm=0) = 
     let(
-        start_count = floor(bed_norm - start_padding_norm),
-        has_half = (axis_norm%1) != 0,
-        end_count = min(floor(bed_norm - end_padding_norm - (has_half ? 0.5 : 0)) + (has_half ? 0.5 : 0), axis_norm - start_count),
-        remaining_count = axis_norm - start_count - end_count
-    ) ceil(remaining_count / floor(bed_norm)) + 2;
+        index_assignments = [for (i = 0, segment_i = 0, segment_size = start_padding_norm; i < len(trace); begin_new = segment_size + trace[i] > bed_norm, segment_i = segment_i + (begin_new ? 1 : 0), segment_size = (begin_new ? 0 : segment_size) + trace[i], i = i + 1) [segment_i, segment_size]],
+        last = index_assignments[len(trace) - 1],
+        split_last = last[1] + trace[len(trace) - 1] + end_padding_norm > bed_norm
+    ) last[0] + (split_last ? 2 : 1);
 
 /**
  * @Summary Calculate an ideal axis plan.
  * @Details An ideal axis plan uses the fewest possible segments, and keeps segments roughly the same size.
- * @param axis_norm The number of cells in this axis, may have 0.5 added to indicate a half cell
+ * @param trace The cell sizes on this axis
  * @param bed_norm The bed size, normalized by cell size
  * @param start_padding_norm The extra padding at the start of the axis, normalized by cell size
  * @param start_padding_norm The extra padding at the end of the axis, normalized by cell size
  * @return A vector containing the number of cells in each planned segment
  */
-function plan_axis_ideal(axis_norm, bed_norm, start_padding_norm, end_padding_norm) =
+function plan_axis_ideal(trace, bed_norm, start_padding_norm=0, end_padding_norm=0) =
     let(
-        total_size = axis_norm + start_padding_norm + end_padding_norm,
-        segment_count = segments_per_axis(axis_norm, bed_norm, start_padding_norm, end_padding_norm),
-    ) [for (i = [0:segment_count - 1]) let(
-        ideal_start = total_size * i / segment_count,
-        ideal_end = total_size * (i + 1) / segment_count,
-        count = (i == segment_count - 1 ? axis_norm : round(ideal_end - start_padding_norm)) - round(ideal_start - start_padding_norm)
-    ) count];
+        cumulated = cumulate(trace),
+        total_size = cumulated[len(trace)] + start_padding_norm + end_padding_norm,
+        segment_count = segments_per_axis(trace, bed_norm, start_padding_norm, end_padding_norm),
+        avg_segment_size = total_size / segment_count,
+        // compute which segment each cell is assigned to
+        assignments = [for (i = [0:len(trace) - 1]) let (
+            center = cumulated[i] + trace[i] / 2 + start_padding_norm,
+            norm_ix = center / avg_segment_size
+        ) (norm_ix % 1) == 0 ? norm_ix - 1 : floor(norm_ix)]
+    ) [for (i = [0:segment_count - 1]) len(search(i, assignments, num_returns_per_match=0))];
 
 /**
  * @Summary Calculate an incremental axis plan.
  * @Details An incremental axis plan uses the maximum number of cells for each segment, and then sizes the final segment to contain the remaining cells.
- * @param axis_norm The number of cells in this axis, may have 0.5 added to indicate a half cell
+ * @param trace The cell sizes on this axis
  * @param bed_norm The bed size, normalized by cell size
  * @param start_padding_norm The extra padding at the start of the axis, normalized by cell size
  * @param start_padding_norm The extra padding at the end of the axis, normalized by cell size
  * @param force_first If set, forcibly change the size of the first segment
- * @return A vector in the format: [start, mid, end], where the start is the size of the first segment, end the size of the last segment, and mid the size of all other segments
+ * @return A vector in the format: [start, mid, end], where the start is the number of cells in the first segment, end the number of cells in the last segment, and mid the number of cells in all other segments
  */
-function plan_axis_incremental_vars(axis_norm, bed_norm, start_padding_norm, end_padding_norm, force_first=undef) = 
-    assert(axis_norm > 0)
+function plan_axis_incremental_vars(trace, bed_norm, start_padding_norm=0, end_padding_norm=0, force_first=undef) = 
     assert(bed_norm > 1)
     assert(start_padding_norm != undef)
     assert(end_padding_norm != undef)
-    axis_norm + start_padding_norm + end_padding_norm <= bed_norm ? [axis_norm, -1, -1] :
+    let (
+        cumulated = cumulate(trace)
+    )
+    cumulated[len(trace)] + start_padding_norm + end_padding_norm <= bed_norm ? [len(trace), -1, -1] :
     let(
+        // size of middle segments
+        mid = floor(bed_norm),
+
+        // for a given first segment size, compute the last segment size
+        compute_end = function (first) let(e = (len(trace) - first) % mid) e == 0 ? mid : e,
+
         // make a preliminary first segement
         first_p = force_first == undef ? floor(bed_norm - start_padding_norm) : force_first,
-        mid = floor(bed_norm),
         // make a preliminary end segment
-        end_p = (axis_norm - first_p - 0.25) % mid + 0.25,
+        end_p = compute_end(first_p),
         // is the end segment too small, i.e. a single half-cell, or too big?
-        shift = end_p < 1 || (end_p + end_padding_norm) > bed_norm,
+        shift = (end_p == 1 && trace[len(trace) - 1] < 1) || (cumulated[len(trace)] - cumulated[len(trace) - end_p] + end_padding_norm) > bed_norm,
         // if the end segment was too small, shrink the first segment a bit to give the end segment a better size
         first = shift ? first_p - 1 : first_p,
         // recalculate end segment size
-        end = (axis_norm - first - 0.25) % mid + 0.25
+        end = compute_end(first)
     ) [first, mid, end];
 
 /**
  * @Summary Transform a short plan from plan_axis_incremental_vars into a full plan as returned by plan_axis_ideal
  * @return A vector containing the number of cells in each planned segment
  */
-function vars_to_incremental(axis_norm, vars) = let(
+function vars_to_incremental(trace, vars) = let(
+        axis_norm = len(trace),
         first = vars[0],
         mid = vars[1],
         end = vars[2]
@@ -1014,25 +1028,24 @@ function least_index(vec, start=0) =
  * @param force_first If set, forcibly change the size of the first segment
  * @return A vector of exactly two axis plans, each a vector containing the number of cells in each planned segment
  */
-function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padding_norm=0) =
-    assert(axis_norm > 0)
+function plan_axis_staggered(trace, bed_norm, start_padding_norm=0, end_padding_norm=0) =
     assert(bed_norm > 1)
     assert(start_padding_norm != undef)
     assert(end_padding_norm != undef)
     let (
         // lambda: call plan_axis_incremental_vars with a specific shift
-        plan_vars = function(force_first) plan_axis_incremental_vars(axis_norm, bed_norm, start_padding_norm, end_padding_norm, force_first),
+        plan_vars = function(force_first) plan_axis_incremental_vars(trace, bed_norm, start_padding_norm, end_padding_norm, force_first),
         // lambda: calculate the number of segments for a given set of plan_axis_incremental_vars
-        plan_size = function(vars) vars[1] == -1 ? 1 : (axis_norm - vars[0] - vars[2]) / vars[1] + 2,
+        plan_size = function(vars) vars[1] == -1 ? 1 : (len(trace) - vars[0] - vars[2]) / vars[1] + 2,
         // make a simple plan for the first column
         plan_a1 = plan_vars(y_row_count_first[0] <= 0 ? undef : y_row_count_first[0]),
         // if the last segment in the column is small, give that segment one more cell
         plan_a2 = plan_a1[1] == -1 || plan_a1[2] >= 2 || plan_a1[0] <= 2 ? plan_a1 : plan_vars(plan_a1[0] - 1)
     )
     // manual override
-    y_row_count_first[1] > 0 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_vars(y_row_count_first[1]))] :
+    y_row_count_first[1] > 0 ? [vars_to_incremental(trace, plan_a1), vars_to_incremental(trace, plan_vars(y_row_count_first[1]))] :
     // shortcut: if we don't need to split at all, or we can't change the split, we don't need to worry about staggering
-    plan_a1[1] <= 1 ? [vars_to_incremental(axis_norm, plan_a1), vars_to_incremental(axis_norm, plan_a1)] : 
+    plan_a1[1] <= 1 ? [vars_to_incremental(trace, plan_a1), vars_to_incremental(trace, plan_a1)] : 
     let(
         // now, we determine the optimal shift of the second column.
         // first, plan with a minimum shift as a baseline.
@@ -1049,7 +1062,7 @@ function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padd
         ) score_plan_b(plan_a2, plan)],
         // pick the shift with the best score
         shift = least_index(plan_b_shift) + 1
-    ) [vars_to_incremental(axis_norm, plan_a2), vars_to_incremental(axis_norm, plan_vars(plan_a2[0] - shift))];
+    ) [vars_to_incremental(trace, plan_a2), vars_to_incremental(trace, plan_vars(plan_a2[0] - shift))];
 
 /**
  * @Summary Calculate the sum of a vector's elements, up to the until index (exclusive)
@@ -1057,14 +1070,34 @@ function plan_axis_staggered(axis_norm, bed_norm, start_padding_norm=0, end_padd
 function sum_sub_vector(vector, until) = 
     [for (i = 0, sum = 0; i <= until; sum = (i == until ? undef : sum + vector[i]), i = i + 1) sum][until];
 
+function slice(vector, start, length) = [for (i = [0:len(vector)]) each (i >= start && i < start + length) ? [vector[i]] : []];
+
+function compute_global_trace_fraction(integer_fraction, length_norm) = let(
+    scaled = floor(length_norm * integer_fraction),
+    whole = floor(scaled / integer_fraction),
+    part = scaled - whole * integer_fraction
+) [for (i = [0:whole-1]) 1, for (i = [0:part-1]) 1/integer_fraction];
+
+function compute_global_trace_dynamic(minimum_size_norm, length_norm) = let(
+    dyn = length_norm % 1,
+    expand_last = dyn < minimum_size_norm,
+    total = floor(length_norm) + (expand_last ? 0 : 1)
+) [for (i = [0:total-2]) 1, (length_norm % 1) + (expand_last ? 1 : 0)];
+
+function compute_global_trace(algorithm, integer_fraction, minimum_size_norm, length_norm) = 
+    algorithm == _FILLER_NONE ? [for (i = [0:floor(length_norm)-1]) 1] :
+    algorithm == _FILLER_INTEGER ? compute_global_trace_fraction(integer_fraction, length_norm) :
+    compute_global_trace_dynamic(minimum_size_norm, length_norm); 
+
 module main() {
-    plate_count = [
-        floor(plate_size.x / BASEPLATE_DIMENSIONS.x * (do_half.x ? 2 : 1)) / (do_half.x ? 2 : 1),
-        floor(plate_size.y / BASEPLATE_DIMENSIONS.y * (do_half.y ? 2 : 1)) / (do_half.y ? 2 : 1)
+    global_trace = [
+        compute_global_trace(filler_x, filler_fraction.x, filler_minimum_size.x/BASEPLATE_DIMENSIONS.x, plate_size.x/BASEPLATE_DIMENSIONS.x),
+        compute_global_trace(filler_y, filler_fraction.y, filler_minimum_size.y/BASEPLATE_DIMENSIONS.y, plate_size.y/BASEPLATE_DIMENSIONS.y)
     ];
+    global_trace_cumulated = [cumulate(global_trace.x), cumulate(global_trace.y)];
     plate_padding_sum = [
-        plate_size.x - plate_count.x * BASEPLATE_DIMENSIONS.x,
-        plate_size.y - plate_count.y * BASEPLATE_DIMENSIONS.y
+        plate_size.x - global_trace_cumulated.x[len(global_trace.x)] * BASEPLATE_DIMENSIONS.x,
+        plate_size.y - global_trace_cumulated.y[len(global_trace.y)] * BASEPLATE_DIMENSIONS.y
     ];
     plate_padding = [
         plate_padding_sum.y * (1 - alignment.y), // NORTH
@@ -1088,68 +1121,81 @@ module main() {
     ];
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
     plan_x = x_segment_algorithm == _SEGMENT_ALGORITHM_IDEAL ? 
-        plan_axis_ideal(axis_norm=plate_count.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x) :
-        vars_to_incremental(plate_count.x, plan_axis_incremental_vars(axis_norm=plate_count.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x, force_first=x_column_count_first == 0 ? undef : x_column_count_first));
+        plan_axis_ideal(global_trace.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x) :
+        vars_to_incremental(global_trace.x, plan_axis_incremental_vars(global_trace.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x, force_first=x_column_count_first == 0 ? undef : x_column_count_first));
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
-    plans_y = plan_axis_staggered(axis_norm=plate_count.y, bed_norm=bed_norm.y, start_padding_norm=start_padding_norm.y, end_padding_norm=end_padding_norm.y);
+    plans_y = plan_axis_staggered(global_trace.y, bed_norm=bed_norm.y, start_padding_norm=start_padding_norm.y, end_padding_norm=end_padding_norm.y);
+    plan_x_cumulate = cumulate(plan_x);
     for (segix = [0:len(plan_x) - 1]) {
         plan_y = plans_y[segix % 2];
+        plan_y_cumulate = cumulate(plan_y);
+        // Compute size of full plate model including segment gaps. We need to do this inside the loop because it changes depending on plan_y
+        all_size = [
+            plate_padding[_WEST] + plate_padding[_EAST] + global_trace_cumulated.x[len(global_trace.x)] * BASEPLATE_DIMENSIONS.x + (len(plan_x) - 1) * _segment_gap,
+            plate_padding[_SOUTH] + plate_padding[_NORTH] + global_trace_cumulated.y[len(global_trace.y)] * BASEPLATE_DIMENSIONS.y + (len(plan_y) - 1) * _segment_gap
+        ];
         for (segiy = [0:len(plan_y) - 1]) {
-            // Compute size of full plate model including segment gaps. We need to do this inside the loop because it changes depending on plan_y
-            all_size = [
-                plate_padding[_WEST] + plate_padding[_EAST] + sum_sub_vector(plan_x, len(plan_x)) * BASEPLATE_DIMENSIONS.x + (len(plan_x) - 1) * _segment_gap,
-                plate_padding[_SOUTH] + plate_padding[_NORTH] + sum_sub_vector(plan_y, len(plan_y)) * BASEPLATE_DIMENSIONS.y + (len(plan_y) - 1) * _segment_gap
-            ];
             segment_padding = [
                 segiy == len(plan_y) - 1 ? plate_padding[_NORTH] : 0,
                 segix == len(plan_x) - 1 ? plate_padding[_EAST] : 0,
                 segiy == 0 ? plate_padding[_SOUTH] : 0,
                 segix == 0 ? plate_padding[_WEST] : 0,
             ];
+            cells_cumulated_before = [
+                global_trace_cumulated.x[plan_x_cumulate[segix]],
+                global_trace_cumulated.y[plan_y_cumulate[segiy]]
+            ];
+            cells_cumulated_after = [
+                global_trace_cumulated.x[plan_x_cumulate[segix+1]],
+                global_trace_cumulated.y[plan_y_cumulate[segiy+1]]
+            ];
             translate([
-                -all_size.x/2 + (sum_sub_vector(plan_x, segix) + plan_x[segix]/2) * BASEPLATE_DIMENSIONS.x + (segix != 0 ? plate_padding[_WEST] : 0) + (segment_padding[_WEST] + segment_padding[_EAST]) / 2 + segix * _segment_gap,
-                -all_size.y/2 + (sum_sub_vector(plan_y, segiy) + plan_y[segiy]/2) * BASEPLATE_DIMENSIONS.y + (segiy != 0 ? plate_padding[_SOUTH] : 0) + (segment_padding[_NORTH] + segment_padding[_SOUTH]) / 2 + segiy * _segment_gap
-            ]) segment(count=[plan_x[segix], plan_y[segiy]], padding=segment_padding, connector=[
+                -all_size.x/2 + (cells_cumulated_after.x+cells_cumulated_before.x)/2 * BASEPLATE_DIMENSIONS.x + (segix != 0 ? plate_padding[_WEST] : 0) + (segment_padding[_WEST] + segment_padding[_EAST]) / 2 + segix * _segment_gap,
+                -all_size.y/2 + (cells_cumulated_after.y+cells_cumulated_before.y)/2 * BASEPLATE_DIMENSIONS.y + (segiy != 0 ? plate_padding[_SOUTH] : 0) + (segment_padding[_NORTH] + segment_padding[_SOUTH]) / 2 + segiy * _segment_gap
+            ]) segment(trace=[
+                slice(global_trace.x, plan_x_cumulate[segix], plan_x[segix]),
+                slice(global_trace.y, plan_y_cumulate[segiy], plan_y[segiy])
+            ], padding=segment_padding, connector=[
                 segiy != len(plan_y) - 1,
                 segix != len(plan_x) - 1,
                 segiy != 0,
                 segix != 0
             ], global_segment_index=segiy + ceil(segix / 2) * len(plans_y[0]) + floor(segix / 2) * len(plans_y[1]),
             global_cell_index=[sum_sub_vector(plan_x, segix), sum_sub_vector(plan_y, segiy)],
-            global_cell_count=plate_count);
+            global_cell_count=[len(global_trace.x), len(global_trace.y)]);
         }
     }
 }
 
 module test_pattern_padding() {
-    translate([30, 30]) segment(count = [1, 1], padding=[5, 0, 0, 0], connector = [false, true, false, true]);
-    translate([-30, 30]) segment(count = [1, 1], padding=[0, 5, 0, 0], connector = [true, false, true, false]);
-    translate([30, -30]) segment(count = [1, 1], padding=[0, 0, 5, 0], connector = [false, true, false, true]);
-    translate([-30, -30]) segment(count = [1, 1], padding=[0, 0, 0, 5], connector = [true, false, true, false]);
+    translate([30, 30]) segment(trace = [[1], [1]], padding=[5, 0, 0, 0], connector = [false, true, false, true]);
+    translate([-30, 30]) segment(trace = [[1], [1]], padding=[0, 5, 0, 0], connector = [true, false, true, false]);
+    translate([30, -30]) segment(trace = [[1], [1]], padding=[0, 0, 5, 0], connector = [false, true, false, true]);
+    translate([-30, -30]) segment(trace = [[1], [1]], padding=[0, 0, 0, 5], connector = [true, false, true, false]);
 }
 
 module test_pattern_half() {
-    segment(count = [1.5, 1.5], connector = [true, true, true, true]);
+    segment(trace = [[1, 0.5], [1, 0.5]], connector = [true, true, true, true]);
 }
 
 module test_pattern_numbering() {
-    translate([0, 30]) segment(count = [2, 1], connector = [true, true, true, true], global_segment_index = 11);
-    translate([30, -30]) segment(count = [0.5, 1], connector = [true, true, true, true], global_segment_index = 12);
-    translate([-30, -30]) segment(count = [1, 1], connector = [true, true, true, true], global_segment_index = 12);
+    translate([0, 30]) segment(trace = [[1, 1], [1]], connector = [true, true, true, true], global_segment_index = 11);
+    translate([30, -30]) segment(trace = [[0.5], [1]], connector = [true, true, true, true], global_segment_index = 12);
+    translate([-30, -30]) segment(trace = [[1], [1]], connector = [true, true, true, true], global_segment_index = 12);
 }
 
 module test_pattern_wall() {
-    segment(count = [2, 2], connector=[false, false, false, false], padding=[5, 5, 5, 5]);
+    segment(trace = [[1, 1], [1, 1]], connector=[false, false, false, false], padding=[5, 5, 5, 5]);
 }
 
 module test_pattern_click() {
-    count = [1, 3];
+    trace = [[1], [1, 1, 1]];
     // this should give similar wall strength as a neighbouring cell
     padding = [12, click1_wall_strength, click1_wall_strength, click1_wall_strength];
-    segment(count = count, connector=[false, false, false, false], padding=padding);
+    segment(trace = trace, connector=[false, false, false, false], padding=padding);
     format_small = function (d) d < 1 ? str(".", d*10) : (d % 1) == 0 ? str(d) : str(d * 10);
     txt = click1 ? str(format_small(click1_distance), "|", format_small(click1_steepness), "|", format_small(click1_height), "|", format_small(click1_strength), "|", format_small(click1_wall_strength)) : "off";
-    navigate_edge(size = compute_segment_size(count, padding), count = count, padding = padding, index = [0, 2], dir = _NORTH) 
+    navigate_edge(size = compute_segment_size(trace, padding), trace = trace, padding = padding, index = [0, 2], dir = _NORTH) 
         translate([0, padding[_NORTH]/2, _profile_height]) 
         linear_extrude(0.5) 
         scale([0.7, 1]) text(txt, halign="center", valign="center", size=8);
