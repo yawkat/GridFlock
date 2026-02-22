@@ -37,6 +37,7 @@ For inserting magnets, check out [the jig](#jig).
     - [Solid frame](#solid-frame)
   - [Click Latch](#click-latch)
     - [ClickGroove](#clickgroove)
+      - [Special Bins](#special-bins)
       - [Gap Length](#gap-length)
       - [Tab Length](#tab-length)
       - [Depth](#depth)
@@ -259,6 +260,13 @@ Like other click latch designs, a ClickGroove baseplate works with standard Grid
 
 <!-- openscad -o docs/images/click2.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D click=true -D click_style=1 -->
 <img src="docs/images/click2.png" alt="ClickGroove baseplate" />
+
+#### Special Bins
+
+To avoid creep and take full advantage of the ClickGroove system, your bins need a compatible groove. There is a template bin with this groove [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files). To add it to a bin, use the [Gridfinity Rebase tool](https://gridfinity.tools/rebase/). The tool can modify community-created bins, or those created with a generator like [Gridfinity Extended](https://docs.ostat.com/docs/openscad/gridfinity-extended).
+
+<!-- openscad -o docs/images/click2-bin.png --camera=0,0,3,80,0,20,50 clickgroove-base.scad -->
+<img src="docs/images/click2-bin.png" alt="ClickGroove bin template" />
 
 #### Gap Length
 
