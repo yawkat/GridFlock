@@ -35,7 +35,10 @@ magnet_bottom = 0.75; // 0.25
 /* [Click Latch (Experimental)] */
 
 // Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
-click1 = false;
+click = false;
+// Style of the click latch. The traditional arc style is more robust. The newer ClickGroove design can reduce creep when used with compatible bins, but still supports standard bins.
+click_style = 1; // [0:Arc, 1:ClickGroove]
+
 // Distance that the click latch extends into the bin area
 click1_distance = 1; // .1
 // Steepness of the click latch arc
@@ -50,6 +53,17 @@ click1_height = 3; // .1
 click1_strength = 1.6; // .1
 // Thickness of the non-bending wall behind the click latch. This wall provides stability and prevents the click latch from bending too far
 click1_wall_strength = 1; // .1
+
+// Length of the gap behind the click latch
+clickgroove_gap_length = 25;
+// Length of the tab that engages with the bin groove
+clickgroove_tab_length = 10;
+// Thickness of the click latch. This is measured from the bottom of the baseplate profile
+clickgroove_strength = 1.4; // .1
+// Thickness of the non-bending wall behind the click latch. This wall provides stability and prevents the click latch from bending too far
+clickgroove_wall_strength = 1; // .1
+// How far the tab protudes from the normal baseplate profile. Increasing this produces a more secure fit
+clickgroove_depth = 0.9; // .05
 
 /* [Intersection Puzzle Connector] */
 
@@ -136,7 +150,7 @@ vertical_screw_other = false;
 
 /* [Thumb Screw] */
 
-// Generate thumb screw cutouts compatible with 'Gridfinity Refined'. This requires solid_base or magnets with 
+// Generate thumb screw cutouts compatible with 'Gridfinity Refined'. This requires solid_base or magnets with solid frame style
 thumbscrews = false;
 // Thumb screw cutout diameter
 thumbscrew_diameter = 15.8; // 0.1
@@ -222,6 +236,9 @@ _FILLER_NONE = 0;
 _FILLER_INTEGER = 1;
 _FILLER_DYNAMIC = 2;
 
+_CLICK1 = 0;
+_CLICK2 = 1;
+
 /**
  * @Summary Run some code in each corner, with proper rotation, to add magnets
  * @Details From the children's perspective, we are centered at the corner, and 
@@ -244,6 +261,18 @@ module each_cell_corner(unit_size) {
         translate([size.x/2, -size.y/2]) rotate([0, 0, 90]) children();
         translate([-size.x/2, size.y/2]) rotate([0, 0, 270]) children();
         translate([size.x/2, size.y/2]) rotate([0, 0, 180]) children();
+    }
+}
+
+module each_cell_side(unit_size) {
+    size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
+    if (unit_size.x == 1) {
+        translate([0, -size.y/2, 0]) rotate([90, 0, -90]) children();
+        translate([0, size.y/2, 0]) rotate([90, 0, 90]) children();
+    }
+    if (unit_size.y == 1) {
+        translate([-size.x/2, 0, 0]) rotate([90, 0, 180]) children();
+        translate([size.x/2, 0, 0]) rotate([90, 0, 0]) children();
     }
 }
 
@@ -275,20 +304,22 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], positive=t
                         }
                     }
                 }
-                if (click1) translate([0, 0, _profile_height/2]) {
+                if (click && click_style == _CLICK1) translate([0, 0, _profile_height/2]) {
                     if (unit_size.x == 1) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
                     if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
                 }
+                if (click && click_style == _CLICK2) {
+                    each_cell_side(unit_size) translate([-2.85+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([2.85-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
+                }
             }
-            if (click1) {
-                if (unit_size.x == 1) {
-                    translate([0, -size.y/2, 0]) rotate([90, 0, -90]) do_sweep(_click1_sweep, convexity=4);
-                    translate([0, size.y/2, 0]) rotate([90, 0, 90]) do_sweep(_click1_sweep, convexity=4);
-                }
-                if (unit_size.y == 1) {
-                    translate([-size.x/2, 0, 0]) rotate([90, 0, 180]) do_sweep(_click1_sweep, convexity=4);
-                    translate([size.x/2, 0, 0]) rotate([90, 0, 0]) do_sweep(_click1_sweep, convexity=4);
-                }
+            if (click && click_style == _CLICK1) {
+                each_cell_side(unit_size) do_sweep(_click1_sweep, convexity=4);
+            }
+            if (click && click_style == _CLICK2) {
+                height = clickgroove_depth*2;
+                center_y = 0.8+1.8/2;
+                max_y = 2.5;
+                each_cell_side(unit_size) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([[-clickgroove_depth, 0], [0, min(height/2, max_y - center_y)], [0, -height/2]]);
             }
             if (magnets) {
                 translate([0, 0, -_magnet_level_height]) linear_extrude(height = _magnet_level_height) {
@@ -1193,8 +1224,11 @@ module test_pattern_click() {
     // this should give similar wall strength as a neighbouring cell
     padding = [12, click1_wall_strength, click1_wall_strength, click1_wall_strength];
     segment(trace = trace, connector=[false, false, false, false], padding=padding);
-    format_small = function (d) d < 1 ? str(".", d*10) : (d % 1) == 0 ? str(d) : str(d * 10);
-    txt = click1 ? str(format_small(click1_distance), "|", format_small(click1_steepness), "|", format_small(click1_height), "|", format_small(click1_strength), "|", format_small(click1_wall_strength)) : "off";
+    format_small = function (d) d < 1 ? str(".", len(str(d*10)) == 1 ? d*10 : d*100) : (d % 1) == 0 ? str(d) : str(d * 10);
+    txt = 
+        !click ? "off" :
+        click_style == _CLICK1 ? str(format_small(click1_distance), "|", format_small(click1_steepness), "|", format_small(click1_height), "|", format_small(click1_strength), "|", format_small(click1_wall_strength)) : 
+        str(format_small(clickgroove_depth), "|", format_small(clickgroove_gap_length), "|", format_small(clickgroove_strength), "|", format_small(clickgroove_wall_strength));
     navigate_edge(size = compute_segment_size(trace, padding), trace = trace, padding = padding, index = [0, 2], dir = _NORTH) 
         translate([0, padding[_NORTH]/2, _profile_height]) 
         linear_extrude(0.5) 

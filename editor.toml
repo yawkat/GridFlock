@@ -9,7 +9,7 @@ head-extra = '<script defer src="https://um.yawk.at/script.js" data-website-id="
 file = "gridflock.scad"
 description-extra-html = "<br>For detailed documentation, check the <a href='https://github.com/yawkat/GridFlock/blob/main/README.md'>README</a>.<br><b>Feb 16: I've turned off magnets by default because most people don't use them.</b> If you've saved a design with magnets, you will have to manually turn them on again below.<br>Feb 21: The do_half parameters have been superseded by the filler parameters."
 umami-track-render = []
-umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click1", "filler_x", "filler_y"]
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y"]
 
 [model.param-metadata.bed_size.presets]
 text = "Printer Presets"
@@ -169,31 +169,49 @@ display-condition = {js = "thumbscrews"}
 
 [model.tab-metadata."Click Latch (Experimental)"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#click-latch"
-control-boolean = "click1"
+control-boolean = "click"
 description-collapsible-html = "Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet"
-[model.param-metadata.click1]
+[model.param-metadata.click]
 display-condition = {fixed = false}
+[model.param-metadata.click_style]
+display-condition = {js = "click"}
 [model.param-metadata.click1_distance]
-display-condition = {js = "click1"}
+display-condition = {js = "click && click_style == 0"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#distance"
 [model.param-metadata.click1_steepness]
-display-condition = {js = "click1"}
+display-condition = {js = "click && click_style == 0"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#steepness"
 [model.param-metadata.click1_outer_length]
-display-condition = {js = "click1"}
+display-condition = {js = "click && click_style == 0"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#length"
 [model.param-metadata.click1_inner_length]
-display-condition = {js = "click1"}
+display-condition = {js = "click && click_style == 0"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#length"
 [model.param-metadata.click1_height]
-display-condition = {js = "click1"}
+display-condition = {js = "click && click_style == 0"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#height"
 [model.param-metadata.click1_strength]
-display-condition = {js = "click1"}
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch_strength"
+display-condition = {js = "click && click_style == 0"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch-strength-1"
 [model.param-metadata.click1_wall_strength]
-display-condition = {js = "click1"}
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch_wall_strength"
+display-condition = {js = "click && click_style == 0"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch-wall-strength-1"
+
+[model.param-metadata.clickgroove_gap_length]
+display-condition = {js = "click && click_style == 1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#gap-length"
+[model.param-metadata.clickgroove_tab_length]
+display-condition = {js = "click && click_style == 1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#tab-length"
+[model.param-metadata.clickgroove_strength]
+display-condition = {js = "click && click_style == 1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch-strength"
+[model.param-metadata.clickgroove_wall_strength]
+display-condition = {js = "click && click_style == 1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#latch-wall-strength"
+[model.param-metadata.clickgroove_depth]
+display-condition = {js = "click && click_style == 1"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#depth"
 
 [model.tab-metadata."Segmentation"]
 collapsed = true

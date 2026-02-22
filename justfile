@@ -91,15 +91,19 @@ clean-printables-zip:
 
 dir_magnet_insertion := "build/printables/Magnet Insertion Jig"
 dir_source := "build/printables/OpenSCAD Source"
+dir_clickgroove := "build/printables/ClickGroove Files"
 
 printables-zip: clean-printables-zip paths (intersection-fit-tester-one "0.0") (intersection-fit-tester-one "0.2") (intersection-fit-tester-one "0.4") (intersection-fit-tester-one "0.6") (intersection-fit-tester-one "0.8") (intersection-fit-tester-one "1.0")
     mkdir -p "{{dir_magnet_insertion}}"
-    openscad -o "{{dir_magnet_insertion}}"/jig.stl --export-format=binstl -D part='"jig"' -D show_cross_section=false mag_insert_jig.scad
-    openscad -o "{{dir_magnet_insertion}}"/pusher.stl --export-format=binstl -D part='"pusher"' mag_insert_jig.scad
+    openscad -o "{{dir_magnet_insertion}}"/jig.stl --hardwarnings --export-format=binstl -D part='"jig"' -D show_cross_section=false mag_insert_jig.scad
+    openscad -o "{{dir_magnet_insertion}}"/pusher.stl --hardwarnings --export-format=binstl -D part='"pusher"' mag_insert_jig.scad
+
+    mkdir -p "{{dir_clickgroove}}"
+    openscad -o "{{dir_clickgroove}}/ClickGroove Bin Template.stl" --hardwarnings --export-format=binstl clickgroove-base.scad
+
     mkdir -p "{{dir_source}}"
     cp -r paths gridflock.scad "{{dir_source}}"
     rm -f build/printables.zip
     cd build/printables && zip -r ../printables.zip .
-    
 
 all: paths test showcase docs printables-zip banners
