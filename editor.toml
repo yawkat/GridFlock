@@ -7,7 +7,14 @@ head-extra = '<script defer src="https://um.yawk.at/script.js" data-website-id="
 
 [[model]]
 file = "gridflock.scad"
-description-extra-html = "<br>For detailed documentation, check the <a href='https://github.com/yawkat/GridFlock/blob/main/README.md'>README</a>.<br><b>Feb 16: I've turned off magnets by default because most people don't use them.</b> If you've saved a design with magnets, you will have to manually turn them on again below.<br>Feb 21: The do_half parameters have been superseded by the filler parameters."
+description-extra-html = """
+<br>For detailed documentation, check the <a href='https://github.com/yawkat/GridFlock/blob/main/README.md'>README</a>.
+<br><b>Feb 16: I've turned off magnets by default because most people don't use them.</b> If you've saved a design with magnets, you will have to manually turn them on again below.
+<br>Feb 21: The do_half parameters have been superseded by the filler parameters.
+<span style="display: none" class="alert alert-warning" data-display-condition="click && click_style == 0">The click latch can deform over time, especially if made of PLA. Prefer other materials like PETG.</span>
+<span style="display: none" class="alert alert-warning" data-display-condition="click && click_style == 1">The click latch can deform over time if used with non-ClickGroove bins, especially if made of PLA. Prefer other materials like PETG if you plan to use such bins.</span>
+<span style="display: none" class="alert alert-warning" data-display-condition="connector_intersection_puzzle && connector_edge_puzzle">You have enabled both the edge and intersection puzzle connectors. While technically possible, it is better to focus on and tune one connector type.</span>
+"""
 umami-track-render = []
 umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y"]
 
