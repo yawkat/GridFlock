@@ -6,14 +6,6 @@ include <paths/puzzle.scad>
 plate_size = [371, 254];
 // The bed size of the printer, e.g. 250x220 for the Prusa Core One
 bed_size = [250, 220];
-// Thickness of the optional solid base
-solid_base = 0;
-// Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
-bottom_chamfer = [0, 0, 0, 0];
-// Chamfer at the top edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
-top_chamfer = [0, 0, 0, 0];
-// Padding alignment. The first value is the x direction (east/west), the second value the y direction (north/south). When padding is added to the build plate, this alignment is used to distribute it. A lower value will move the grid towards the west/south direction, adding more padding to the east/north
-alignment = [0.5, 0.5]; // [0:0.1:1]
 
 /* [Magnets] */
 
@@ -96,13 +88,16 @@ edge_puzzle_height_male_delta = 0.25; // 0.25
 
 /* [Filler] */
 
+// When there is not enough room for a full cell, fill the remaining space with a half-width or dynamic width cell (x direction)
 filler_x = 1; // [0:None, 1:Integer Fraction, 2:Dynamic]
-
+// When there is not enough room for a full cell, fill the remaining space with a half-width or dynamic width cell (y direction)
 filler_y = 1; // [0:None, 1:Integer Fraction, 2:Dynamic]
-
+// Integer fraction of the reduced size cells, e.g. a value of 2 produces half-width cells, a value of 3 produces third-width cells
 filler_fraction = [2, 2];
-
+// Minimum size of filler cells in dynamic mode. If a filler cell would be smaller than this value, it is added to the previous cell instead, producing a cell that is larger than 42mm
 filler_minimum_size = [15, 15];
+// Padding alignment. The first value is the x direction (east/west), the second value the y direction (north/south). When padding is added to the build plate, this alignment is used to distribute it. A lower value will move the grid towards the west/south direction, adding more padding to the east/north
+alignment = [0.5, 0.5]; // [0:0.1:1]
 
 /* [Numbering] */
 
@@ -116,6 +111,13 @@ number_size = 3; // 0.5
 number_font = "sans-serif";
 // When a segment is very narrow, use this reduced number size. Should rarely be relevant
 number_squeeze_size = 2; // 0.5
+
+/* [Chamfer] */
+
+// Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
+bottom_chamfer = [0, 0, 0, 0];
+// Chamfer at the top edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
+top_chamfer = [0, 0, 0, 0];
 
 /* [Plate wall] */
 
@@ -166,6 +168,8 @@ x_column_count_first = 0;
 
 /* [Advanced] */
 
+// Thickness of the optional solid base
+solid_base = 0;
 // Corner radius of the generated plate. The default of 4mm matches the corner radius of the gridfinity cell
 plate_corner_radius = 4;
 // Edge adjustment values (clockwise: north, east, south, west). These values are *added* to the plate size as padding, i.e. the final plate will end up different than configured in plate_size. This allows you to customize the padding to be asymmetrical. You can also use negative values to "cut" the plate edges if you want to squeeze an extra square out of limited space.

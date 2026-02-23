@@ -135,6 +135,9 @@ display-condition = {js = "numbering"}
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#squeezed-number"
 display-condition = {js = "numbering"}
 
+[model.tab-metadata."Chamfer"]
+collapsed = true
+
 [model.tab-metadata."Plate wall"]
 collapsed = true
 [model.param-metadata.plate_wall_thickness]
