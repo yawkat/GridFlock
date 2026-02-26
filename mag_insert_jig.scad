@@ -59,6 +59,7 @@ magnet_cutout_height = 2.25 * magnet_clearance;
 
 // Overwrite GridFlock's settings
 test_pattern = -1;
+magnets = true;
 connector_edge_puzzle = true;
 connector_intersection_puzzle = false;
 _edge_puzzle_direction_male = [false, false, false, false];
