@@ -323,7 +323,13 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], positive=t
                 height = clickgroove_depth*2;
                 center_y = 0.8+1.8/2;
                 max_y = 2.5;
-                each_cell_side(unit_size) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([[-clickgroove_depth, 0], [0, min(height/2, max_y - center_y)], [0, -height/2]]);
+                inset = 0.01;
+                each_cell_side(unit_size) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([
+                    [-clickgroove_depth, 0], // peak
+                    [0, min(height/2, max_y - center_y)], // top corner
+                    [0.01, 0], // slight dent to make sure the polygon is connected to the edge
+                    [0, -height/2] // bottom corner
+                ]);
             }
             if (magnets) {
                 translate([0, 0, -_magnet_level_height]) linear_extrude(height = _magnet_level_height) {
