@@ -243,6 +243,9 @@ _FILLER_DYNAMIC = 2;
 _CLICK1 = 0;
 _CLICK2 = 1;
 
+firstview = $vpr==[55,0,25];
+$vpr = firstview ? [0, 0, 0] : $vpr;
+
 /**
  * @Summary Run some code in each corner, with proper rotation, to add magnets
  * @Details From the children's perspective, we are centered at the corner, and 
