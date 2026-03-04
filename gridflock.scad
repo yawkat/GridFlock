@@ -115,9 +115,9 @@ number_squeeze_size = 2; // 0.5
 /* [Chamfer] */
 
 // Chamfer at the bottom edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
-bottom_chamfer = [0, 0, 0, 0];
+bottom_chamfer = [0, 0, 0, 0]; // 0.1
 // Chamfer at the top edge of the plate. Configurable for each edge individually (clockwise: north, east, south, west)
-top_chamfer = [0, 0, 0, 0];
+top_chamfer = [0, 0, 0, 0]; // 0.1
 
 /* [Plate wall] */
 
@@ -271,27 +271,31 @@ module each_cell_corner(unit_size) {
     }
 }
 
-module each_cell_side(unit_size) {
+module each_cell_side(unit_size, enabled = [true, true, true, true]) {
     size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
     if (unit_size.x == 1) {
-        translate([0, -size.y/2, 0]) rotate([90, 0, -90]) children();
-        translate([0, size.y/2, 0]) rotate([90, 0, 90]) children();
+        if (enabled[_SOUTH]) translate([0, -size.y/2, 0]) rotate([90, 0, -90]) children();
+        if (enabled[_NORTH]) translate([0, size.y/2, 0]) rotate([90, 0, 90]) children();
     }
     if (unit_size.y == 1) {
-        translate([-size.x/2, 0, 0]) rotate([90, 0, 180]) children();
-        translate([size.x/2, 0, 0]) rotate([90, 0, 0]) children();
+        if (enabled[_WEST]) translate([-size.x/2, 0, 0]) rotate([90, 0, 180]) children();
+        if (enabled[_EAST]) translate([size.x/2, 0, 0]) rotate([90, 0, 0]) children();
     }
 }
 
 /**
  * @Summary Draw a grid cell centered on 0,0
  * @param unit_size Size of the cell, in grid units, in each direction
+ * @param connector Is there a connector right next to this cell? (by direction)
+ * @param bottom_chamfer_takes How much of this cell a bottom chamfer will eat up (by direction)
  * @param positive This flag is false when this cell is used for cutting instead of additively. When cutting, we can simplify the geometry in ways that would waste filament for additive mode
  */
-module cell(unit_size=[1, 1], connector=[false, false, false, false], positive=true) {
+module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_chamfer_takes=[0, 0, 0, 0], positive=true) {
     size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
     difference() {
         union() {
+            enable_clickgroove = function(direction) bottom_chamfer_takes[direction] < clickgroove_wall_strength;
+
             difference() {
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
                 // baseplate_cutter accepts a height parameter. _profile_height is the actual profile part of this. The remainder is "dead" space below the profile that the bin does not use. That's where e.g. magnets are placed.
@@ -316,7 +320,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], positive=t
                     if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
                 }
                 if (click && click_style == _CLICK2) {
-                    each_cell_side(unit_size) translate([-2.85+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([2.85-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
+                    each_cell_side(unit_size, enabled=[for (dir = [0:3]) enable_clickgroove(dir)]) translate([-2.85+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([2.85-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
                 }
             }
             if (click && click_style == _CLICK1) {
@@ -327,7 +331,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], positive=t
                 center_y = 0.8+1.8/2;
                 max_y = 2.5;
                 inset = 0.01;
-                each_cell_side(unit_size) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([
+                each_cell_side(unit_size, enabled=[for (dir = [0:3]) enable_clickgroove(dir)]) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([
                     [-clickgroove_depth, 0], // peak
                     [0, min(height/2, max_y - center_y)], // top corner
                     [0.01, 0], // slight dent to make sure the polygon is connected to the edge
@@ -879,12 +883,12 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                         seq_index = (iy + global_cell_index.y) * ceil(global_cell_count.x) + (ix + global_cell_index.x);
                         cell_style = len(cell_override) <= seq_index ? _CELL_STYLE_NORMAL : cell_override[seq_index];
                         if (cell_style == _CELL_STYLE_NORMAL) {
-                            cell(cell_size, [
-                                connector[_NORTH] && iy == last.y,
-                                connector[_EAST] && ix == last.x,
-                                connector[_SOUTH] && iy == 0,
-                                connector[_WEST] && ix == 0
-                            ]);
+                            at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
+                            cell(
+                                cell_size, 
+                                connector=[for (direction = [0:3]) connector[direction] && at_edge[direction]], 
+                                bottom_chamfer_takes=[for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0]
+                            );
                         } else if (cell_style == _CELL_STYLE_EMPTY) {
                         } else if (cell_style == _CELL_STYLE_SOLID) {
                             dim = [BASEPLATE_DIMENSIONS.x * cell_size.x, BASEPLATE_DIMENSIONS.y * cell_size.y];

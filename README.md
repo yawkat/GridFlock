@@ -267,6 +267,12 @@ Like other click latch designs, a ClickGroove baseplate works with standard Grid
 <!-- openscad -o docs/images/click2.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D click=true -D click_style=1 -->
 <img src="docs/images/click2.png" alt="ClickGroove baseplate" />
 
+<!-- regression testing: -->
+<!-- openscad -o docs/images/click2-bottom-chamfer-1.png --camera=0,0,0,140,0,10,200 -D plate_size='[86, 86]' -D click=true -D click_style=1 -D bottom_chamfer='[0,0,0,0]' -->
+<!-- openscad -o docs/images/click2-bottom-chamfer-2.png --camera=0,0,0,140,0,10,200 -D plate_size='[86, 86]' -D click=true -D click_style=1 -D bottom_chamfer='[1,1,0,0]' -->
+<!-- openscad -o docs/images/click2-bottom-chamfer-3.png --camera=0,0,0,140,0,10,200 -D plate_size='[86, 86]' -D click=true -D click_style=1 -D bottom_chamfer='[2,2,1,1]' -->
+<!-- openscad -o docs/images/click2-bottom-chamfer-4.png --camera=0,0,0,140,0,10,200 -D plate_size='[86, 86]' -D click=true -D click_style=1 -D bottom_chamfer='[3,3,2,2]' -->
+
 #### Special Bins
 
 To avoid creep and take full advantage of the ClickGroove system, your bins need a compatible groove. There is a template bin with this groove [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files). To add it to a bin, use the [Gridfinity Rebase tool](https://gridfinity.tools/rebase/). The tool can modify community-created bins, or those created with a generator like [Gridfinity Extended](https://docs.ostat.com/docs/openscad/gridfinity-extended).
