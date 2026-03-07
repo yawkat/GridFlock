@@ -294,7 +294,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
     size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
     difference() {
         union() {
-            enable_clickgroove = function(direction) bottom_chamfer_takes[direction] < clickgroove_wall_strength;
+            enable_clickgroove = function(direction) positive && bottom_chamfer_takes[direction] < clickgroove_wall_strength && !(connector_edge_puzzle && connector[direction] && (direction == _SOUTH || direction == _WEST));
 
             difference() {
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);

@@ -135,6 +135,9 @@ This connector is a good alternative to the intersection puzzle if the plate has
 <!-- openscad -o docs/images/edge-puzzle.png --camera=0,30,0,40,0,25,300 -D plate_size='[420, 420]' -D connector_intersection_puzzle=false -D connector_edge_puzzle=true -D magnets=true -->
 <img src="docs/images/edge-puzzle.png" alt="Edge puzzle" />
 
+<!-- regression tests: -->
+<!-- openscad -o docs/images/edge-puzzle-clickgroove.png --camera=0,0,0,10,0,10,400 -D plate_size='[168, 168]' -D bed_size='[100,100]' -D connector_intersection_puzzle=false -D connector_edge_puzzle=true -D click=true -D click_style=1 -->
+
 #### Connector Height
 
 The edge puzzle connector height can be configured using the `edge_puzzle_height_female` property. The male connector is smaller than this option by `edge_puzzle_height_male_delta`.
