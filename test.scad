@@ -70,4 +70,7 @@ assert_eq([1.125], compute_global_trace(2, 2, 0.25, 1.125));
 assert_eq([1, 0.25], compute_global_trace(2, 2, 0.25, 1.25));
 assert_eq([1, 0.5], compute_global_trace(2, 2, 0.25, 1.5));
 
+assert_eq([1, 2, 3], quicksort([3, 1, 2]));
+assert_eq([1, 1, 3], quicksort([3, 1, 1]));
+
 cube([1, 1, 1]);

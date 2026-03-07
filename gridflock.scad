@@ -166,6 +166,23 @@ y_row_count_first = [0, 0];
 // If the 'incremental' x segment algorithm is chosen, this can be used to override the column count in the first segment.
 x_column_count_first = 0;
 
+/* [Stacked Print] */
+
+// Enable stacked printing of segments in a single print
+stacked_print = false;
+// Layer height for stacked prints. GridFlock will ensure that each segment is placed at a multiple of this layer height, for consistent printing.
+stacked_print_layer_height = 0.2; // 0.05
+// The minimum vertical gap between segments, in layers (as per stacked_print_layer_height). The actual gap will be somewhere between stacked_print_min_gap and 1+stacked_print_min_gap layers
+stacked_print_min_gap = 0.5; // 0.1
+// How many times each segment should appear in the stack. If you set this to 2 for example, you can assemble two full baseplates from the final result.
+stacked_print_duplicates = 1;
+// Flip the first (lowest) segment?
+stacked_print_flip_first = 0; // [0:Do not flip, 1:Flip east-west, 2:Flip north-south]
+// Flip the other segments?
+stacked_print_flip = 1; // [0:Do not flip, 1:Flip east-west, 2:Flip north-south]
+// In order to get better contact area for the stacked print, cut off this much from the top of the baseplate.
+stacked_print_slice = 0.3; // 0.05
+
 /* [Advanced] */
 
 // Thickness of the optional solid base
@@ -176,6 +193,8 @@ plate_corner_radius = 4;
 edge_adjust = [0, 0, 0, 0];
 // Override the content of individual cells. Each character in this string modifies one cell. The order goes from west to east, then south to north. A 'c' stands for a normal cell. An 's' stands for a solid plate without a cell cutout. An 'e' stands for an empty square
 cell_override = "";
+// Cut off a bit of the top of the baseplate. This can be used to increase contact area when printing the plate upside down.
+top_slice = 0; // 0.05
 // Test patterns
 test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall, 5:Click]
 
@@ -204,7 +223,9 @@ _magnet_extraction_dim_negative = [magnet_diameter/2, magnet_diameter/2];
 
 // actual height of a gridfinity profile with no extra clearance.
 // gridfinity rebuilt adds extra clearance at the bottom, we cut that out. This is the height for z>0
-_profile_height = 4.65;
+_profile_height_raw = 4.65;
+// for stacked prints, we cut off a sliver at the top to get a better contact area
+_profile_height = _profile_height_raw - top_slice - (stacked_print ? stacked_print_slice : 0);
 // height of the magnet level
 _magnet_level_height = (magnet_style != _MAGNET_GLUE_TOP ? magnet_top : 0) + (magnet_style != _MAGNET_GLUE_BOTTOM ? magnet_bottom : 0) + magnet_height;
 // total height of the non-bin levels (magnets, solid base). These are placed at z<0
@@ -242,6 +263,10 @@ _FILLER_DYNAMIC = 2;
 
 _CLICK1 = 0;
 _CLICK2 = 1;
+
+_FLIP_OFF = 0;
+_FLIP_X = 1;
+_FLIP_Y = 2;
 
 firstview = $vpr==[55,0,25];
 $vpr = firstview ? [0, 0, 0] : $vpr;
@@ -283,6 +308,24 @@ module each_cell_side(unit_size, enabled = [true, true, true, true]) {
     }
 }
 
+module cutter(size, below=0) {
+    cutter_height = _profile_height_raw + below + 0.001;
+    translate([0, 0, _profile_height_raw - cutter_height]) {
+        if (cutter_height >= BASEPLATE_HEIGHT) {
+            baseplate_cutter(size, cutter_height);
+        } else if (cutter_height >= _total_height) {
+            // we can simply move down a little bit, the additional cutting will only cut air anyway.
+            translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
+        } else {
+            // we need to manually remove the dead space from the cut
+            intersection() {
+                translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
+                translate([-size.x/2, -size.y/2]) cube([size.x, size.y, cutter_height]);
+            }
+        }
+    }
+}
+
 /**
  * @Summary Draw a grid cell centered on 0,0
  * @param unit_size Size of the cell, in grid units, in each direction
@@ -298,23 +341,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
 
             difference() {
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
-                // baseplate_cutter accepts a height parameter. _profile_height is the actual profile part of this. The remainder is "dead" space below the profile that the bin does not use. That's where e.g. magnets are placed.
-                // The problem is that the height parameter must be at least BASEPLATE_HEIGHT, which is slightly larger than _profile_height, so there is some "mandatory" dead space.
-                cutter_height = _profile_height + _extra_height - solid_base + 0.001; // the +0.001 fixes what appears to be some floating point issue
-                translate([0, 0, _profile_height - cutter_height]) {
-                    if (cutter_height >= BASEPLATE_HEIGHT) {
-                        baseplate_cutter(size, cutter_height);
-                    } else if (cutter_height >= _total_height) {
-                        // we can simply move down a little bit, the additional cutting will only cut air anyway.
-                        translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
-                    } else {
-                        // we need to manually remove the dead space from the cut
-                        intersection() {
-                            translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
-                            translate([-size.x/2, -size.y/2]) cube([size.x, size.y, cutter_height]);
-                        }
-                    }
-                }
+                cutter(size, below=_extra_height - solid_base);
                 if (click && click_style == _CLICK1) translate([0, 0, _profile_height/2]) {
                     if (unit_size.x == 1) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
                     if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
@@ -1113,6 +1140,20 @@ function plan_axis_staggered(trace, bed_norm, start_padding_norm=0, end_padding_
     ) [vars_to_incremental(trace, plan_a2), vars_to_incremental(trace, plan_vars(plan_a2[0] - shift))];
 
 /**
+ * @Summary Quicksort the input array
+ * @param lte The comparison function to use, equivalent to the "less than or equal" operator
+ */
+function quicksort(arr, lte=function (a, b) a <= b) = 
+    len(arr) <= 1 ? arr : let(
+        pivot = arr[len(arr)/2],
+        lte_cache = [for (x = arr) lte(x, pivot)],
+        lte_cache_inv = [for (x = arr) lte(pivot, x)],
+        lt = [for (i = [0:len(arr)-1]) if (lte_cache[i] && !lte_cache_inv[i]) arr[i]],
+        eq = [for (i = [0:len(arr)-1]) if (lte_cache[i] && lte_cache_inv[i]) arr[i]],
+        gt = [for (i = [0:len(arr)-1]) if (!lte_cache[i] && lte_cache_inv[i]) arr[i]],
+    ) /*echo(arr=arr, pivot=pivot, lt=lt, eq=eq, gt=gt, lte_cache=lte_cache, lte_cache_inv=lte_cache_inv)*/ concat(quicksort(lt, lte), eq, quicksort(gt, lte));
+
+/**
  * @Summary Calculate the sum of a vector's elements, up to the until index (exclusive)
  */
 function sum_sub_vector(vector, until) = 
@@ -1136,6 +1177,14 @@ function compute_global_trace(algorithm, integer_fraction, minimum_size_norm, le
     algorithm == _FILLER_NONE ? [for (i = [0:floor(length_norm)-1]) 1] :
     algorithm == _FILLER_INTEGER ? compute_global_trace_fraction(integer_fraction, length_norm) :
     compute_global_trace_dynamic(minimum_size_norm, length_norm); 
+
+module flip_segment_conditional(flip) {
+    if (flip.x || flip.y) {
+        translate([0, 0, _total_height/2]) rotate([flip.y ? 180 : 0, flip.x ? 180 : 0, 0]) translate([0, 0, -_total_height/2]) children();
+    } else {
+        children();
+    }
+}
 
 module main() {
     global_trace = [
@@ -1173,45 +1222,90 @@ module main() {
         vars_to_incremental(global_trace.x, plan_axis_incremental_vars(global_trace.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x, force_first=x_column_count_first == 0 ? undef : x_column_count_first));
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
     plans_y = plan_axis_staggered(global_trace.y, bed_norm=bed_norm.y, start_padding_norm=start_padding_norm.y, end_padding_norm=end_padding_norm.y);
+    plans_y_cumulate = [for (p = plans_y) cumulate(p)];
     plan_x_cumulate = cumulate(plan_x);
-    for (segix = [0:len(plan_x) - 1]) {
-        plan_y = plans_y[segix % 2];
-        plan_y_cumulate = cumulate(plan_y);
+
+    function get_plan_y(segix) = plans_y[segix % 2];
+    function get_plan_y_cumulate(segix) = plans_y_cumulate[segix % 2];
+    
+    /*
+     * @Summary Compute the padding for a particular segment.
+     */
+    function compute_segment_padding(segi) = [
+        segi.y == len(get_plan_y(segi.x)) - 1 ? plate_padding[_NORTH] : 0,
+        segi.x == len(plan_x) - 1 ? plate_padding[_EAST] : 0,
+        segi.y == 0 ? plate_padding[_SOUTH] : 0,
+        segi.x == 0 ? plate_padding[_WEST] : 0,
+    ];
+
+    /*
+     * @Summary Get the total sum of cells (in grid units) *before* the given segi. If there are fractional cells, this is a fractional value.
+     */
+    function get_cells_cumulated_before(plan_y_cumulate, segi) = [
+        global_trace_cumulated.x[plan_x_cumulate[segi.x]],
+        global_trace_cumulated.y[plan_y_cumulate[segi.y]]
+    ];
+    /*
+     * @Summary Compute the segement size in mm (excluding connectors).
+     */
+    function compute_segment_size(segi) = let(
+        cells_cumulated_before = get_cells_cumulated_before(get_plan_y_cumulate(segi.x), segi),
+        cells_cumulated_after = get_cells_cumulated_before(get_plan_y_cumulate(segi.x), [segi.x+1, segi.y+1]),
+        segment_padding = compute_segment_padding(segi)
+    ) [
+        segment_padding[_WEST] + segment_padding[_EAST] + (cells_cumulated_after.x - cells_cumulated_before.x) * BASEPLATE_DIMENSIONS.x,
+        segment_padding[_NORTH] + segment_padding[_SOUTH] + (cells_cumulated_after.y - cells_cumulated_before.y) * BASEPLATE_DIMENSIONS.y
+    ];
+    function compute_segment_area(segi) = let(s = compute_segment_size(segi)) s.x * s.y;
+
+    function compute_segment_position_standard(segi) = let(
         // Compute size of full plate model including segment gaps. We need to do this inside the loop because it changes depending on plan_y
         all_size = [
             plate_padding[_WEST] + plate_padding[_EAST] + global_trace_cumulated.x[len(global_trace.x)] * BASEPLATE_DIMENSIONS.x + (len(plan_x) - 1) * _segment_gap,
-            plate_padding[_SOUTH] + plate_padding[_NORTH] + global_trace_cumulated.y[len(global_trace.y)] * BASEPLATE_DIMENSIONS.y + (len(plan_y) - 1) * _segment_gap
+            plate_padding[_SOUTH] + plate_padding[_NORTH] + global_trace_cumulated.y[len(global_trace.y)] * BASEPLATE_DIMENSIONS.y + (len(get_plan_y(segi.x)) - 1) * _segment_gap
+        ],
+        cells_cumulated_before = get_cells_cumulated_before(get_plan_y_cumulate(segi.x), segi),
+        cells_cumulated_after = get_cells_cumulated_before(get_plan_y_cumulate(segi.x), [segi.x+1, segi.y+1]),
+        size = compute_segment_size(segi)
+    ) [
+        -all_size.x/2 + cells_cumulated_before.x * BASEPLATE_DIMENSIONS.x + (segi.x != 0 ? plate_padding[_WEST] : 0) + size.x/2 + segi.x * _segment_gap,
+        -all_size.y/2 + cells_cumulated_before.y * BASEPLATE_DIMENSIONS.y + (segi.y != 0 ? plate_padding[_SOUTH] : 0) + size.y/2 + segi.y * _segment_gap
+    ];
+
+    function compute_segment_position_stacked(zi, segi, flip) = let(
+        segment_padding = compute_segment_padding(segi),
+        size = compute_segment_size(segi),
+        total_height_ceil = ceil(_total_height / stacked_print_layer_height + stacked_print_min_gap) * stacked_print_layer_height
+    ) [
+        size.x/2 - segment_padding[flip.x ? _EAST : _WEST],
+        size.y/2 - segment_padding[flip.y ? _NORTH : _SOUTH],
+        total_height_ceil * zi
+    ];
+
+    all_segments = [for (segix = [0:len(plan_x) - 1]) for (segiy = [0:len(get_plan_y(segix)) - 1]) [segix, segiy]];
+    segments_in_order = stacked_print ? quicksort(all_segments, lte=function (a, b) compute_segment_area(a) >= compute_segment_area(b)) : all_segments;
+
+    duplicates = stacked_print ? stacked_print_duplicates : 1;
+    for (i = [0:len(segments_in_order)*duplicates-1]) {
+        segi = segments_in_order[floor(i / duplicates)];
+        plan_y = get_plan_y(segi.x);
+        plan_y_cumulate = get_plan_y_cumulate(segi.x);
+        flip = [
+            stacked_print && (i == 0 ? stacked_print_flip_first : stacked_print_flip) == _FLIP_X,
+            stacked_print && (i == 0 ? stacked_print_flip_first : stacked_print_flip) == _FLIP_Y
         ];
-        for (segiy = [0:len(plan_y) - 1]) {
-            segment_padding = [
-                segiy == len(plan_y) - 1 ? plate_padding[_NORTH] : 0,
-                segix == len(plan_x) - 1 ? plate_padding[_EAST] : 0,
-                segiy == 0 ? plate_padding[_SOUTH] : 0,
-                segix == 0 ? plate_padding[_WEST] : 0,
-            ];
-            cells_cumulated_before = [
-                global_trace_cumulated.x[plan_x_cumulate[segix]],
-                global_trace_cumulated.y[plan_y_cumulate[segiy]]
-            ];
-            cells_cumulated_after = [
-                global_trace_cumulated.x[plan_x_cumulate[segix+1]],
-                global_trace_cumulated.y[plan_y_cumulate[segiy+1]]
-            ];
-            translate([
-                -all_size.x/2 + (cells_cumulated_after.x+cells_cumulated_before.x)/2 * BASEPLATE_DIMENSIONS.x + (segix != 0 ? plate_padding[_WEST] : 0) + (segment_padding[_WEST] + segment_padding[_EAST]) / 2 + segix * _segment_gap,
-                -all_size.y/2 + (cells_cumulated_after.y+cells_cumulated_before.y)/2 * BASEPLATE_DIMENSIONS.y + (segiy != 0 ? plate_padding[_SOUTH] : 0) + (segment_padding[_NORTH] + segment_padding[_SOUTH]) / 2 + segiy * _segment_gap
-            ]) segment(trace=[
-                slice(global_trace.x, plan_x_cumulate[segix], plan_x[segix]),
-                slice(global_trace.y, plan_y_cumulate[segiy], plan_y[segiy])
-            ], padding=segment_padding, connector=[
-                segiy != len(plan_y) - 1,
-                segix != len(plan_x) - 1,
-                segiy != 0,
-                segix != 0
-            ], global_segment_index=segiy + ceil(segix / 2) * len(plans_y[0]) + floor(segix / 2) * len(plans_y[1]),
-            global_cell_index=[sum_sub_vector(plan_x, segix), sum_sub_vector(plan_y, segiy)],
-            global_cell_count=[len(global_trace.x), len(global_trace.y)]);
-        }
+        
+        translate(stacked_print ? compute_segment_position_stacked(i, segi, flip) : compute_segment_position_standard(segi)) flip_segment_conditional(flip) segment(trace=[
+            slice(global_trace.x, plan_x_cumulate[segi.x], plan_x[segi.x]),
+            slice(global_trace.y, plan_y_cumulate[segi.y], plan_y[segi.y])
+        ], padding=compute_segment_padding(segi), connector=[
+            segi.y != len(plan_y) - 1,
+            segi.x != len(plan_x) - 1,
+            segi.y != 0,
+            segi.x != 0
+        ], global_segment_index=segi.y + ceil(segi.x / 2) * len(plans_y[0]) + floor(segi.x / 2) * len(plans_y[1]),
+        global_cell_index=[sum_sub_vector(plan_x, segi.x), sum_sub_vector(plan_y, segi.y)],
+        global_cell_count=[len(global_trace.x), len(global_trace.y)]);
     }
 }
 
