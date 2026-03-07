@@ -232,6 +232,31 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 [model.param-metadata.x_column_count_first]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#vertical"
 
+[model.tab-metadata."Stacked Print"]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#stacked-print"
+control-boolean = "stacked_print"
+description-collapsible-html = "Place generated segments on top of each other for stacked printing. WARNING: Incompatible with many plate features, may require support structures. YMMV."
+[model.param-metadata.stacked_print]
+display-condition = {fixed = false}
+[model.param-metadata.stacked_print_layer_height]
+display-condition = {js = "stacked_print"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-gap"
+[model.param-metadata.stacked_print_min_gap]
+display-condition = {js = "stacked_print"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-gap"
+[model.param-metadata.stacked_print_duplicates]
+display-condition = {js = "stacked_print"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#duplicates"
+[model.param-metadata.stacked_print_flip_first]
+display-condition = {js = "stacked_print"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#flipping"
+[model.param-metadata.stacked_print_flip]
+display-condition = {js = "stacked_print"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#flipping"
+[model.param-metadata.stacked_print_slice]
+display-condition = {js = "stacked_print"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#top-slice-1"
+
 [model.tab-metadata."Advanced"]
 collapsed = true
 [model.param-metadata.plate_corner_radius]
@@ -240,4 +265,6 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#corner-radi
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#edge-adjustment"
 [model.param-metadata.cell_override]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#cell-override"
+[model.param-metadata.top_slice]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#top-slice"
 [model.param-metadata.test_pattern]

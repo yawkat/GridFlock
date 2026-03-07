@@ -82,6 +82,12 @@ For inserting magnets, check out [the jig](#jig).
     - [Shifting the grid](#shifting-the-grid)
     - [Adding empty space](#adding-empty-space)
     - [Squeezing in extra cells](#squeezing-in-extra-cells)
+  - [Top Slice](#top-slice)
+  - [Stacked Print](#stacked-print)
+    - [Segment Gap](#segment-gap)
+    - [Duplicates](#duplicates)
+    - [Flipping](#flipping)
+    - [Top Slice](#top-slice-1)
   - [Cell override](#cell-override)
     - [Normal cell](#normal-cell)
     - [Solid](#solid)
@@ -708,6 +714,57 @@ If your plate is slightly too large for where you want to put it, but you don't 
 <img src="docs/images/edge-adjustment-cut.png" alt="Cutting the grid using edge adjustment" />
 
 If you do this, you may of course have trouble fitting bins into the empty space.
+
+## Top Slice
+
+Using the `top_slice` option, you can cut off a bit of the top of the baseplate:
+
+<!-- openscad -o docs/images/top-slice.png --camera=0,0,0,40,0,20,130 -D plate_size='[84, 42]' -D top_slice=0.5 -->
+<img src="docs/images/top-slice.png" alt="Top Slice" />
+
+This can be useful when the baseplate is printed upside down, to increase contact area with the print bed.
+
+## Stacked Print
+
+In stacked print mode, segments are placed above each other with a slight gap in between. With the right print settings, this can allow you to print all the segments at once.
+
+> [!WARNING]
+> For very basic plates with no padding or filler cells stacked printing works well, but many features will result in overhangs that may be difficult to print.
+
+<!-- openscad -o docs/images/stacked-print.png --camera=42,42,0,40,0,20,200 -D plate_size='[84, 126]' -D bed_size='[100,100]' -D stacked_print=true -->
+<img src="docs/images/stacked-print.png" alt="Stacked print" />
+
+### Segment Gap
+
+Segments are placed on top of each other with a slight gap. The base of each segment is placed at a multiple of `stacked_print_layer_height`. The gap is at least `stacked_print_min_gap` high, but may be slightly larger to reach the next print layer.
+
+> [!NOTE]
+> The layer height has a big impact on print quality. A gap that is too small may make the segments inseperable, while a gap that is too large easily leads to print failures due to unsupported surfaces. A layer height of 0.2 with the default gap works in my testing.
+
+The default `stacked_print_min_gap` is 0.5. That means that the gap between segments will be 0.5 to 1.5 layers:
+
+<!-- openscad -o docs/images/stacked-print-gap-normal.png --camera=21,21,0,90,0,0,70 -D plate_size='[42, 42]' -D stacked_print=true -D stacked_print_duplicates=2 -->
+<img src="docs/images/stacked-print-gap-normal.png" alt="Slight gap between segments" />
+
+Here's an example with an exaggerated `stacked_print_min_gap` of 8 layers:
+
+<!-- openscad -o docs/images/stacked-print-gap-exaggerated.png --camera=21,21,0,90,0,0,70 -D plate_size='[42, 42]' -D stacked_print=true -D stacked_print_duplicates=2 -D stacked_print_min_gap=8 -->
+<img src="docs/images/stacked-print-gap-exaggerated.png" alt="Slight gap between segments" />
+
+### Duplicates
+
+If you need multiple of the same baseplate, you can use the `stacked_print_duplicates` option to repeat each segment multiple times:
+
+<!-- openscad -o docs/images/stacked-print-duplicate.png --camera=42,42,0,40,0,20,200 -D plate_size='[84, 126]' -D bed_size='[100,100]' -D stacked_print=true -D stacked_print_duplicates=3 -->
+<img src="docs/images/stacked-print-duplicate.png" alt="Duplicate stacked print" />
+
+### Flipping
+
+In order to reduce overhangs, segments are "flipped" and print on their heads. The bottom segment is not flipped by default. You can control this flipping behavior using the `stacked_print_flip` and `stacked_print_flip_first` options. Both options can be set to either not flip, flip east-to-west (rotate 180° around y axis), or flip north-to-south (rotate 180° around x axis).
+
+### Top Slice
+
+Enabling stacked print automatically _adds_ to the [top slice](#top-slice) to increase contact area. The value that is added is configurable through `stacked_print_slice`.
 
 ## Cell override
 

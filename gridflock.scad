@@ -170,14 +170,18 @@ x_column_count_first = 0;
 
 // Enable stacked printing of segments in a single print
 stacked_print = false;
-// Gap between stacked layers. This should be one layer height
-stacked_print_gap = 0.25;
+// Layer height for stacked prints. GridFlock will ensure that each segment is placed at a multiple of this layer height, for consistent printing.
+stacked_print_layer_height = 0.2; // 0.05
+// The minimum vertical gap between segments, in layers (as per stacked_print_layer_height). The actual gap will be somewhere between stacked_print_min_gap and 1+stacked_print_min_gap layers
+stacked_print_min_gap = 0.5; // 0.1
 // How many times each segment should appear in the stack. If you set this to 2 for example, you can assemble two full baseplates from the final result.
 stacked_print_duplicates = 1;
 // Flip the first (lowest) segment?
 stacked_print_flip_first = 0; // [0:Do not flip, 1:Flip east-west, 2:Flip north-south]
 // Flip the other segments?
 stacked_print_flip = 1; // [0:Do not flip, 1:Flip east-west, 2:Flip north-south]
+// In order to get better contact area for the stacked print, cut off this much from the top of the baseplate.
+stacked_print_slice = 0.3; // 0.05
 
 /* [Advanced] */
 
@@ -189,6 +193,8 @@ plate_corner_radius = 4;
 edge_adjust = [0, 0, 0, 0];
 // Override the content of individual cells. Each character in this string modifies one cell. The order goes from west to east, then south to north. A 'c' stands for a normal cell. An 's' stands for a solid plate without a cell cutout. An 'e' stands for an empty square
 cell_override = "";
+// Cut off a bit of the top of the baseplate. This can be used to increase contact area when printing the plate upside down.
+top_slice = 0; // 0.05
 // Test patterns
 test_pattern = 0; // [0:None, 1:Half, 2:Padding, 3:Numbering, 4:Wall, 5:Click]
 
@@ -217,7 +223,9 @@ _magnet_extraction_dim_negative = [magnet_diameter/2, magnet_diameter/2];
 
 // actual height of a gridfinity profile with no extra clearance.
 // gridfinity rebuilt adds extra clearance at the bottom, we cut that out. This is the height for z>0
-_profile_height = 4.65;
+_profile_height_raw = 4.65;
+// for stacked prints, we cut off a sliver at the top to get a better contact area
+_profile_height = _profile_height_raw - top_slice - (stacked_print ? stacked_print_slice : 0);
 // height of the magnet level
 _magnet_level_height = (magnet_style != _MAGNET_GLUE_TOP ? magnet_top : 0) + (magnet_style != _MAGNET_GLUE_BOTTOM ? magnet_bottom : 0) + magnet_height;
 // total height of the non-bin levels (magnets, solid base). These are placed at z<0
@@ -300,6 +308,24 @@ module each_cell_side(unit_size, enabled = [true, true, true, true]) {
     }
 }
 
+module cutter(size, below=0) {
+    cutter_height = _profile_height_raw + below + 0.001;
+    translate([0, 0, _profile_height_raw - cutter_height]) {
+        if (cutter_height >= BASEPLATE_HEIGHT) {
+            baseplate_cutter(size, cutter_height);
+        } else if (cutter_height >= _total_height) {
+            // we can simply move down a little bit, the additional cutting will only cut air anyway.
+            translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
+        } else {
+            // we need to manually remove the dead space from the cut
+            intersection() {
+                translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
+                translate([-size.x/2, -size.y/2]) cube([size.x, size.y, cutter_height]);
+            }
+        }
+    }
+}
+
 /**
  * @Summary Draw a grid cell centered on 0,0
  * @param unit_size Size of the cell, in grid units, in each direction
@@ -315,23 +341,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
 
             difference() {
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
-                // baseplate_cutter accepts a height parameter. _profile_height is the actual profile part of this. The remainder is "dead" space below the profile that the bin does not use. That's where e.g. magnets are placed.
-                // The problem is that the height parameter must be at least BASEPLATE_HEIGHT, which is slightly larger than _profile_height, so there is some "mandatory" dead space.
-                cutter_height = _profile_height + _extra_height - solid_base + 0.001; // the +0.001 fixes what appears to be some floating point issue
-                translate([0, 0, _profile_height - cutter_height]) {
-                    if (cutter_height >= BASEPLATE_HEIGHT) {
-                        baseplate_cutter(size, cutter_height);
-                    } else if (cutter_height >= _total_height) {
-                        // we can simply move down a little bit, the additional cutting will only cut air anyway.
-                        translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
-                    } else {
-                        // we need to manually remove the dead space from the cut
-                        intersection() {
-                            translate([0, 0, cutter_height - BASEPLATE_HEIGHT]) baseplate_cutter(size, BASEPLATE_HEIGHT);
-                            translate([-size.x/2, -size.y/2]) cube([size.x, size.y, cutter_height]);
-                        }
-                    }
-                }
+                cutter(size, below=_extra_height - solid_base);
                 if (click && click_style == _CLICK1) translate([0, 0, _profile_height/2]) {
                     if (unit_size.x == 1) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
                     if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
@@ -1264,11 +1274,12 @@ module main() {
 
     function compute_segment_position_stacked(zi, segi, flip) = let(
         segment_padding = compute_segment_padding(segi),
-        size = compute_segment_size(segi)
-    ) echo(flip, segment_padding) [
+        size = compute_segment_size(segi),
+        total_height_ceil = ceil(_total_height / stacked_print_layer_height + stacked_print_min_gap) * stacked_print_layer_height
+    ) [
         size.x/2 - segment_padding[flip.x ? _EAST : _WEST],
         size.y/2 - segment_padding[flip.y ? _NORTH : _SOUTH],
-        (_total_height + stacked_print_gap) * zi
+        total_height_ceil * zi
     ];
 
     all_segments = [for (segix = [0:len(plan_x) - 1]) for (segiy = [0:len(get_plan_y(segix)) - 1]) [segix, segiy]];
