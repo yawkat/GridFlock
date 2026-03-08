@@ -16,7 +16,7 @@ description-extra-html = """
 <span style="display: none" class="alert alert-warning" data-display-condition="connector_intersection_puzzle && connector_edge_puzzle">You have enabled both the edge and intersection puzzle connectors. While technically possible, it is better to focus on and tune one connector type.</span>
 """
 umami-track-render = []
-umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y"]
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y", "stacked_print"]
 
 [model.param-metadata.bed_size.presets]
 text = "Printer Presets"
