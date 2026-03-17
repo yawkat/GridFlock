@@ -196,7 +196,7 @@ Because the distance to the bin magnets is larger, press-fit magnets make for a 
 
 #### Jig
 
-GridFlock includes a magnet insertion jig that makes pressing in magnets easy and fast (thanks @nelsonjchen!). You can download the jig [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files).
+GridFlock includes a magnet insertion jig that makes pressing in magnets easy and fast (thanks @nelsonjchen!). You can download the jig [on printables](https://www.printables.com/model/1579487-gridflock-gridfinity-baseplate-generator/files). There is also [a remix available](https://www.printables.com/model/1640587-gridflock-magnet-jig-tweaked) that improves the jig further. Note that the remix is not generated as part of GridFlock, so future geometry changes may not be included (see [issue](https://github.com/yawkat/GridFlock/issues/39)).
 
 The jig prints in two pieces, a main frame and a pusher. The pusher needs to be printed with supports, and should have a high infill percentage.
 
