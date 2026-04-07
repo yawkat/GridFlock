@@ -23,6 +23,10 @@ magnet_height = 2.25; // 0.25
 magnet_top = 0.5; // 0.25
 // Floor below the magnet. Not structurally important, should be small to minimize filament use
 magnet_bottom = 0.75; // 0.25
+// Horizontal strength of the frame holding the magnet in place
+magnet_border = 2; // 0.5
+// Width of the magnet release slot
+magnet_release_width = 3; // 0.5
 
 /* [Click Latch (Experimental)] */
 
@@ -217,9 +221,9 @@ assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGN
 $fn=40;
 
 // dimensions of the magnet extraction slot
-_magnet_extraction_dim = [magnet_diameter/2, magnet_diameter/2+2];
+_magnet_extraction_dim = [magnet_release_width, magnet_diameter/2+2];
 // dimensions of the magnet extraction slot in negative mode. This is used to cut out slots out of the edge puzzle connector. This is a bit smaller to make the edge puzzle connector less frail
-_magnet_extraction_dim_negative = [magnet_diameter/2, magnet_diameter/2];
+_magnet_extraction_dim_negative = [magnet_release_width, magnet_diameter/2];
 
 // actual height of a gridfinity profile with no extra clearance.
 // gridfinity rebuilt adds extra clearance at the bottom, we cut that out. This is the height for z>0
@@ -243,7 +247,6 @@ _WEST = 3;
 
 // distance of each magnet from the side of the base plate grid cell
 _magnet_location = 0.25 + 2.15 + 0.8 + 4.8;
-_magnet_border = 2;
 
 // Distance between edge connector pieces, if multiple configured
 _edge_puzzle_stagger = edge_puzzle_dim.x + 2;
@@ -371,10 +374,10 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
                         // round corners
                         if (magnet_frame_style == _MAGNET_ROUND_CORNERS) {
                             each_cell_corner(unit_size) {
-                                total_bounds = _magnet_location + magnet_diameter/2 + _magnet_border;
+                                total_bounds = _magnet_location + magnet_diameter/2 + magnet_border;
                                 square([_magnet_location, total_bounds]);
                                 square([total_bounds, _magnet_location]);
-                                translate([_magnet_location, _magnet_location]) circle(r=magnet_diameter/2+_magnet_border);
+                                translate([_magnet_location, _magnet_location]) circle(r=magnet_diameter/2+magnet_border);
                             }
                         }
                         // if we have a female edge connector here, add a bar for stability (edge_puzzle_magnet_border)
@@ -405,16 +408,24 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
                     } else {
                         translate([0, 0, -_magnet_level_height + magnet_bottom]) linear_extrude(magnet_height) {
                             circle(d=magnet_diameter);
-                            if (magnet_style == _MAGNET_PRESS_FIT) rotate([0, 0, rot_slot]) translate([-magnet_diameter/2, 0]) square([magnet_diameter, magnet_diameter/2 + _magnet_border]);
+                            if (magnet_style == _MAGNET_PRESS_FIT) rotate([0, 0, rot_slot]) translate([-magnet_diameter/2, 0]) square([magnet_diameter, magnet_diameter/2 + magnet_border]);
                         }
                     }
+                    // magnet extraction slot
                     if (magnet_style == _MAGNET_PRESS_FIT) {
-                        // magnet extraction slot
-                        rotate([0, 0, rot_slot]) translate([0, 0, -_extra_height]) linear_extrude(_extra_height - _magnet_level_height + magnet_bottom + magnet_height) {
-                            extraction_dim = positive ? _magnet_extraction_dim : _magnet_extraction_dim_negative;
-                            translate([-extraction_dim.x/2, -extraction_dim.y]) square(extraction_dim);
-                            translate([0, -extraction_dim.y]) circle(extraction_dim.x/2);
-                            circle(extraction_dim.x/2);
+                        // horizontal slot
+                        extraction_dim = positive ? _magnet_extraction_dim : _magnet_extraction_dim_negative;
+                        if (extraction_dim.x > 0 && extraction_dim.y > 0) {
+                            rotate([0, 0, rot_slot]) translate([0, 0, -_extra_height]) linear_extrude(_extra_height - _magnet_level_height + magnet_bottom + magnet_height) {
+                                translate([-extraction_dim.x/2, -extraction_dim.y]) square(extraction_dim);
+                                translate([0, -extraction_dim.y]) circle(extraction_dim.x/2);
+                                circle(extraction_dim.x/2);
+                            }
+                        }
+                    } else {
+                        // vertical slot
+                        if (magnet_release_width > 0) {
+                            translate([0, 0, -_extra_height]) cylinder(d=magnet_release_width, h=_extra_height);
                         }
                     }
                 }

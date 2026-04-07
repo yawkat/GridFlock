@@ -32,8 +32,10 @@ For inserting magnets, check out [the jig](#jig).
     - [No Magnets](#no-magnets)
     - [Press-Fit magnets](#press-fit-magnets)
       - [Jig](#jig)
+    - [Release slot](#release-slot)
     - [Glued magnets](#glued-magnets)
     - [Rounded corner frame](#rounded-corner-frame)
+      - [Magnet border](#magnet-border)
     - [Solid frame](#solid-frame)
   - [Click Latch](#click-latch)
     - [ClickGroove](#clickgroove)
@@ -185,11 +187,6 @@ Press-fit magnets require no glue. The magnets are simply pressed into the pocke
 <!-- openscad -o docs/images/magnets-press-fit.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=true -->
 <img src="docs/images/magnets-press-fit.png" alt="Press-fit magnets" />
 
-On the bottom side of the plate there is a slot so you can push out any inserted magnet with a screwdriver.
-
-<!-- openscad -o docs/images/magnets-press-fit-below.png --camera=0,0,0,140,0,10,200 -D plate_size='[105, 63]' -D magnets=true -->
-<img src="docs/images/magnets-press-fit-below.png" alt="Press-fit magnets from below" />
-
 The layers above and below the magnet can be configured using the `magnet_top` and `magnet_bottom` options. 
 
 Because the distance to the bin magnets is larger, press-fit magnets make for a weaker connection than glue-in magnets.
@@ -230,6 +227,17 @@ Pull the pusher back into its original position to release the baseplate. You ca
 <!-- openscad -o docs/images/jig-main-below.png --camera=0,0,0,140,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
 <!-- openscad -o docs/images/jig-pusher-below.png --camera=0,0,0,140,0,10,200 -D part='"pusher"' mag_insert_jig.scad -->
 
+### Release slot
+
+On the bottom side of the plate there is a slot so you can push out any inserted magnet with a screwdriver.
+
+<!-- openscad -o docs/images/magnets-press-fit-below.png --camera=0,0,0,140,0,10,200 -D plate_size='[105, 63]' -D magnets=true -->
+<img src="docs/images/magnets-press-fit-below.png" alt="Press-fit magnets from below" />
+
+The width of this slot can be adjusted with the `magnet_release_width` setting. Setting this to 0 disables the release slot.
+
+For glue-in magnets, there is a hole instead of a slot. The diameter of the hole is also controlled by `magnet_release_width`.
+
 ### Glued magnets
 
 Magnets can also be glued in from the top:
@@ -251,6 +259,13 @@ By tuning the magnet size, this last magnet style can also be used to press-fit 
 By default, the vertical space for the magnet is not fully filled in to save filament. This is called the "rounded corner" frame style.
 
 <img src="docs/images/magnets-press-fit.png" alt="Press-fit magnets" />
+
+#### Magnet border
+
+To save filament, you can set a lower `magnet_border`:
+
+<!-- openscad -o docs/images/magnet-border-1.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=true -D magnet_border=1 -D magnet_style=1 -->
+<img src="docs/images/magnet-border-1.png" alt="Magnet border" />
 
 ### Solid frame
 
