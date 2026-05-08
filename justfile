@@ -91,7 +91,7 @@ docs:
             final = 1 if pos == len(data) else 0
             out.append(final)
             out.extend(struct.pack("<H", len(block)))
-            out.extend(struct.pack("<H", MAX_DEFLATE_BLOCK_SIZE - len(block)))
+            out.extend(struct.pack("<H", (~len(block)) & MAX_DEFLATE_BLOCK_SIZE))
             out.extend(block)
         out.extend(struct.pack(">I", zlib.adler32(data) & 0xFFFFFFFF))
         return bytes(out)
