@@ -27,6 +27,7 @@ docs:
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
     channels_by_color_type = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
+    # OpenSCAD intermittently writes this known broken placeholder PNG on render failure.
     render_failure_size = 7763
     max_render_retries = 5
 
@@ -77,6 +78,7 @@ docs:
         raise ValueError(f"Unsupported PNG filter type: {filter_type}")
 
     def zlib_store(data):
+        # Write deterministic store-only DEFLATE blocks, avoiding encoder heuristics.
         out = bytearray(b"\x78\x01")
         pos = 0
         while pos < len(data):
@@ -91,6 +93,7 @@ docs:
         return bytes(out)
 
     def canonicalize_png(path):
+        """Re-encode PNGs with filter type 0 to make equivalent pixels byte-identical."""
         with open(path, "rb") as f:
             data = f.read()
         if not data.startswith(png_signature):
