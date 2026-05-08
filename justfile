@@ -27,10 +27,11 @@ docs:
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
     # PNG color types: 0=grayscale, 2=RGB, 3=indexed, 4=grayscale+alpha, 6=RGBA.
-    channels_by_color_type = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
+    CHANNELS_BY_COLOR_TYPE = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
     # OpenSCAD intermittently writes a broken placeholder PNG of this exact size.
-    openscad_broken_placeholder_size = 7763
-    max_render_retries = 5
+    OPENSCAD_BROKEN_PLACEHOLDER_SIZE = 7763
+    MAX_RENDER_RETRIES = 5
+    MAX_DEFLATE_BLOCK_SIZE = 0xFFFF
 
     png_signature = b"\x89PNG\r\n\x1a\n"
 
@@ -44,7 +45,7 @@ docs:
 
     def bpp_for_filter(bit_depth, color_type):
         """Return bytes-per-pixel for PNG filter reconstruction."""
-        channels = channels_by_color_type[color_type]
+        channels = CHANNELS_BY_COLOR_TYPE[color_type]
         return max(1, (channels * bit_depth + 7) // 8)
 
     def undo_filter(filter_type, scanline, prev, bpp):
@@ -85,12 +86,12 @@ docs:
         out = bytearray(b"\x78\x01")
         pos = 0
         while pos < len(data):
-            block = data[pos : pos + 0xFFFF]
+            block = data[pos : pos + MAX_DEFLATE_BLOCK_SIZE]
             pos += len(block)
             final = 1 if pos == len(data) else 0
             out.append(final)
             out.extend(struct.pack("<H", len(block)))
-            out.extend(struct.pack("<H", 0xFFFF - len(block)))
+            out.extend(struct.pack("<H", MAX_DEFLATE_BLOCK_SIZE - len(block)))
             out.extend(block)
         out.extend(struct.pack(">I", zlib.adler32(data) & 0xFFFFFFFF))
         return bytes(out)
@@ -128,7 +129,7 @@ docs:
         width, height, bit_depth, color_type, compression, filter_method, interlace = ihdr_fields
         if compression != 0 or filter_method != 0 or interlace != 0:
             raise ValueError(f"Unsupported PNG encoding for {path}")
-        row_bytes = (width * channels_by_color_type[color_type] * bit_depth + 7) // 8
+        row_bytes = (width * CHANNELS_BY_COLOR_TYPE[color_type] * bit_depth + 7) // 8
         bpp = bpp_for_filter(bit_depth, color_type)
 
         raw = zlib.decompress(bytes(idat))
@@ -169,10 +170,10 @@ docs:
                 proc = await asyncio.create_subprocess_exec(*cmd)
                 await proc.wait()
                 assert proc.returncode == 0
-            if os.path.getsize(output) == openscad_broken_placeholder_size:
+            if os.path.getsize(output) == OPENSCAD_BROKEN_PLACEHOLDER_SIZE:
                 # OpenSCAD occasionally writes a fixed-size broken PNG; retry the render.
                 retries += 1
-                if retries >= max_render_retries:
+                if retries >= MAX_RENDER_RETRIES:
                     raise RuntimeError(f"Render failure for `{shlex.join(cmd)}` after {retries} retries")
                 print(f"Render failure for `{shlex.join(cmd)}`, retrying")
                 continue
