@@ -26,6 +26,7 @@ docs:
 
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
+    channels_by_color_type = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
     render_failure_size = 7763
     max_render_retries = 5
 
@@ -40,7 +41,7 @@ docs:
         )
 
     def bpp_for_filter(bit_depth, color_type):
-        channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[color_type]
+        channels = channels_by_color_type[color_type]
         return max(1, (channels * bit_depth + 7) // 8)
 
     def undo_filter(filter_type, scanline, prev, bpp):
@@ -120,7 +121,7 @@ docs:
         width, height, bit_depth, color_type, compression, filter_method, interlace = struct.unpack(">IIBBBBB", ihdr)
         if compression != 0 or filter_method != 0 or interlace != 0:
             raise ValueError(f"Unsupported PNG encoding for {path}")
-        row_bytes = (width * {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[color_type] * bit_depth + 7) // 8
+        row_bytes = (width * channels_by_color_type[color_type] * bit_depth + 7) // 8
         bpp = bpp_for_filter(bit_depth, color_type)
 
         raw = zlib.decompress(bytes(idat))
@@ -162,7 +163,7 @@ docs:
                 await proc.wait()
                 assert proc.returncode == 0
             if os.path.getsize(output) == render_failure_size:
-                # openscad occasionally writes a fixed-size broken PNG; retry the render.
+                # OpenSCAD occasionally writes a fixed-size broken PNG; retry the render.
                 retries += 1
                 if retries > max_render_retries:
                     raise RuntimeError(f"Render failure for `{shlex.join(cmd)}` after {max_render_retries} retries")
