@@ -29,7 +29,7 @@ docs:
     # PNG color types: 0=grayscale, 2=RGB, 3=indexed, 4=grayscale+alpha, 6=RGBA.
     channels_by_color_type = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
     # OpenSCAD intermittently writes a broken placeholder PNG of this exact size.
-    render_failure_size = 7763
+    openscad_broken_placeholder_size = 7763
     max_render_retries = 5
 
     png_signature = b"\x89PNG\r\n\x1a\n"
@@ -166,10 +166,10 @@ docs:
                 proc = await asyncio.create_subprocess_exec(*cmd)
                 await proc.wait()
                 assert proc.returncode == 0
-            if os.path.getsize(output) == render_failure_size:
+            if os.path.getsize(output) == openscad_broken_placeholder_size:
                 # OpenSCAD occasionally writes a fixed-size broken PNG; retry the render.
                 retries += 1
-                if retries > max_render_retries:
+                if retries >= max_render_retries:
                     raise RuntimeError(f"Render failure for `{shlex.join(cmd)}` after {max_render_retries} retries")
                 print(f"Render failure for `{shlex.join(cmd)}`, retrying")
                 continue
