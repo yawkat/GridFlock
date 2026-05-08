@@ -26,8 +26,9 @@ docs:
 
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
+    # PNG color types: 0=grayscale, 2=RGB, 3=indexed, 4=grayscale+alpha, 6=RGBA.
     channels_by_color_type = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
-    # OpenSCAD intermittently writes this known broken placeholder PNG on render failure.
+    # OpenSCAD intermittently writes a broken placeholder PNG of this exact size.
     render_failure_size = 7763
     max_render_retries = 5
 
