@@ -122,7 +122,8 @@ docs:
             elif typ == b"IEND":
                 break
 
-        width, height, bit_depth, color_type, compression, filter_method, interlace = struct.unpack(">IIBBBBB", ihdr)
+        ihdr_fields = struct.unpack(">IIBBBBB", ihdr)
+        width, height, bit_depth, color_type, compression, filter_method, interlace = ihdr_fields
         if compression != 0 or filter_method != 0 or interlace != 0:
             raise ValueError(f"Unsupported PNG encoding for {path}")
         row_bytes = (width * channels_by_color_type[color_type] * bit_depth + 7) // 8
@@ -170,7 +171,7 @@ docs:
                 # OpenSCAD occasionally writes a fixed-size broken PNG; retry the render.
                 retries += 1
                 if retries >= max_render_retries:
-                    raise RuntimeError(f"Render failure for `{shlex.join(cmd)}` after {max_render_retries} retries")
+                    raise RuntimeError(f"Render failure for `{shlex.join(cmd)}` after {retries} retries")
                 print(f"Render failure for `{shlex.join(cmd)}`, retrying")
                 continue
             canonicalize_png(output)
