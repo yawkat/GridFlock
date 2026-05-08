@@ -26,6 +26,8 @@ docs:
 
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
+    render_failure_size = 7763
+    max_render_retries = 5
 
     png_signature = b"\x89PNG\r\n\x1a\n"
 
@@ -152,14 +154,18 @@ docs:
             f.write(output)
 
     async def run(cmd, output):
+        retries = 0
         while True:
             async with concurrency:
                 print("Running: " + shlex.join(cmd))
                 proc = await asyncio.create_subprocess_exec(*cmd)
                 await proc.wait()
                 assert proc.returncode == 0
-            if os.path.getsize(output) == 7763:
-                # render failure, retry
+            if os.path.getsize(output) == render_failure_size:
+                # openscad occasionally writes a fixed-size broken PNG; retry the render.
+                retries += 1
+                if retries > max_render_retries:
+                    raise RuntimeError(f"Render failure for `{shlex.join(cmd)}` after {max_render_retries} retries")
                 print(f"Render failure for `{shlex.join(cmd)}`, retrying")
                 continue
             canonicalize_png(output)
