@@ -1,0 +1,43 @@
+name: Verify docs images
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  verify-docs-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just openscad
+          uv sync --frozen
+
+      - name: Regenerate docs images
+        run: |
+          just clean-docs docs
+
+      - name: Verify docs images are committed
+        run: |
+          if [ -n "$(git status --porcelain -- docs/images)" ]; then
+            echo "::error::docs/images is out of date. Run 'just docs' and commit the result."
+            git --no-pager status --short -- docs/images
+            git --no-pager diff -- docs/images
+            exit 1
+          fi
