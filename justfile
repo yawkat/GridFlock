@@ -43,6 +43,7 @@ docs:
         )
 
     def bpp_for_filter(bit_depth, color_type):
+        """Return bytes-per-pixel for PNG filter reconstruction."""
         channels = channels_by_color_type[color_type]
         return max(1, (channels * bit_depth + 7) // 8)
 
@@ -79,7 +80,8 @@ docs:
         raise ValueError(f"Unsupported PNG filter type: {filter_type}")
 
     def zlib_store(data):
-        # Write deterministic store-only DEFLATE blocks, avoiding encoder heuristics.
+        # Write deterministic store-only DEFLATE blocks to avoid version-dependent
+        # compression heuristics from normal DEFLATE encoders.
         out = bytearray(b"\x78\x01")
         pos = 0
         while pos < len(data):
