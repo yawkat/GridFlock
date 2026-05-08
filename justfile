@@ -152,17 +152,18 @@ docs:
             f.write(output)
 
     async def run(cmd, output):
-        async with concurrency:
-            print("Running: " + shlex.join(cmd))
-            proc = await asyncio.create_subprocess_exec(*cmd)
-            await proc.wait()
-            assert proc.returncode == 0
-        if os.path.getsize(output) == 7763:
-            # render failure, retry
-            print(f"Render failure for `{shlex.join(cmd)}`, retrying")
-            await run(cmd, output)
+        while True:
+            async with concurrency:
+                print("Running: " + shlex.join(cmd))
+                proc = await asyncio.create_subprocess_exec(*cmd)
+                await proc.wait()
+                assert proc.returncode == 0
+            if os.path.getsize(output) == 7763:
+                # render failure, retry
+                print(f"Render failure for `{shlex.join(cmd)}`, retrying")
+                continue
+            canonicalize_png(output)
             return
-        canonicalize_png(output)
     
     async def main():
         tasks = []
