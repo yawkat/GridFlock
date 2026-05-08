@@ -29,7 +29,7 @@ docs:
     # PNG color types: 0=grayscale, 2=RGB, 3=indexed, 4=grayscale+alpha, 6=RGBA.
     CHANNELS_BY_COLOR_TYPE = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
     # OpenSCAD intermittently writes a broken placeholder PNG of this exact size.
-    OPENSCAD_BROKEN_PLACEHOLDER_SIZE = 7763
+    OPENSCAD_BROKEN_PNG_SIZE_BYTES = 7763
     MAX_RENDER_RETRIES = 5
     MAX_DEFLATE_BLOCK_SIZE = 0xFFFF
 
@@ -91,7 +91,7 @@ docs:
             final = 1 if pos == len(data) else 0
             out.append(final)
             out.extend(struct.pack("<H", len(block)))
-            out.extend(struct.pack("<H", (~len(block)) & MAX_DEFLATE_BLOCK_SIZE))
+            out.extend(struct.pack("<H", (~len(block)) & 0xFFFF))
             out.extend(block)
         out.extend(struct.pack(">I", zlib.adler32(data) & 0xFFFFFFFF))
         return bytes(out)
@@ -170,7 +170,7 @@ docs:
                 proc = await asyncio.create_subprocess_exec(*cmd)
                 await proc.wait()
                 assert proc.returncode == 0
-            if os.path.getsize(output) == OPENSCAD_BROKEN_PLACEHOLDER_SIZE:
+            if os.path.getsize(output) == OPENSCAD_BROKEN_PNG_SIZE_BYTES:
                 # OpenSCAD occasionally writes a fixed-size broken PNG; retry the render.
                 retries += 1
                 if retries >= MAX_RENDER_RETRIES:
