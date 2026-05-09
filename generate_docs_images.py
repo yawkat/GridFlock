@@ -170,8 +170,8 @@ async def run(cmd, output):
 async def main():
     tasks = []
     written = []
-    with open("README.md") as readme:
-        for line in readme:
+    with open("README.md") as f:
+        for line in f:
             match = OPENSCAD_PATTERN.match(line)
             if match:
                 cmd = [
@@ -189,6 +189,8 @@ async def main():
                         break
                 else:
                     cmd.append("gridflock.scad")
+                if "-o" not in cmd:
+                    raise ValueError(f"OpenSCAD command in README.md is missing -o output argument: {match.group(1)}")
                 output = cmd[cmd.index("-o") + 1]
                 tasks.append(run(cmd, output))
                 written.append(output)
