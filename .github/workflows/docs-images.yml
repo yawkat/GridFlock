@@ -28,8 +28,17 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y just openscad
+          sudo apt-get install -y just libfuse2 libegl1 libxcb-cursor0 libglu1-mesa
           uv sync --frozen
+          python -m pip install --user scadm==0.6.3
+          tmpdir="$(mktemp -d)"
+          printf '{"dependencies":[]}\n' > "${tmpdir}/scadm.json"
+          (
+            cd "${tmpdir}"
+            ~/.local/bin/scadm install --openscad-only
+          )
+          echo "${tmpdir}/bin/openscad" >> "$GITHUB_PATH"
+          "${tmpdir}/bin/openscad/openscad" --version
 
       - name: Regenerate docs images
         run: |
