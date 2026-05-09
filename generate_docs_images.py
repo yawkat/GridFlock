@@ -191,7 +191,12 @@ async def main():
                     cmd.append("gridflock.scad")
                 if "-o" not in cmd:
                     raise ValueError(f"OpenSCAD command in README.md is missing -o output argument: {match.group(1)}")
-                output = cmd[cmd.index("-o") + 1]
+                output_index = cmd.index("-o") + 1
+                if output_index >= len(cmd):
+                    raise ValueError(
+                        f"OpenSCAD command in README.md has -o without an output path: {match.group(1)}"
+                    )
+                output = cmd[output_index]
                 tasks.append(run(cmd, output))
                 written.append(output)
     for f in os.listdir("docs/images"):
