@@ -170,6 +170,28 @@ y_row_count_first = [0, 0];
 // If the 'incremental' x segment algorithm is chosen, this can be used to override the column count in the first segment.
 x_column_count_first = 0;
 
+/* [Lightweight] */
+
+lightweight = false;
+
+lightweight_corner_bottom = 8;
+
+lightweight_corner_top = 7;
+
+lightweight_corner_slot = 9;
+
+lightweight_minimum = 0;
+
+lightweight_base = 1;
+
+lightweight_bridge = 1.4;
+
+lightweight_edge = false;
+
+lightweight_padding = true;
+
+lightweight_intersection = true;
+
 /* [Stacked Print] */
 
 // Enable stacked printing of segments in a single print
@@ -329,6 +351,30 @@ module cutter(size, below=0) {
     }
 }
 
+module lightweight_cutter(length, at_connector, width=_baseplate_max_strength) {
+    if (length > lightweight_minimum && !at_connector && width > 0) {
+        cut_length_bot = length - lightweight_corner_bottom * 2;
+        cut_length_top = length - lightweight_corner_top * 2;
+        slot_width = (width - lightweight_bridge) * 2;
+        cut_length_slot = length - lightweight_corner_slot * 2 - slot_width;
+        height = _total_height - lightweight_base;
+        if (cut_length_top > 0 && height > 0) {
+            rotate([90, 0, 180]) linear_extrude(10) {
+                // trapezoid
+                if (cut_length_bot > 0) polygon([[-cut_length_bot/2, lightweight_base], [cut_length_bot/2, lightweight_base], [cut_length_top/2, _total_height], [cut_length_top/2, _total_height + 1], [-cut_length_top/2, _total_height + 1], [-cut_length_top/2, _total_height]]);
+                // triangle
+                else polygon([[0, -_total_height*cut_length_bot/(cut_length_top-cut_length_bot)], [cut_length_top/2, _total_height], [cut_length_top/2, _total_height + 1], [-cut_length_top/2, _total_height + 1], [-cut_length_top/2, _total_height]]);
+            }
+        }
+        if (cut_length_slot > 0 && slot_width > 0) {
+            linear_extrude(lightweight_base) hull() {
+                translate([-cut_length_slot/2, 0]) circle(d=slot_width);
+                translate([cut_length_slot/2, 0]) circle(d=slot_width);
+            };
+        }
+    }
+}
+
 /**
  * @Summary Draw a grid cell centered on 0,0
  * @param unit_size Size of the cell, in grid units, in each direction
@@ -343,7 +389,23 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
             enable_clickgroove = function(direction) positive && bottom_chamfer_takes[direction] < clickgroove_wall_strength && !(connector_edge_puzzle && connector[direction] && (direction == _SOUTH || direction == _WEST));
 
             difference() {
-                translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
+                if (lightweight && lightweight_intersection && positive) {
+                    translate([0, 0, -_extra_height]) union() {
+                        // rounded square, leave corners empty
+                        linear_extrude(_total_height) hull() {
+                            r = 4;
+                            translate([-size.x/2+r, -size.y/2+r]) if (connector[_SOUTH] || connector[_WEST]) square([r*2,r*2], center=true); else circle(r);
+                            translate([-size.x/2+r, size.y/2-r]) if (connector[_NORTH] || connector[_WEST]) square([r*2,r*2], center=true); else circle(r);
+                            translate([size.x/2-r, -size.y/2+r]) if (connector[_SOUTH] || connector[_EAST]) square([r*2,r*2], center=true); else circle(r);
+                            translate([size.x/2-r, size.y/2-r]) if (connector[_NORTH] || connector[_EAST]) square([r*2,r*2], center=true); else circle(r);
+                        };
+                        // thin base plate
+                        translate([-size.x/2, -size.y/2]) cube([size.x, size.y, lightweight_base]);
+                    }
+                } else {
+                    // square
+                    translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
+                }
                 cutter(size, below=_extra_height - solid_base);
                 if (click && click_style == _CLICK1) translate([0, 0, _profile_height/2]) {
                     if (unit_size.x == 1) cube([click1_outer_length, size.y-click1_wall_strength*2, _profile_height], center=true);
@@ -351,6 +413,12 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
                 }
                 if (click && click_style == _CLICK2) {
                     each_cell_side(unit_size, enabled=[for (dir = [0:3]) enable_clickgroove(dir)]) translate([-2.85+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([2.85-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
+                }
+                if (lightweight && positive) {
+                    translate([-size.x/2, 0]) rotate([0, 0, -90]) lightweight_cutter(size.y, at_connector=connector[_WEST]);
+                    translate([size.x/2, 0]) rotate([0, 0, 90]) lightweight_cutter(size.y, at_connector=connector[_EAST]);
+                    translate([0, -size.y/2]) rotate([0, 0, 0]) lightweight_cutter(size.x, at_connector=connector[_SOUTH]);
+                    translate([0, size.y/2]) rotate([0, 0, 180]) lightweight_cutter(size.x, at_connector=connector[_NORTH]);
                 }
             }
             if (click && click_style == _CLICK1) {
@@ -881,6 +949,23 @@ function compute_segment_size(trace, padding) = [
     BASEPLATE_DIMENSIONS.y * cumulate(trace.y)[len(trace.y)] + padding[_NORTH] + padding[_SOUTH],
 ];
 
+module segment_padding(length, paddings, direction, direction_start, direction_end) {
+    padding = paddings[direction];
+    if (padding > 0) {
+        difference() {
+            translate([-length/2, 0]) cube([length, padding, _total_height]);
+            if (lightweight && lightweight_padding) {
+                ps = paddings[direction_start];
+                pe = paddings[direction_end];
+                translate([(ps - pe) / 2, 0]) lightweight_cutter(length - ps - pe, false, padding);
+                if (lightweight_intersection) {
+                    translate([-length/2, 0, lightweight_base]) cube([length, padding, _total_height]);
+                }
+            }
+        };
+    }
+}
+
 /**
  * @Summary Model a segment, which is piece of the plate without breaks
  * @param trace The cell sizes, in grid units, on each axis
@@ -909,10 +994,10 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                 union() {
                     // padding cubes
                     translate([0, 0, -_extra_height]) {
-                        if (padding[_NORTH] > 0) translate([-size.x/2, size.y/2-padding[_NORTH]]) cube([size.x, padding[_NORTH], _total_height]);
-                        if (padding[_EAST] > 0) translate([size.x/2-padding[_EAST], -size.y/2]) cube([padding[_EAST], size.y, _total_height]);
-                        if (padding[_SOUTH] > 0) translate([-size.x/2, -size.y/2]) cube([size.x, padding[_SOUTH], _total_height]);
-                        if (padding[_WEST] > 0) translate([-size.x/2, -size.y/2]) cube([padding[_WEST], size.y, _total_height]);
+                        translate([0, size.y/2-padding[_NORTH]]) segment_padding(size.x, padding, _NORTH, _WEST, _EAST);
+                        translate([size.x/2-padding[_EAST], 0]) rotate([0, 0, -90]) segment_padding(size.y, padding, _EAST, _NORTH, _SOUTH);
+                        translate([0, -size.y/2+padding[_SOUTH]]) rotate([0, 0, 180]) segment_padding(size.x, padding, _SOUTH, _EAST, _WEST);
+                        translate([-size.x/2+padding[_WEST], 0]) rotate([0, 0, 90]) segment_padding(size.y, padding, _WEST, _SOUTH, _NORTH);
                     }
                     // cells
                     for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
