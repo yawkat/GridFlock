@@ -33,7 +33,7 @@ jobs:
 
       - name: Regenerate docs images
         run: |
-          just clean-docs docs
+          just clean-docs paths docs
 
       - name: Verify docs images are committed
         run: |
