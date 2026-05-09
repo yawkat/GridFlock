@@ -184,17 +184,17 @@ async def main():
                     *shlex.split(match.group(1)),
                 ]
                 # use gridflock.scad if no other file specified
-                for c in cmd:
-                    if ".scad" in c:
+                for arg in cmd:
+                    if ".scad" in arg:
                         break
                 else:
                     cmd.append("gridflock.scad")
                 try:
                     output_index = cmd.index("-o") + 1
-                except ValueError as e:
+                except ValueError as original_error:
                     raise ValueError(
                         f"OpenSCAD command in README.md is missing -o output argument: {match.group(1)}"
-                    ) from e
+                    ) from original_error
                 if output_index >= len(cmd):
                     raise ValueError(
                         f"OpenSCAD command in README.md has -o without an output path: {match.group(1)}"
