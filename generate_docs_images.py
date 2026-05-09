@@ -170,27 +170,28 @@ async def run(cmd, output):
 async def main():
     tasks = []
     written = []
-    for line in open("README.md"):
-        match = OPENSCAD_PATTERN.match(line)
-        if match:
-            cmd = [
-                "openscad",
-                "--hardwarnings",
-                "--projection=ortho",
-                "--colorscheme=Starnight",
-                "--render",
-                "--imgsize=2500,1000",
-                *shlex.split(match.group(1)),
-            ]
-            # use gridflock.scad if no other file specified
-            for c in cmd:
-                if ".scad" in c:
-                    break
-            else:
-                cmd.append("gridflock.scad")
-            output = cmd[cmd.index("-o") + 1]
-            tasks.append(run(cmd, output))
-            written.append(output)
+    with open("README.md") as readme:
+        for line in readme:
+            match = OPENSCAD_PATTERN.match(line)
+            if match:
+                cmd = [
+                    "openscad",
+                    "--hardwarnings",
+                    "--projection=ortho",
+                    "--colorscheme=Starnight",
+                    "--render",
+                    "--imgsize=2500,1000",
+                    *shlex.split(match.group(1)),
+                ]
+                # use gridflock.scad if no other file specified
+                for c in cmd:
+                    if ".scad" in c:
+                        break
+                else:
+                    cmd.append("gridflock.scad")
+                output = cmd[cmd.index("-o") + 1]
+                tasks.append(run(cmd, output))
+                written.append(output)
     for f in os.listdir("docs/images"):
         if os.path.join("docs/images", f) not in written:
             os.unlink(os.path.join("docs/images", f))
