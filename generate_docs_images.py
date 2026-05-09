@@ -189,9 +189,12 @@ async def main():
                         break
                 else:
                     cmd.append("gridflock.scad")
-                if "-o" not in cmd:
-                    raise ValueError(f"OpenSCAD command in README.md is missing -o output argument: {match.group(1)}")
-                output_index = cmd.index("-o") + 1
+                try:
+                    output_index = cmd.index("-o") + 1
+                except ValueError as e:
+                    raise ValueError(
+                        f"OpenSCAD command in README.md is missing -o output argument: {match.group(1)}"
+                    ) from e
                 if output_index >= len(cmd):
                     raise ValueError(
                         f"OpenSCAD command in README.md has -o without an output path: {match.group(1)}"
