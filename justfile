@@ -15,7 +15,7 @@ banner name:
 banners: (banner "banner-generator-yawkat") (banner "banner-generator-perplexinglabs")
 
 docs:
-    LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=softpipe uv run generate_docs_images.py
+    uv run generate_docs_images.py
 
 overlay-png name:
     inkscape -w 1600 -h 1200 docs/{{name}}.svg -o build/{{name}}.png
