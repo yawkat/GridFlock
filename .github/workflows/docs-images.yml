@@ -1,0 +1,59 @@
+name: Verify docs images
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  verify-docs-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just libfuse2 libegl1 libxcb-cursor0 libglu1-mesa
+          uv sync --frozen
+          python -m pip install --user scadm==0.6.3
+          tmpdir="$(mktemp -d)"
+          printf '{"dependencies":[]}\n' > "${tmpdir}/scadm.json"
+          (
+            cd "${tmpdir}"
+            ~/.local/bin/scadm install --openscad-only
+          )
+          echo "${tmpdir}/bin/openscad" >> "$GITHUB_PATH"
+          "${tmpdir}/bin/openscad/openscad" --version
+
+      - name: Regenerate docs images
+        run: |
+          just clean-docs paths docs
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          GALLIUM_DRIVER: softpipe
+
+      - name: Commit regenerated docs images
+        run: |
+          if [ -n "$(git status --porcelain -- docs/images)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/images/
+            git commit -m "Regenerate docs images [skip ci]"
+            git push
+          fi
