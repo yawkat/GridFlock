@@ -172,24 +172,25 @@ x_column_count_first = 0;
 
 /* [Lightweight] */
 
+// Cut out material from the underside of each cell to reduce filament use and print time. The top profile is fully preserved so bins seat correctly.
 lightweight = false;
-
+// Margin (mm) left solid at each end of a cutout at the base level. Increase to leave more material at the corners.
 lightweight_corner_bottom = 8;
-
+// Margin (mm) left solid at each end of a cutout at the top. Typically slightly less than lightweight_corner_bottom because the cutout is trapezoidal.
 lightweight_corner_top = 7;
-
+// Margin (mm) left solid at each end of the oval slot opening cut through the base floor.
 lightweight_corner_slot = 9;
-
+// Skip the lightweight cutout on any cell side whose length (mm) is at or below this value. Set to 0 to cut all sides.
 lightweight_minimum = 0;
-
+// Thickness (mm) of the thin floor left at the bottom of each cutout. This acts as a bridging surface during printing.
 lightweight_base = 1;
-
+// Width (mm) of the thin vertical strip that connects the top profile to the base floor. Wider bridge = narrower cutout opening.
 lightweight_bridge = 1.4;
-
+// Also apply the lightweight cutout to the outer edges of the plate.
 lightweight_edge = false;
-
+// Also apply the lightweight cutout to padding strips (the non-cell border around the grid).
 lightweight_padding = true;
-
+// Round cell corners so only the corner pillars carry material. When false, the full rectangular footprint of each cell is kept and only the side walls are cut.
 lightweight_intersection = true;
 
 /* [Stacked Print] */

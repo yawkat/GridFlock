@@ -239,6 +239,37 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 [model.param-metadata.x_column_count_first]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#vertical"
 
+[model.tab-metadata."Lightweight"]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#lightweight"
+control-boolean = "lightweight"
+description-html = "Cut out material from the underside of each cell to reduce filament use and print time."
+[model.param-metadata.lightweight]
+display-condition = {fixed = false}
+[model.param-metadata.lightweight_base]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#base-thickness"
+[model.param-metadata.lightweight_corner_bottom]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#corner-size-bottom"
+[model.param-metadata.lightweight_corner_top]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#corner-size-top"
+[model.param-metadata.lightweight_corner_slot]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#corner-slot-size"
+[model.param-metadata.lightweight_bridge]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bridge-width"
+[model.param-metadata.lightweight_minimum]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#minimum-length"
+[model.param-metadata.lightweight_padding]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#lightweighted-padding"
+[model.param-metadata.lightweight_intersection]
+display-condition = {js = "lightweight"}
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#intersection-rounding"
+
 [model.tab-metadata."Stacked Print"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#stacked-print"
 control-boolean = "stacked_print"
