@@ -85,6 +85,15 @@ For inserting magnets, check out [the jig](#jig).
     - [Adding empty space](#adding-empty-space)
     - [Squeezing in extra cells](#squeezing-in-extra-cells)
   - [Top Slice](#top-slice)
+  - [Lightweight](#lightweight)
+    - [Base Thickness](#base-thickness)
+    - [Corner Size (Bottom)](#corner-size-bottom)
+    - [Corner Size (Top)](#corner-size-top)
+    - [Corner Slot Size](#corner-slot-size)
+    - [Bridge Width](#bridge-width)
+    - [Minimum Length](#minimum-length)
+    - [Lightweighted Padding](#lightweighted-padding)
+    - [Intersection Rounding](#intersection-rounding)
   - [Stacked Print](#stacked-print)
     - [Segment Gap](#segment-gap)
     - [Duplicates](#duplicates)
@@ -738,6 +747,95 @@ Using the `top_slice` option, you can cut off a bit of the top of the baseplate:
 <img src="docs/images/top-slice.png" alt="Top Slice" />
 
 This can be useful when the baseplate is printed upside down, to increase contact area with the print bed.
+
+## Lightweight
+
+The `lightweight` option cuts out material from the underside of each cell, reducing filament use and print time while keeping the top profile fully intact so bins still seat correctly.
+
+<!-- openscad -o docs/images/lightweight.png --camera=0,0,0,40,0,10,400 -D plate_size='[126, 84]' -D magnets=false -D lightweight=true -->
+<img src="docs/images/lightweight.png" alt="Lightweight baseplate" />
+
+Cutouts are not applied to cell sides that are adjacent to a puzzle connector, to preserve connector strength.
+
+### Base Thickness
+
+`lightweight_base` sets the thickness (in mm) of the thin floor that is left at the bottom of each cutout. This floor is needed as a bridging surface during printing. The default is 1 mm.
+
+<!-- openscad -o docs/images/lightweight-base-0.5.png --camera=0,30,0,40,0,25,300 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_base=0.5 -->
+<img src="docs/images/lightweight-base-0.5.png" alt="lightweight_base=0.5" />
+
+<!-- openscad -o docs/images/lightweight-base-2.png --camera=0,30,0,40,0,25,300 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_base=2 -->
+<img src="docs/images/lightweight-base-2.png" alt="lightweight_base=2" />
+
+### Corner Size (Bottom)
+
+`lightweight_corner_bottom` is the margin (in mm) left solid at each end of a cutout, measured at the base level. Larger values leave more material at the corners of the slot in the floor. The default is 8 mm.
+
+<!-- openscad -o docs/images/lightweight-corner-bottom-4.png --camera=0,0,0,40,0,10,200 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_corner_bottom=4 -D lightweight_corner_top=3 -->
+<img src="docs/images/lightweight-corner-bottom-4.png" alt="lightweight_corner_bottom=4" />
+
+<!-- openscad -o docs/images/lightweight-corner-bottom-14.png --camera=0,0,0,40,0,10,200 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_corner_bottom=14 -D lightweight_corner_top=12 -D lightweight_corner_slot=15 -->
+<img src="docs/images/lightweight-corner-bottom-14.png" alt="lightweight_corner_bottom=14" />
+
+### Corner Size (Top)
+
+`lightweight_corner_top` is the margin (in mm) left solid at each end of a cutout, measured at the top of the cell. Because the cutout is trapezoidal in cross-section (wider at the top than the bottom), this value is typically slightly smaller than `lightweight_corner_bottom`. The default is 7 mm.
+
+<!-- openscad -o docs/images/lightweight-corner-top-3.png --camera=0,30,0,40,0,25,300 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_corner_top=3 -->
+<img src="docs/images/lightweight-corner-top-3.png" alt="lightweight_corner_top=3" />
+
+<!-- openscad -o docs/images/lightweight-corner-top-14.png --camera=0,30,0,40,0,25,300 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_corner_top=14 -D lightweight_corner_bottom=15 -D lightweight_corner_slot=16 -->
+<img src="docs/images/lightweight-corner-top-14.png" alt="lightweight_corner_top=14" />
+
+### Corner Slot Size
+
+`lightweight_corner_slot` is the margin (in mm) left solid at each end of the bottom slot (the oval opening cut through the base floor). A larger value leaves more material between the slot and the cell edge. The default is 9 mm.
+
+<!-- openscad -o docs/images/lightweight-corner-slot-5.png --camera=0,0,0,40,0,10,200 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_corner_slot=5 -D lightweight_corner_bottom=4 -D lightweight_corner_top=3 -->
+<img src="docs/images/lightweight-corner-slot-5.png" alt="lightweight_corner_slot=5" />
+
+<!-- openscad -o docs/images/lightweight-corner-slot-14.png --camera=0,0,0,40,0,10,200 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_corner_slot=14 -->
+<img src="docs/images/lightweight-corner-slot-14.png" alt="lightweight_corner_slot=14" />
+
+### Bridge Width
+
+`lightweight_bridge` controls the width (in mm) of the thin strip of material that remains in the centre of each cutout wall, connecting the top profile to the base floor. Increasing this value leaves a wider bridge and a narrower cutout opening. The default is 1.4 mm.
+
+<!-- openscad -o docs/images/lightweight-bridge-0.5.png --camera=0,30,0,40,0,25,300 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_bridge=0.5 -->
+<img src="docs/images/lightweight-bridge-0.5.png" alt="lightweight_bridge=0.5" />
+
+<!-- openscad -o docs/images/lightweight-bridge-3.png --camera=0,30,0,40,0,25,300 -D plate_size='[84, 42]' -D magnets=false -D lightweight=true -D lightweight_bridge=3 -->
+<img src="docs/images/lightweight-bridge-3.png" alt="lightweight_bridge=3" />
+
+### Minimum Length
+
+`lightweight_minimum` skips the lightweight cutout on any cell side whose length (in mm) is at or below this threshold. This can be useful to leave small filler or padding cells solid. The default is 0 (cut all sides regardless of length).
+
+<!-- openscad -o docs/images/lightweight-minimum-0.png --camera=0,0,0,40,0,10,200 -D plate_size='[71, 42]' -D magnets=false -D lightweight=true -D lightweight_minimum=0 -->
+<img src="docs/images/lightweight-minimum-0.png" alt="lightweight_minimum=0 (all sides cut)" />
+
+<!-- openscad -o docs/images/lightweight-minimum-25.png --camera=0,0,0,40,0,10,200 -D plate_size='[71, 42]' -D magnets=false -D lightweight=true -D lightweight_minimum=25 -->
+<img src="docs/images/lightweight-minimum-25.png" alt="lightweight_minimum=25 (short sides kept solid)" />
+
+### Lightweighted Padding
+
+When `lightweight_padding` is true (the default), the lightweight cutout is also applied to padding strips (the non-cell border around the grid). Set to `false` to keep padding strips solid.
+
+<!-- openscad -o docs/images/lightweight-padding-true.png --camera=0,0,0,40,0,10,200 -D plate_size='[71, 42]' -D magnets=false -D lightweight=true -D lightweight_padding=true -->
+<img src="docs/images/lightweight-padding-true.png" alt="lightweight_padding=true" />
+
+<!-- openscad -o docs/images/lightweight-padding-false.png --camera=0,0,0,40,0,10,200 -D plate_size='[71, 42]' -D magnets=false -D lightweight=true -D lightweight_padding=false -->
+<img src="docs/images/lightweight-padding-false.png" alt="lightweight_padding=false" />
+
+### Intersection Rounding
+
+When `lightweight_intersection` is true (the default), cell corners are rounded so that only the corner pillars carry material, with no flat floor between them. When set to `false`, the full rectangular footprint of each cell is kept, and only the side walls are cut.
+
+<!-- openscad -o docs/images/lightweight-intersection-true.png --camera=0,0,0,40,0,10,400 -D plate_size='[84, 84]' -D magnets=false -D lightweight=true -D lightweight_intersection=true -->
+<img src="docs/images/lightweight-intersection-true.png" alt="lightweight_intersection=true" />
+
+<!-- openscad -o docs/images/lightweight-intersection-false.png --camera=0,0,0,40,0,10,400 -D plate_size='[84, 84]' -D magnets=false -D lightweight=true -D lightweight_intersection=false -->
+<img src="docs/images/lightweight-intersection-false.png" alt="lightweight_intersection=false" />
 
 ## Stacked Print
 
