@@ -966,8 +966,13 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
             translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, trace, size, padding, connector);
         }
         if (numbering && global_segment_index != undef) {
+            grid_segment = len(trace.x) > 0 && len(trace.y) > 0;
             squeeze = len(trace.x) <= 1;
-            navigate_cell(size, trace, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x*trace.x[0]/2-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
+            if (grid_segment) {
+                navigate_cell(size, trace, padding, [0, 0]) translate([BASEPLATE_DIMENSIONS.x*trace.x[0]/2-(squeeze?2.95/2:0), -BASEPLATE_DIMENSIONS.y/2+4, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) rotate([0, 0, 90]) text(str(global_segment_index + 1), size = squeeze ? number_squeeze_size : number_size, halign="right", valign = "center", font = number_font);
+            } else {
+                translate([0, 0, -_extra_height]) linear_extrude(number_depth) mirror([0, 1]) text(str(global_segment_index + 1), size = number_squeeze_size, halign="center", valign = "center", font = number_font);
+            }
         }
         // extend a bit beyond the segment edges to make sure we cut any overhang
         extend = 10;
