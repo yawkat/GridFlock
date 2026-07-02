@@ -169,6 +169,8 @@ x_segment_algorithm = 0; // [0:Ideal, 1:Incremental]
 y_row_count_first = [0, 0]; 
 // If the 'incremental' x segment algorithm is chosen, this can be used to override the column count in the first segment.
 x_column_count_first = 0;
+// Generate positive edge padding as separate printable pieces instead of attaching it to the outer baseplate segments
+separate_edge_padding = false;
 
 /* [Stacked Print] */
 
@@ -999,6 +1001,9 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
     }
 }
 
+function padding_unless_separate(p) = 
+    separate_edge_padding ? min(0, p) : p;
+
 /**
  * @Summary Calculate the minimum number of segments required to print this axis
  * @param trace The cell sizes on this axis
@@ -1025,15 +1030,16 @@ function segments_per_axis(trace, bed_norm, start_padding_norm=0, end_padding_no
 function plan_axis_ideal(trace, bed_norm, start_padding_norm=0, end_padding_norm=0) =
     let(
         cumulated = cumulate(trace),
-        total_size = cumulated[len(trace)] + start_padding_norm + end_padding_norm,
-        segment_count = segments_per_axis(trace, bed_norm, start_padding_norm, end_padding_norm),
+        total_size = cumulated[len(trace)] + padding_unless_separate(start_padding_norm) + padding_unless_separate(end_padding_norm),
+        segment_count = segments_per_axis(trace, bed_norm, padding_unless_separate(start_padding_norm), padding_unless_separate(end_padding_norm)),
         avg_segment_size = total_size / segment_count,
+        segment_count_with_padding = segment_count + (separate_edge_padding && start_padding_norm > 0 ? 1 : 0) + (separate_edge_padding && end_padding_norm > 0 ? 1 : 0),
         // compute which segment each cell is assigned to
         assignments = [for (i = [0:len(trace) - 1]) let (
-            center = cumulated[i] + trace[i] / 2 + start_padding_norm,
+            center = cumulated[i] + trace[i] / 2 + padding_unless_separate(start_padding_norm),
             norm_ix = center / avg_segment_size
-        ) (norm_ix % 1) == 0 ? norm_ix - 1 : floor(norm_ix)]
-    ) [for (i = [0:segment_count - 1]) len(search(i, assignments, num_returns_per_match=0))];
+        ) ((norm_ix % 1) == 0 ? norm_ix - 1 : floor(norm_ix)) + (separate_edge_padding && start_padding_norm > 0 ? 1 : 0)]
+    ) [for (i = [0:segment_count_with_padding - 1]) len(search(i, assignments, num_returns_per_match=0))];
 
 /**
  * @Summary Calculate an incremental axis plan.
@@ -1076,13 +1082,15 @@ function plan_axis_incremental_vars(trace, bed_norm, start_padding_norm=0, end_p
  * @Summary Transform a short plan from plan_axis_incremental_vars into a full plan as returned by plan_axis_ideal
  * @return A vector containing the number of cells in each planned segment
  */
-function vars_to_incremental(trace, vars) = let(
+function vars_to_incremental(trace, vars, start_padding_norm=0, end_padding_norm=0) = let(
         axis_norm = len(trace),
         first = vars[0],
         mid = vars[1],
-        end = vars[2]
-    ) mid == -1 ? [first] : [for(i = 0, pos = 0; pos < axis_norm; i = i + 1, pos = first + mid * (i - 1)) 
-        i == 0 ? first : pos + mid >= axis_norm ? end : mid];
+        end = vars[2],
+        before = separate_edge_padding && start_padding_norm > 0 ? [0] : [],
+        after = separate_edge_padding && end_padding_norm > 0 ? [0] : []
+    ) concat(before, (mid == -1 ? [first] : [for(i = 0, pos = 0; pos < axis_norm; i = i + 1, pos = first + mid * (i - 1)) 
+        i == 0 ? first : pos + mid >= axis_norm ? end : mid]), after);
 
 /**
  * @Summary Score plan_b, assuming plan_a is fixed. Lower value is better
@@ -1120,7 +1128,7 @@ function plan_axis_staggered(trace, bed_norm, start_padding_norm=0, end_padding_
     assert(end_padding_norm != undef)
     let (
         // lambda: call plan_axis_incremental_vars with a specific shift
-        plan_vars = function(force_first) plan_axis_incremental_vars(trace, bed_norm, start_padding_norm, end_padding_norm, force_first),
+        plan_vars = function(force_first) plan_axis_incremental_vars(trace, bed_norm, padding_unless_separate(start_padding_norm), padding_unless_separate(end_padding_norm), force_first),
         // lambda: calculate the number of segments for a given set of plan_axis_incremental_vars
         plan_size = function(vars) vars[1] == -1 ? 1 : (len(trace) - vars[0] - vars[2]) / vars[1] + 2,
         // make a simple plan for the first column
@@ -1129,9 +1137,9 @@ function plan_axis_staggered(trace, bed_norm, start_padding_norm=0, end_padding_
         plan_a2 = plan_a1[1] == -1 || plan_a1[2] >= 2 || plan_a1[0] <= 2 ? plan_a1 : plan_vars(plan_a1[0] - 1)
     )
     // manual override
-    y_row_count_first[1] > 0 ? [vars_to_incremental(trace, plan_a1), vars_to_incremental(trace, plan_vars(y_row_count_first[1]))] :
+    y_row_count_first[1] > 0 ? [vars_to_incremental(trace, plan_a1, start_padding_norm, end_padding_norm), vars_to_incremental(trace, plan_vars(y_row_count_first[1]), start_padding_norm, end_padding_norm)] :
     // shortcut: if we don't need to split at all, or we can't change the split, we don't need to worry about staggering
-    plan_a1[1] <= 1 ? [vars_to_incremental(trace, plan_a1), vars_to_incremental(trace, plan_a1)] : 
+    plan_a1[1] <= 1 ? [vars_to_incremental(trace, plan_a1, start_padding_norm, end_padding_norm), vars_to_incremental(trace, plan_a1, start_padding_norm, end_padding_norm)] : 
     let(
         // now, we determine the optimal shift of the second column.
         // first, plan with a minimum shift as a baseline.
@@ -1148,7 +1156,7 @@ function plan_axis_staggered(trace, bed_norm, start_padding_norm=0, end_padding_
         ) score_plan_b(plan_a2, plan)],
         // pick the shift with the best score
         shift = least_index(plan_b_shift) + 1
-    ) [vars_to_incremental(trace, plan_a2), vars_to_incremental(trace, plan_vars(plan_a2[0] - shift))];
+    ) [vars_to_incremental(trace, plan_a2, start_padding_norm, end_padding_norm), vars_to_incremental(trace, plan_vars(plan_a2[0] - shift), start_padding_norm, end_padding_norm)];
 
 /**
  * @Summary Quicksort the input array
@@ -1230,7 +1238,7 @@ module main() {
     // for the x axis, we only need a single plan, so we can use the ideal algorithm.
     plan_x = x_segment_algorithm == _SEGMENT_ALGORITHM_IDEAL ? 
         plan_axis_ideal(global_trace.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x) :
-        vars_to_incremental(global_trace.x, plan_axis_incremental_vars(global_trace.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x, force_first=x_column_count_first == 0 ? undef : x_column_count_first));
+        vars_to_incremental(global_trace.x, plan_axis_incremental_vars(global_trace.x, bed_norm=bed_norm.x, start_padding_norm=start_padding_norm.x, end_padding_norm=end_padding_norm.x, force_first=x_column_count_first == 0 ? undef : x_column_count_first), start_padding_norm.x, end_padding_norm.x);
     // for the y axis, we need to avoid 4-way gap intersections, so we need two plans.
     plans_y = plan_axis_staggered(global_trace.y, bed_norm=bed_norm.y, start_padding_norm=start_padding_norm.y, end_padding_norm=end_padding_norm.y);
     plans_y_cumulate = [for (p = plans_y) cumulate(p)];
