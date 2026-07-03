@@ -1249,8 +1249,15 @@ module main() {
     plans_y_cumulate = [for (p = plans_y) cumulate(p)];
     plan_x_cumulate = cumulate(plan_x);
 
-    function get_plan_y(segix) = plans_y[segix % 2];
-    function get_plan_y_cumulate(segix) = plans_y_cumulate[segix % 2];
+    // with separate_edge_padding, the normal plans contain segments with 0x0 cells that we want to avoid. those segments are collapsed into their neighbors here.
+    function collapse_empty(plan) = 
+        [for (seg = plan) if (seg != 0) seg];
+    plans_y_collapsed = [for (p = plans_y) collapse_empty(p)];
+    plans_y_collapsed_cumulate = [for (p = plans_y_collapsed) cumulate(p)];
+
+    function get_plan_y(segix) = 
+        (plan_x[segix] == 0 ? plans_y_collapsed : plans_y)[segix % 2];
+    function get_plan_y_cumulate(segix) = (plan_x[segix] == 0 ? plans_y_collapsed_cumulate : plans_y_cumulate)[segix % 2];
     
     /*
      * @Summary Compute the padding for a particular segment.
