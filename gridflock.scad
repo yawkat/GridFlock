@@ -169,7 +169,7 @@ x_segment_algorithm = 0; // [0:Ideal, 1:Incremental]
 y_row_count_first = [0, 0]; 
 // If the 'incremental' x segment algorithm is chosen, this can be used to override the column count in the first segment.
 x_column_count_first = 0;
-// Generate positive edge padding as separate printable pieces instead of attaching it to the outer baseplate segments
+// Generate positive edge padding as separate printable pieces instead of attaching it to the outer baseplate segments.
 separate_edge_padding = false;
 
 /* [Stacked Print] */

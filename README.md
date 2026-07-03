@@ -80,6 +80,7 @@ For inserting magnets, check out [the jig](#jig).
   - [Segmentation](#segmentation)
     - [Horizontal](#horizontal)
     - [Vertical](#vertical)
+    - [Separate edge padding](#separate-edge-padding)
   - [Edge Adjustment](#edge-adjustment)
     - [Shifting the grid](#shifting-the-grid)
     - [Adding empty space](#adding-empty-space)
@@ -691,6 +692,13 @@ You can override the cell count for the first segment of each plan using the `y_
 
 <!-- openscad -o docs/images/segment-y-override.png --camera=0,0,0,40,0,10,600 -D plate_size='[84, 252]' -D bed_size='[50, 180]' -D magnets=false -D connector_intersection_puzzle=false -D y_row_count_first='[1, 1]' -->
 <img src="docs/images/segment-y-override.png" alt="Incremental segmentation alogirthm with cell count override (y splitting)" />
+
+### Separate edge padding
+
+By default, positive edge padding is attached to the outer baseplate segments. Enable `separate_edge_padding` to generate positive edge padding as separate printable strips instead. The strips are planned as normal segments, so they include the connectors needed to attach them to the neighboring baseplate segments.
+
+<!-- openscad -o docs/images/separate-edge.png --camera=0,0,0,40,0,10,600 -D plate_size='[180, 180]' -D bed_size='[100, 100]' -D connector_intersection_puzzle=true -D separate_edge_padding=true -->
+<img src="docs/images/separate-edge.png" alt="Separate edge padding" />
 
 ## Edge Adjustment
 

@@ -238,6 +238,8 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal"
 [model.param-metadata.x_column_count_first]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#vertical"
+[model.param-metadata.separate_edge_padding]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#separate-edge-padding"
 
 [model.tab-metadata."Stacked Print"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#stacked-print"
