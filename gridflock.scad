@@ -851,6 +851,16 @@ module segment_corner(posy=_NORTH, posx=_WEST, connector=[false, false, false, f
 }
 
 /**
+ * This is an "inverted" quarter-circle that is used to punch out the corner of a rounded rectangle.
+ */
+module corner_punch() {
+    difference() {
+        square([plate_corner_radius, plate_corner_radius]);
+        translate([plate_corner_radius, plate_corner_radius]) circle(r=plate_corner_radius);
+    }
+}
+
+/**
  * @Summary Draw the 2D shape of a segment, including rounded corners
  * @param size The size of the segment
  * @param connector The connector configuration
@@ -861,21 +871,13 @@ module segment_rectangle(size, connector=[false, false, false, false], include_w
     wall_t = function (side) include_wall || connector[side] ? 0 : plate_wall_thickness[side];
     // corner radius by side
     compute_radius = function (side) max(0.01, plate_corner_radius - wall_t(side));
-    bounds_offset = function (side) compute_radius(side) + wall_t(side);
-    bounds_min = [
-        -size.x/2 + bounds_offset(_WEST),
-        -size.y/2 + bounds_offset(_SOUTH)
-    ];
-    bounds_max = [
-        size.x/2 - bounds_offset(_EAST),
-        size.y/2 - bounds_offset(_NORTH)
-    ];
-    hull() {
-        translate([bounds_min.x, bounds_min.y]) segment_corner(_SOUTH, _WEST, connector, compute_radius);
-        translate([bounds_max.x, bounds_min.y]) segment_corner(_SOUTH, _EAST, connector, compute_radius);
-        translate([bounds_max.x, bounds_max.y]) segment_corner(_NORTH, _EAST, connector, compute_radius);
-        translate([bounds_min.x, bounds_max.y]) segment_corner(_NORTH, _WEST, connector, compute_radius);
-    };
+    difference() {
+        square(size, center=true);
+        if (!connector[_SOUTH] && !connector[_WEST]) translate([-size.x/2, -size.y/2]) corner_punch();
+        if (!connector[_NORTH] && !connector[_WEST]) translate([-size.x/2, size.y/2]) rotate(-90) corner_punch();
+        if (!connector[_SOUTH] && !connector[_EAST]) translate([size.x/2, -size.y/2]) rotate(90) corner_punch();
+        if (!connector[_NORTH] && !connector[_EAST]) translate([size.x/2, size.y/2]) rotate(180) corner_punch();
+    }
 }
 
 module chamfer_triangle() {
