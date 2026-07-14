@@ -695,7 +695,7 @@ You can override the cell count for the first segment of each plan using the `y_
 
 ### Separate edge padding
 
-By default, positive edge padding is attached to the outer baseplate segments. Enable `separate_edge_padding` to generate positive edge padding as separate printable strips instead. The strips are planned as normal segments, so they include the connectors needed to attach them to the neighboring baseplate segments.
+By default, positive edge padding is attached to the outer baseplate segments. Enable `separate_edge_padding` to generate positive edge padding as separate printable strips instead. The strips are planned as normal segments, so they include the connectors needed to attach them to the neighboring baseplate segments. Note that if the padding is small, connectors may not fully fit.
 
 <!-- openscad -o docs/images/separate-edge.png --camera=0,0,0,40,0,10,600 -D plate_size='[180, 180]' -D bed_size='[100, 100]' -D connector_intersection_puzzle=true -D separate_edge_padding=true -->
 <img src="docs/images/separate-edge.png" alt="Separate edge padding" />
