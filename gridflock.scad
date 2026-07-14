@@ -452,7 +452,7 @@ module puzzle_male_0() {
  * Cleaned polygon for the male puzzle connector. In particular, we need 
  * to cut the parts of the polygon that overlap with the bin.
  */
-module puzzle_male(positive) {
+module puzzle_male(positive, max_depth) {
     difference() {
         if (positive) {
             puzzle_male_0();
@@ -460,6 +460,8 @@ module puzzle_male(positive) {
             hull() puzzle_male_0();
         }
         translate([-4, -4]) circle(4);
+        // if the segment is very narrow (separate_edge_padding) we need to shorten the connector
+        if (max_depth < 4) translate([-4, -4]) square([4 - max_depth, 8]);
     }
 }
 
@@ -672,8 +674,8 @@ module segment_intersection_connectors(positive, trace, size, padding, connector
             if (!skip_last) navigate_corner(size, trace, padding, [ix, 0], _SOUTH, _EAST) rotate([0, 0, -90]) puzzle_female(positive);
         }
         if (connector[_NORTH]) {
-            if (!skip_first) navigate_corner(size, trace, padding, [ix, last.y], _NORTH, _WEST) rotate([0, 0, 90]) puzzle_male(positive);
-            if (!skip_last) navigate_corner(size, trace, padding, [ix, last.y], _NORTH, _EAST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive);
+            if (!skip_first) navigate_corner(size, trace, padding, [ix, last.y], _NORTH, _WEST) rotate([0, 0, 90]) puzzle_male(positive, size.y);
+            if (!skip_last) navigate_corner(size, trace, padding, [ix, last.y], _NORTH, _EAST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive, size.y);
         }
     }
     for (iy = [0:1:last.y]) {
@@ -683,8 +685,8 @@ module segment_intersection_connectors(positive, trace, size, padding, connector
             navigate_corner(size, trace, padding, [0, iy], _NORTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
         }
         if (connector[_EAST]) {
-            navigate_corner(size, trace, padding, [last.x, iy], _SOUTH, _EAST) mirror([0, 1]) puzzle_male(positive);
-            navigate_corner(size, trace, padding, [last.x, iy], _NORTH, _EAST) puzzle_male(positive);
+            navigate_corner(size, trace, padding, [last.x, iy], _SOUTH, _EAST) mirror([0, 1]) puzzle_male(positive, size.x);
+            navigate_corner(size, trace, padding, [last.x, iy], _NORTH, _EAST) puzzle_male(positive, size.x);
         }
     }
     // At the corners of the segment, we now only have half-connectors. But if we have padding, there may be space for a full connector after all.
@@ -705,11 +707,11 @@ module segment_intersection_connectors(positive, trace, size, padding, connector
         union() {
             if (!connector[_WEST]) {
                 if (connector[_SOUTH]) navigate_corner(size, trace, padding, [0, 0], _SOUTH, _WEST) rotate([0, 0, -90]) puzzle_female(positive);
-                if (connector[_NORTH]) navigate_corner(size, trace, padding, [0, last.y], _NORTH, _WEST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive);
+                if (connector[_NORTH]) navigate_corner(size, trace, padding, [0, last.y], _NORTH, _WEST) mirror([1, 0]) rotate([0, 0, 90]) puzzle_male(positive, size.y);
             }
             if (!connector[_EAST]) {
                 if (connector[_SOUTH]) navigate_corner(size, trace, padding, [last.x, 0], _SOUTH, _EAST) mirror([1, 0]) rotate([0, 0, -90]) puzzle_female(positive);
-                if (connector[_NORTH]) navigate_corner(size, trace, padding, [last.x, last.y], _NORTH, _EAST) rotate([0, 0, 90]) puzzle_male(positive);
+                if (connector[_NORTH]) navigate_corner(size, trace, padding, [last.x, last.y], _NORTH, _EAST) rotate([0, 0, 90]) puzzle_male(positive, size.y);
             }
         }
     }
@@ -718,11 +720,11 @@ module segment_intersection_connectors(positive, trace, size, padding, connector
         union() {
             if (!connector[_SOUTH]) {
                 if (connector[_WEST]) navigate_corner(size, trace, padding, [0, 0], _SOUTH, _WEST) mirror([0, 1]) rotate([0, 0, 180]) puzzle_female(positive);
-                if (connector[_EAST]) navigate_corner(size, trace, padding, [last.x, 0], _SOUTH, _EAST) puzzle_male(positive);
+                if (connector[_EAST]) navigate_corner(size, trace, padding, [last.x, 0], _SOUTH, _EAST) puzzle_male(positive, size.x);
             }
             if (!connector[_NORTH]) {
                 if (connector[_WEST]) navigate_corner(size, trace, padding, [0, last.y], _NORTH, _WEST) rotate([0, 0, 180]) puzzle_female(positive);
-                if (connector[_EAST]) navigate_corner(size, trace, padding, [last.x, last.y], _NORTH, _EAST) mirror([0, 1]) puzzle_male(positive);
+                if (connector[_EAST]) navigate_corner(size, trace, padding, [last.x, last.y], _NORTH, _EAST) mirror([0, 1]) puzzle_male(positive, size.x);
             }
         }
     }
