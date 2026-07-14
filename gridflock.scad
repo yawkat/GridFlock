@@ -662,12 +662,6 @@ module navigate_edge(size, trace, padding, index, dir) {
  */
 module segment_intersection_connectors(positive, trace, size, padding, connector) {
     last = [len(trace.x) - 1, len(trace.y) - 1];
-    connector = [
-        connector[_NORTH] && len(trace.x) > 0,
-        connector[_EAST] && len(trace.y) > 0,
-        connector[_SOUTH] && len(trace.x) > 0,
-        connector[_WEST] && len(trace.y) > 0
-    ];
     // for the normal case, we iterate over the cells at the edge of the segment, and add two half-connectors for each cell.
     for (ix = [0:1:last.x]) {
         // north and south connectors
@@ -706,7 +700,7 @@ module segment_intersection_connectors(positive, trace, size, padding, connector
         size.x/2 - calculate_plate_wall(_EAST),
         size.y/2 - calculate_plate_wall(_NORTH)
     ];
-    intersection() {
+    if (len(trace.x) > 0 || !positive) intersection() {
         translate([bounds_min.x, -size.y/2 - 20]) square([bounds_max.x - bounds_min.x, size.y + 40]);
         union() {
             if (!connector[_WEST]) {
@@ -719,7 +713,7 @@ module segment_intersection_connectors(positive, trace, size, padding, connector
             }
         }
     }
-    intersection() {
+    if (len(trace.y) > 0 || !positive) intersection() {
         translate([-size.x/2 - 20, bounds_min.y]) square([size.x + 40, bounds_max.y - bounds_min.y]);
         union() {
             if (!connector[_SOUTH]) {
