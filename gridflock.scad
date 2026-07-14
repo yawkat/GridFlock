@@ -855,8 +855,8 @@ module segment_corner(posy=_NORTH, posx=_WEST, connector=[false, false, false, f
  */
 module corner_punch() {
     difference() {
-        square([plate_corner_radius, plate_corner_radius]);
-        translate([plate_corner_radius, plate_corner_radius]) circle(r=plate_corner_radius);
+        square([1, 1]);
+        translate([1, 1]) circle(r=1);
     }
 }
 
@@ -871,12 +871,21 @@ module segment_rectangle(size, connector=[false, false, false, false], include_w
     wall_t = function (side) include_wall || connector[side] ? 0 : plate_wall_thickness[side];
     // corner radius by side
     compute_radius = function (side) max(0.01, plate_corner_radius - wall_t(side));
+    bounds_offset = function (side) wall_t(side);
+    bounds_min = [
+        -size.x/2 + bounds_offset(_WEST),
+        -size.y/2 + bounds_offset(_SOUTH)
+    ];
+    bounds_max = [
+        size.x/2 - bounds_offset(_EAST),
+        size.y/2 - bounds_offset(_NORTH)
+    ];
     difference() {
-        square(size, center=true);
-        if (!connector[_SOUTH] && !connector[_WEST]) translate([-size.x/2, -size.y/2]) corner_punch();
-        if (!connector[_NORTH] && !connector[_WEST]) translate([-size.x/2, size.y/2]) rotate(-90) corner_punch();
-        if (!connector[_SOUTH] && !connector[_EAST]) translate([size.x/2, -size.y/2]) rotate(90) corner_punch();
-        if (!connector[_NORTH] && !connector[_EAST]) translate([size.x/2, size.y/2]) rotate(180) corner_punch();
+        translate(bounds_min) square([bounds_max.x - bounds_min.x, bounds_max.y - bounds_min.y]);
+        if (!connector[_SOUTH] && !connector[_WEST]) translate(bounds_min) scale([compute_radius(_WEST), compute_radius(_SOUTH)]) corner_punch();
+        if (!connector[_NORTH] && !connector[_WEST]) translate([bounds_min.x, bounds_max.y]) scale([compute_radius(_WEST), compute_radius(_NORTH)]) rotate(-90) corner_punch();
+        if (!connector[_SOUTH] && !connector[_EAST]) translate([bounds_max.x, bounds_min.y]) scale([compute_radius(_EAST), compute_radius(_SOUTH)]) rotate(90) corner_punch();
+        if (!connector[_NORTH] && !connector[_EAST]) translate(bounds_max) scale([compute_radius(_EAST), compute_radius(_NORTH)]) rotate(180) corner_punch();
     }
 }
 
