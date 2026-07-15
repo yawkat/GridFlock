@@ -137,7 +137,7 @@ vertical_screw_diameter = 3.2; // 0.1
 // Top countersink dimension. First value is the diameter of the screw head, second value the height
 vertical_screw_countersink_top = [0, 0]; // 0.1
 // Top counterbore dimension. First value is the diameter of the screw head, second value the height
-vertical_screw_counterbore_top = [0, 0];
+vertical_screw_counterbore_top = [0, 0]; // 0.1
 
 // Enable screws at *plate* corners
 vertical_screw_plate_corners = false;
@@ -153,6 +153,19 @@ vertical_screw_segment_corner_inset = [1, 1];
 vertical_screw_segment_edges = false;
 // Enable screws at all other intersections
 vertical_screw_other = false;
+
+/* [Horizontal Screws] */
+
+// Radius of vertical screws
+horizontal_screw_diameter = 3.2; // 0.1
+// Top countersink dimension. First value is the diameter of the screw head, second value the height
+horizontal_screw_countersink_top = [0, 0]; // 0.1
+// Top counterbore dimension. First value is the diameter of the screw head, second value the height
+horizontal_screw_counterbore_top = [0, 0]; // 0.1
+// Enable horizontal screws on plate walls
+horizontal_screw_wall = false;
+// Shift the screw location by a predetermined offset
+horizontal_screw_offset = [0, 0];
 
 /* [Thumb Screw] */
 
@@ -806,22 +819,50 @@ module edge_puzzle(positive, male, size) {
 /**
  * @Summary Draw a vertical screw at the current coordinate
  */
-module vertical_screw() {
-    // Additional space to clear above the screw. There shouldn't be anything here, but this guards against rounding errors
-    clear_upwards = 0.01;
+module screw(depth, d, countersink, counterbore, clear_up=0.01) {
+    // Additional space to clear above and below the screw. There shouldn't be anything here, but this guards against rounding errors
+    clear_down = 0.01;
     rotate_extrude() {
-        translate([0, -_extra_height]) square([vertical_screw_diameter/2, _total_height + clear_upwards]);
-        translate([0, _profile_height - vertical_screw_counterbore_top.y]) {
+        translate([0, -depth-clear_down]) square([d/2, depth + clear_down + clear_up]);
+        translate([0, -counterbore.y]) {
             // counterbore
-            square([vertical_screw_counterbore_top.x/2, vertical_screw_counterbore_top.y+clear_upwards]);
+            square([counterbore.x/2, counterbore.y+clear_up]);
             // countersink
             polygon([
                 [0, 0], 
-                [0, clear_upwards], 
-                [vertical_screw_countersink_top.x/2, clear_upwards], 
-                [vertical_screw_countersink_top.x/2, 0], 
-                [vertical_screw_diameter/2, -vertical_screw_countersink_top.y]
+                [0, clear_up], 
+                [countersink.x/2, clear_up], 
+                [countersink.x/2, 0], 
+                [d/2, -countersink.y]
             ]);
+        }
+    }
+}
+
+module vertical_screw() {
+    translate([0, 0, _profile_height]) screw(depth=_total_height, d=vertical_screw_diameter, countersink=vertical_screw_countersink_top, counterbore=vertical_screw_counterbore_top);
+}
+
+module horizontal_screws(direction, padding, trace) {
+    wall = plate_wall_thickness[direction];
+    if (horizontal_screw_wall && wall > 0 && padding[direction] > 0) {
+        direction_left = (direction + 3) % 4;
+        direction_right = (direction + 1) % 4;
+        cumulated = cumulate(trace);
+        size = cumulated[len(trace)] * BASEPLATE_DIMENSIONS.x + padding[direction_left] + padding[direction_right];
+        // if we only have an upper or a lower wall, center on that wall. otherwise, center on the whole section.
+        z = horizontal_screw_offset.y +
+            (plate_wall_height.y <= 0 && plate_wall_height.x > 0 ? _profile_height + plate_wall_height.x / 2 :
+            plate_wall_height.x <= 0 && plate_wall_height.y > 0 ? -_extra_height - plate_wall_height.y / 2 :
+            (_profile_height + plate_wall_height.x - plate_wall_height.y - _extra_height) / 2);
+        for (i = [0:len(trace)-1]) {
+            translate([-size/2 + (cumulated[i] + trace[i] / 2) * BASEPLATE_DIMENSIONS.x + padding[direction_left] + horizontal_screw_offset.x, -wall, z]) rotate([90, 0, 0]) screw(
+                depth=wall, 
+                d=horizontal_screw_diameter, 
+                countersink=horizontal_screw_countersink_top, 
+                counterbore=horizontal_screw_counterbore_top, 
+                clear_up=padding[direction] + trace[i] * BASEPLATE_DIMENSIONS.x / 2
+            );
         }
     }
 }
@@ -1016,6 +1057,12 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                 if (vertical_screw_other) vertical_screw();
             }
         }
+
+        // horizontal screw holes
+        translate([0, size.y/2]) horizontal_screws(_NORTH, padding, trace = trace.x);
+        translate([0, -size.y/2]) rotate([0, 0, 180]) horizontal_screws(_SOUTH, padding, trace = trace.x);
+        translate([-size.x/2, 0]) rotate([0, 0, 90]) horizontal_screws(_WEST, padding, trace = trace.y);
+        translate([size.x/2, 0]) rotate([0, 0, -90]) horizontal_screws(_EAST, padding, trace = trace.y);
     }
 }
 

@@ -76,6 +76,7 @@ For inserting magnets, check out [the jig](#jig).
       - [Segment edges](#segment-edges)
       - [Other intersections](#other-intersections)
       - [Combined](#combined)
+  - [Horizontal Screws](#horizontal-screws)
   - [Thumb Screw](#thumb-screw)
   - [Segmentation](#segmentation)
     - [Horizontal](#horizontal)
@@ -634,6 +635,15 @@ Vertical screw locations can be combined as needed. A common combination would b
 
 <!-- openscad -o docs/images/vscrews-most.png --camera=0,0,0,40,0,10,400 -D plate_size='[336, 210]' -D 'bed_size=[180, 250]' -D magnets=false -D vertical_screw_other=true -D vertical_screw_segment_corners=true -D vertical_screw_plate_corners=true -->
 <img src="docs/images/vscrews-most.png" alt="Vertical screws at most locations" />
+
+## Horizontal Screws
+
+Horizontal screws are used to attach the plate on the side. At the moment, it is only possible to place screws on [plate walls](#plate-wall). Enable screws with the `horizontal_screw_wall` option. The screws will be placed in the middle of each cell.
+
+<!-- openscad -o docs/images/hscrews.png --camera=0,0,0,40,0,10,400 -D plate_size='[84, 84]' -D plate_wall_thickness='[0, 3, 0, 0]' -D plate_wall_height=5 -D horizontal_screw_wall=true -->
+<img src="docs/images/hscrews.png" alt="Horizontal screws" />
+
+The exact position can be adjusted using `horizontal_screw_offset`. Similar to vertical screws, the screw head can be customized with `horizontal_screw_countersink_top` and `horizontal_screw_counterbore_top`.
 
 ## Thumb Screw
 
