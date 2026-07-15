@@ -640,10 +640,12 @@ Vertical screw locations can be combined as needed. A common combination would b
 
 Horizontal screws are used to attach the plate on the side. At the moment, it is only possible to place screws on [plate walls](#plate-wall). Enable screws with the `horizontal_screw_wall` option. The screws will be placed in the middle of each cell.
 
-<!-- openscad -o docs/images/hscrews.png --camera=0,0,0,40,0,10,400 -D plate_size='[84, 84]' -D plate_wall_thickness='[0, 3, 0, 0]' -D plate_wall_height=5 -D horizontal_screw_wall=true -->
+<!-- openscad -o docs/images/hscrews.png --camera=0,0,0,40,0,10,400 -D plate_size='[84, 84]' -D plate_wall_thickness='[3, 0, 0, 0]' -D plate_wall_height='[5, 0]' -D horizontal_screw_wall=true -->
 <img src="docs/images/hscrews.png" alt="Horizontal screws" />
 
-The exact position can be adjusted using `horizontal_screw_offset`. Similar to vertical screws, the screw head can be customized with `horizontal_screw_countersink_top` and `horizontal_screw_counterbore_top`.
+Similar to vertical screws, the screw head can be customized with `horizontal_screw_countersink_top` and `horizontal_screw_counterbore_top`. 
+
+The exact hole position can be adjusted using `horizontal_screw_offset`. By default, the hole will be centered on any wall.
 
 ## Thumb Screw
 

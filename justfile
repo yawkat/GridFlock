@@ -26,15 +26,18 @@ docs:
     concurrency = asyncio.Semaphore(8)
 
     async def run(cmd, output):
-        async with concurrency:
-            print("Running: " + shlex.join(cmd))
-            proc = await asyncio.create_subprocess_exec(*cmd)
-            await proc.wait()
-            assert proc.returncode == 0
-        if os.path.getsize(output) == 7763:
+        max_attempts = 5
+        for attempt in range(1, max_attempts + 1):
+            async with concurrency:
+                print("Running: " + shlex.join(cmd))
+                proc = await asyncio.create_subprocess_exec(*cmd)
+                await proc.wait()
+                assert proc.returncode == 0
+            if os.path.getsize(output) != 7763:
+                return
             # render failure, retry
-            print(f"Render failure for `{shlex.join(cmd)}`, retrying")
-            await run(cmd, output)
+            print(f"Render failure for `{shlex.join(cmd)}` ({attempt}/{max_attempts}), retrying")
+        raise RuntimeError(f"Render failure after {max_attempts} attempts: {shlex.join(cmd)}")
     
     async def main():
         tasks = []
