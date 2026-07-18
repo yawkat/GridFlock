@@ -14,7 +14,7 @@ banner name:
 
 banners: (banner "banner-generator-yawkat") (banner "banner-generator-perplexinglabs")
 
-docs:
+docs: paths
     #!/usr/bin/env -S uv run --script
     import re
     import shlex
