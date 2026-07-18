@@ -156,14 +156,14 @@ vertical_screw_other = false;
 
 /* [Horizontal Screws] */
 
+// Enable horizontal screws on plate walls
+horizontal_screw_wall = false;
 // Radius of vertical screws
 horizontal_screw_diameter = 3.2; // 0.1
 // Top countersink dimension. First value is the diameter of the screw head, second value the height
 horizontal_screw_countersink_top = [0, 0]; // 0.1
 // Top counterbore dimension. First value is the diameter of the screw head, second value the height
 horizontal_screw_counterbore_top = [0, 0]; // 0.1
-// Enable horizontal screws on plate walls
-horizontal_screw_wall = false;
 // Shift the screw location by a predetermined offset
 horizontal_screw_offset = [0, 0];
 
