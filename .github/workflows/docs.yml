@@ -13,6 +13,9 @@ jobs:
   images:
     runs-on: ubuntu-latest
     env:
+      GALLIUM_DRIVER: softpipe
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      MESA_LOADER_DRIVER_OVERRIDE: softpipe
       OPENSCAD_APPIMAGE_URL: https://files.openscad.org/snapshots/OpenSCAD-2026.07.16-x86_64.AppImage
       OPENSCAD_APPIMAGE_SHA256: 85000c7839cf96ca824511d9da38091683e3c6f71a390205ef4dd07e62ed97b4
     steps:

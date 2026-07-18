@@ -28,13 +28,18 @@ docs: paths
 
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
+    openscad_environment = os.environ | {
+        "GALLIUM_DRIVER": "softpipe",
+        "LIBGL_ALWAYS_SOFTWARE": "1",
+        "MESA_LOADER_DRIVER_OVERRIDE": "softpipe",
+    }
 
     async def run(cmd, output):
         max_attempts = 5
         for attempt in range(1, max_attempts + 1):
             async with concurrency:
                 print("Running: " + shlex.join(cmd))
-                proc = await asyncio.create_subprocess_exec(*cmd)
+                proc = await asyncio.create_subprocess_exec(*cmd, env=openscad_environment)
                 await proc.wait()
                 assert proc.returncode == 0
             if os.path.getsize(output) != 7763:
