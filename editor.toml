@@ -176,6 +176,26 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-edg
 [model.param-metadata.vertical_screw_other]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-intersections"
 
+[model.tab-metadata."Horizontal Screws"]
+collapsed = true
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
+control-boolean = "horizontal_screw_wall"
+description-html = "Enable horizontal screws on plate walls."
+[model.param-metadata.horizontal_screw_wall]
+display-condition = {fixed = false}
+[model.param-metadata.horizontal_screw_diameter]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
+display-condition = {js = "horizontal_screw_wall"}
+[model.param-metadata.horizontal_screw_countersink_top]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
+display-condition = {js = "horizontal_screw_wall"}
+[model.param-metadata.horizontal_screw_counterbore_top]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
+display-condition = {js = "horizontal_screw_wall"}
+[model.param-metadata.horizontal_screw_offset]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
+display-condition = {js = "horizontal_screw_wall"}
+
 [model.tab-metadata."Thumb Screw"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#thumb-screw"
 control-boolean = "thumbscrews"
