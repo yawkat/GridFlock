@@ -638,7 +638,7 @@ Vertical screw locations can be combined as needed. A common combination would b
 
 ## Horizontal Screws
 
-Horizontal screws are used to attach the plate on the side. At the moment, it is only possible to place screws on [plate walls](#plate-wall). Enable screws with the `horizontal_screw_wall` option. The screws will be placed in the middle of each cell.
+Horizontal screws are used to attach the plate on the side. At the moment, it is only possible to place screws on [plate walls](#plate-wall). Enable screws with the `horizontal_screw_wall` option. This requires `plate_wall_thickness` to be set for the relevant wall. The screws will be placed in the middle of each cell.
 
 <!-- openscad -o docs/images/hscrews.png --camera=0,0,0,40,0,10,400 -D plate_size='[84, 84]' -D plate_wall_thickness='[3, 0, 0, 0]' -D plate_wall_height='[5, 0]' -D horizontal_screw_wall=true -->
 <img src="docs/images/hscrews.png" alt="Horizontal screws" />

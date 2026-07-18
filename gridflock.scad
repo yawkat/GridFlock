@@ -156,7 +156,7 @@ vertical_screw_other = false;
 
 /* [Horizontal Screws] */
 
-// Enable horizontal screws on plate walls
+// Enable horizontal screws on plate walls (requires plate_wall_thickness)
 horizontal_screw_wall = false;
 // Radius of vertical screws
 horizontal_screw_diameter = 3.2; // 0.1

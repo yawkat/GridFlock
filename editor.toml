@@ -179,7 +179,7 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-inter
 [model.tab-metadata."Horizontal Screws"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
 control-boolean = "horizontal_screw_wall"
-description-html = "Enable horizontal screws on plate walls."
+description-html = "Enable horizontal screws on plate walls. Requires plate_wall_thickness."
 [model.param-metadata.horizontal_screw_wall]
 display-condition = {fixed = false}
 [model.param-metadata.horizontal_screw_diameter]
