@@ -20,7 +20,11 @@ docs:
     import shlex
     import subprocess
     import os
+    import sys
     import asyncio
+
+    sys.path.insert(0, os.getcwd())
+    from canonicalize_png import canonicalize
 
     openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
     concurrency = asyncio.Semaphore(8)
@@ -34,6 +38,7 @@ docs:
                 await proc.wait()
                 assert proc.returncode == 0
             if os.path.getsize(output) != 7763:
+                canonicalize(output)
                 return
             # render failure, retry
             print(f"Render failure for `{shlex.join(cmd)}` ({attempt}/{max_attempts}), retrying")

@@ -1,0 +1,58 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    env:
+      OPENSCAD_APPIMAGE_URL: https://files.openscad.org/snapshots/OpenSCAD-2026.07.16-x86_64.AppImage
+      OPENSCAD_APPIMAGE_SHA256: 85000c7839cf96ca824511d9da38091683e3c6f71a390205ef4dd07e62ed97b4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: true
+
+      - name: Setup Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
+          uv sync --frozen
+
+      - name: Install OpenSCAD AppImage
+        run: |
+          appimage="$RUNNER_TEMP/OpenSCAD.AppImage"
+          appdir="$RUNNER_TEMP/openscad-appdir"
+          curl --fail --location --silent --show-error "$OPENSCAD_APPIMAGE_URL" --output "$appimage"
+          echo "$OPENSCAD_APPIMAGE_SHA256  $appimage" | sha256sum --check -
+          chmod +x "$appimage"
+          mkdir "$appdir"
+          cd "$appdir"
+          "$appimage" --appimage-extract >/dev/null
+          sudo ln --symbolic "$appdir/squashfs-root/AppRun" /usr/local/bin/openscad
+          openscad --version
+
+      - name: Generate documentation images
+        run: just docs
+
+      - name: Check documentation images
+        run: |
+          # Make newly generated, untracked images visible to git diff as well.
+          git add --intent-to-add docs/images
+          git diff --exit-code -- docs/images
