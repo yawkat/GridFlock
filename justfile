@@ -55,7 +55,7 @@ docs: paths
         for line in open("README.md"):
             match = openscad_pattern.match(line)
             if match:
-                cmd = ["openscad", "--enable", "predictible-output", "--hardwarnings", "--projection=ortho", "--colorscheme=Starnight", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1))]
+                cmd = ["openscad", "--backend", "CGAL", "--enable", "predictible-output", "--hardwarnings", "--projection=ortho", "--colorscheme=Starnight", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1))]
                 # use gridflock.scad if no other file specified
                 for c in cmd:
                     if ".scad" in c:
