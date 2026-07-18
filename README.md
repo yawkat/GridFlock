@@ -226,7 +226,7 @@ Pull the pusher back into its original position to release the baseplate. You ca
 <!-- These images are generated for regression detection purposes. -->
 <!-- openscad -o docs/images/jig-main.png --camera=0,0,0,40,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
 <!-- openscad -o docs/images/jig-pusher.png --camera=0,0,0,40,0,10,200 -D part='"pusher"' mag_insert_jig.scad -->
-<!-- openscad -o docs/images/jig-main-below.png --camera=0,0,0,140,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
+<!-- openscad -o docs/images/jig-main-below.png --camera=0.01,0,0,140,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
 <!-- openscad -o docs/images/jig-pusher-below.png --camera=0,0,0,140,0,10,200 -D part='"pusher"' mag_insert_jig.scad -->
 
 ### Release slot
