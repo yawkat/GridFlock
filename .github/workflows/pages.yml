@@ -17,17 +17,17 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           submodules: true
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
       - name: Install Python dependencies
         run: uv sync --frozen
@@ -39,24 +39,24 @@ jobs:
           just paths
 
       - name: Generate site
-        uses: yawkat/web-openscad-editor@main
+        uses: yawkat/web-openscad-editor@35cd9bbb2bdec1fe98462d853833ea4c3058f89f # main
         with:
           config: editor.toml
           output: out
 
       - name: Publish
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4
         id: cf_publish
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy out/ --project-name=gridflock-yawk-at
       - name: Check PR
-        uses: 8BitJonny/gh-get-current-pr@4.0.0
+        uses: 8BitJonny/gh-get-current-pr@4056877062a1f3b624d5d4c2bedefa9cf51435c9 # 4.0.0
         id: pr
       - name: Comment on PR
         if: steps.pr.outputs.pr_found == 'true'
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: deployment
           message: ":rocket: Preview deployed to ${{ steps.cf_publish.outputs.deployment-url }}"

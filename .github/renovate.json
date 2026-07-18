@@ -1,0 +1,7 @@
+{
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "helpers:githubDigestChangelogs"
+  ]
+}
