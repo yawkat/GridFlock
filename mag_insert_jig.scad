@@ -342,7 +342,7 @@ if (part == "jig") {
       jig_with_pusher();
     }
   } else {
-    jig_with_pusher();
+    color([1.0, 0.2, 0.2, jig_alpha]) jig_with_pusher();
   }
 } else if (part == "pusher") {
   pusher_combined();
