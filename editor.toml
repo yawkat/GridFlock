@@ -177,7 +177,6 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-edg
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-intersections"
 
 [model.tab-metadata."Horizontal Screws"]
-collapsed = true
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
 control-boolean = "horizontal_screw_wall"
 description-html = "Enable horizontal screws on plate walls."
