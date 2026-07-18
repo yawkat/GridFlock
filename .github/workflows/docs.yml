@@ -56,3 +56,11 @@ jobs:
           # Make newly generated, untracked images visible to git diff as well.
           git add --intent-to-add docs/images
           git diff --exit-code -- docs/images
+
+      - name: Upload changed documentation images
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: documentation-images
+          path: docs/images
+          retention-days: 1
