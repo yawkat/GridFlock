@@ -51,10 +51,17 @@ async def render(command: list[str], output: str) -> None:
         temporary_output.unlink(missing_ok=True)
 
 
+async def render_group(commands: list[list[str]], output: str) -> None:
+    # Some README examples intentionally use the same output for legacy and
+    # renamed options. Run those sequentially so they cannot race over the
+    # shared temporary and final paths.
+    for command in commands:
+        await render(command, output)
+
+
 async def main() -> None:
     openscad = str(openscad_path())
-    tasks = []
-    written = []
+    commands_by_output: dict[str, list[list[str]]] = {}
     with Path("README.md").open() as readme:
         for line in readme:
             match = OPENSCAD_PATTERN.match(line)
@@ -73,13 +80,17 @@ async def main() -> None:
                 if not any(".scad" in argument for argument in command):
                     command.append("gridflock.scad")
                 output = command[command.index("-o") + 1]
-                tasks.append(render(command, output))
-                written.append(output)
+                commands_by_output.setdefault(output, []).append(command)
 
     for image in Path("docs/images").iterdir():
-        if str(image) not in written:
+        if str(image) not in commands_by_output:
             image.unlink()
-    await asyncio.gather(*tasks)
+    await asyncio.gather(
+        *(
+            render_group(commands, output)
+            for output, commands in commands_by_output.items()
+        )
+    )
 
 
 if __name__ == "__main__":
