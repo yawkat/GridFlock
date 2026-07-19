@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "pillow>=11.3.0",
+    "pypng>=0.20220715.0",
     "svgelements>=1.9.6",
+    "zopfli>=0.4.3",
 ]
