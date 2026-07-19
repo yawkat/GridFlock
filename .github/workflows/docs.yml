@@ -16,8 +16,6 @@ jobs:
       GALLIUM_DRIVER: softpipe
       LIBGL_ALWAYS_SOFTWARE: "1"
       MESA_LOADER_DRIVER_OVERRIDE: softpipe
-      OPENSCAD_APPIMAGE_URL: https://files.openscad.org/snapshots/OpenSCAD-2026.07.16-x86_64.AppImage
-      OPENSCAD_APPIMAGE_SHA256: 85000c7839cf96ca824511d9da38091683e3c6f71a390205ef4dd07e62ed97b4
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -37,19 +35,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y just libegl1 libgl1-mesa-dri libopengl0
           uv sync --frozen
-
-      - name: Install OpenSCAD AppImage
-        run: |
-          appimage="$RUNNER_TEMP/OpenSCAD.AppImage"
-          appdir="$RUNNER_TEMP/openscad-appdir"
-          curl --fail --location --silent --show-error "$OPENSCAD_APPIMAGE_URL" --output "$appimage"
-          echo "$OPENSCAD_APPIMAGE_SHA256  $appimage" | sha256sum --check -
-          chmod +x "$appimage"
-          mkdir "$appdir"
-          cd "$appdir"
-          "$appimage" --appimage-extract >/dev/null
-          sudo ln --symbolic "$appdir/squashfs-root/AppRun" /usr/local/bin/openscad
-          openscad --version
 
       - name: Generate documentation images
         run: just docs

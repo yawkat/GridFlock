@@ -1,6 +1,6 @@
 paths:
     mkdir -p paths
-    uv run extract_paths.py puzzle.svg paths/puzzle.scad
+    uv run scripts/extract_paths.py puzzle.svg paths/puzzle.scad
 
 test:
     openscad -o /dev/null --export-format=stl test.scad
@@ -15,62 +15,7 @@ banner name:
 banners: (banner "banner-generator-yawkat") (banner "banner-generator-perplexinglabs")
 
 docs: paths
-    #!/usr/bin/env -S uv run --script
-    import re
-    import shlex
-    import subprocess
-    import os
-    import sys
-    import asyncio
-
-    sys.path.insert(0, os.getcwd())
-    from canonicalize_png import canonicalize
-
-    openscad_pattern = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
-    concurrency = asyncio.Semaphore(8)
-    openscad_environment = os.environ | {
-        "GALLIUM_DRIVER": "softpipe",
-        "LIBGL_ALWAYS_SOFTWARE": "1",
-        "MESA_LOADER_DRIVER_OVERRIDE": "softpipe",
-    }
-
-    async def run(cmd, output):
-        max_attempts = 5
-        for attempt in range(1, max_attempts + 1):
-            async with concurrency:
-                print("Running: " + shlex.join(cmd))
-                proc = await asyncio.create_subprocess_exec(*cmd, env=openscad_environment)
-                await proc.wait()
-                assert proc.returncode == 0
-            if os.path.getsize(output) != 7763:
-                canonicalize(output)
-                return
-            # render failure, retry
-            print(f"Render failure for `{shlex.join(cmd)}` ({attempt}/{max_attempts}), retrying")
-        raise RuntimeError(f"Render failure after {max_attempts} attempts: {shlex.join(cmd)}")
-    
-    async def main():
-        tasks = []
-        written = []
-        for line in open("README.md"):
-            match = openscad_pattern.match(line)
-            if match:
-                cmd = ["openscad", "--enable", "predictible-output", "--hardwarnings", "--projection=ortho", "--colorscheme=Starnight", "--render", "--imgsize=2500,1000", *shlex.split(match.group(1))]
-                # use gridflock.scad if no other file specified
-                for c in cmd:
-                    if ".scad" in c:
-                        break
-                else:
-                    cmd.append("gridflock.scad")
-                output = cmd[cmd.index("-o") + 1]
-                tasks.append(run(cmd, output))
-                written.append(output)
-        for f in os.listdir("docs/images"):
-            if os.path.join("docs/images", f) not in written:
-                os.unlink(os.path.join("docs/images", f))
-        await asyncio.gather(*tasks)
-
-    asyncio.run(main())
+    uv run scripts/generate_docs.py
 
 overlay-png name:
     inkscape -w 1600 -h 1200 docs/{{name}}.svg -o build/{{name}}.png
