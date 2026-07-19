@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 import shlex
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 from canonicalize_png import canonicalize
@@ -10,7 +11,7 @@ from pinned_openscad import openscad_path
 
 OPENSCAD_PATTERN = re.compile(r"^\s*<!--\s*openscad (.+)\s*-->\s*$")
 CONCURRENCY = asyncio.Semaphore(8)
-CANONICALIZE_CONCURRENCY = asyncio.Semaphore(8)
+CANONICALIZE_POOL = ProcessPoolExecutor(max_workers=8)
 OPENSCAD_ENVIRONMENT = os.environ | {
     "GALLIUM_DRIVER": "softpipe",
     "LIBGL_ALWAYS_SOFTWARE": "1",
@@ -38,8 +39,10 @@ async def render(command: list[str], output: str) -> None:
                         f"OpenSCAD exited with {process.returncode}: {shlex.join(command)}"
                     )
             if temporary_output.stat().st_size != 7763:
-                async with CANONICALIZE_CONCURRENCY:
-                    await asyncio.to_thread(canonicalize, temporary_output)
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(
+                    CANONICALIZE_POOL, canonicalize, temporary_output
+                )
                 os.replace(temporary_output, output_path)
                 return
             print(
