@@ -1,0 +1,54 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    env:
+      GALLIUM_DRIVER: softpipe
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      MESA_LOADER_DRIVER_OVERRIDE: softpipe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          submodules: true
+
+      - name: Setup Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just libegl1 libgl1-mesa-dri libopengl0
+          uv sync --frozen
+
+      - name: Generate documentation images
+        run: just docs
+
+      - name: Check documentation images
+        run: |
+          # Make newly generated, untracked images visible to git diff as well.
+          git add --intent-to-add docs/images
+          git diff --exit-code -- docs/images
+
+      - name: Upload changed documentation images
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: documentation-images
+          path: docs/images
+          retention-days: 1

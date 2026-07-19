@@ -226,7 +226,7 @@ Pull the pusher back into its original position to release the baseplate. You ca
 <!-- These images are generated for regression detection purposes. -->
 <!-- openscad -o docs/images/jig-main.png --camera=0,0,0,40,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
 <!-- openscad -o docs/images/jig-pusher.png --camera=0,0,0,40,0,10,200 -D part='"pusher"' mag_insert_jig.scad -->
-<!-- openscad -o docs/images/jig-main-below.png --camera=0,0,0,140,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
+<!-- openscad -o docs/images/jig-main-below.png --camera=0,0,0,175,0,10,200 -D part='"jig"' mag_insert_jig.scad -->
 <!-- openscad -o docs/images/jig-pusher-below.png --camera=0,0,0,140,0,10,200 -D part='"pusher"' mag_insert_jig.scad -->
 
 ### Release slot
@@ -331,15 +331,15 @@ The depth of the tab can be configured with `clickgroove_depth`. Changing this v
 
 The `clickgroove_strength` property controls the thickness of the latch itself. This is measured from the very bottom of the latch which, if you look at the gridfinity specification, has a chamfer of 0.7mm, so the strength needs to be higher than this to get any reasonable latch height. Here's an example with `clickgroove_strength=2.5` (and `clickgroove_wall_strength=0`, or else there would not be enough space):
 
-<!-- openscad -o docs/images/click1-strength-2.5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click=true -D click_style=1 -D clickgroove_strength=2.5 -D clickgroove_wall_strength=0 -->
-<img src="docs/images/click1-strength-2.5.png" alt="Click latch with clickgroove_strength=2.5" />
+<!-- openscad -o docs/images/click2-strength-2.5.png --camera=0,0,0,40,0,10,100 -D plate_size='[42, 42]' -D click=true -D click_style=1 -D clickgroove_strength=2.5 -D clickgroove_wall_strength=0 -->
+<img src="docs/images/click2-strength-2.5.png" alt="Click latch with clickgroove_strength=2.5" />
 
 #### Latch Wall Strength
 
 The `clickgroove_wall_strength` property controls the thickness of the wall behind the latch. This wall serves two purposes: It adds rigidity to the baseplate, and it prevents the click latch from bending too far. Note that the wall is measured per cell, so if you have two neighbouring cells, the actual wall thickness will be double this value. An example with `clickgroove_wall_strength=2` (and reduced `clickgroove_strength`):
 
-<!-- openscad -o docs/images/click1-wall-strength-2.png --camera=0,0,0,40,0,10,100 -D plate_size='[84, 42]' -D click=true -D click_style=1 -D clickgroove_strength=0.8 -D clickgroove_wall_strength=2 -->
-<img src="docs/images/click1-wall-strength-2.png" alt="Click latch with clickgroove_wall_strength=2" />
+<!-- openscad -o docs/images/click2-wall-strength-2.png --camera=0,0,0,40,0,10,100 -D plate_size='[84, 42]' -D click=true -D click_style=1 -D clickgroove_strength=0.8 -D clickgroove_wall_strength=2 -->
+<img src="docs/images/click2-wall-strength-2.png" alt="Click latch with clickgroove_wall_strength=2" />
 
 ### Arc Style Latch
 
