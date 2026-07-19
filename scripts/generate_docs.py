@@ -37,8 +37,8 @@ async def render(command: list[str], output: str) -> None:
                         f"OpenSCAD exited with {process.returncode}: {shlex.join(command)}"
                     )
             if temporary_output.stat().st_size != 7763:
-                if canonicalize(temporary_output, output_path):
-                    os.replace(temporary_output, output_path)
+                canonicalize(temporary_output)
+                os.replace(temporary_output, output_path)
                 return
             print(
                 f"Render failure for `{shlex.join(command)}` "

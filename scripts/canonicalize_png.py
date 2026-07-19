@@ -15,6 +15,15 @@ LENGTH_EXTRA_BITS = (
     0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3,
     3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
 )
+DISTANCE_BASES = (
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257,
+    385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289,
+    16385, 24577,
+)
+DISTANCE_EXTRA_BITS = (
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8,
+    8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13,
+)
 
 
 class _BitWriter:
@@ -57,7 +66,7 @@ def _write_fixed_symbol(writer: _BitWriter, symbol: int) -> None:
     writer.write(_reverse_bits(code, width), width)
 
 
-def _write_length(writer: _BitWriter, length: int) -> None:
+def _write_match(writer: _BitWriter, length: int, distance: int) -> None:
     for index, (base, extra_bits) in enumerate(
         zip(LENGTH_BASES, LENGTH_EXTRA_BITS, strict=True)
     ):
@@ -65,45 +74,67 @@ def _write_length(writer: _BitWriter, length: int) -> None:
         if length <= maximum:
             _write_fixed_symbol(writer, 257 + index)
             writer.write(length - base, extra_bits)
-            # Distance one uses fixed distance symbol zero with no extra bits.
-            writer.write(0, 5)
-            return
-    raise ValueError(f"Invalid deflate match length: {length}")
+            break
+    else:
+        raise ValueError(f"Invalid deflate match length: {length}")
+
+    for symbol, (base, extra_bits) in enumerate(
+        zip(DISTANCE_BASES, DISTANCE_EXTRA_BITS, strict=True)
+    ):
+        maximum = base + (1 << extra_bits) - 1
+        if distance <= maximum:
+            writer.write(_reverse_bits(symbol, 5), 5)
+            writer.write(distance - base, extra_bits)
+            break
+    else:
+        raise ValueError(f"Invalid deflate match distance: {distance}")
 
 
 def _deterministic_zlib(data: bytes) -> bytes:
     """Encode a deterministic fixed-Huffman deflate stream.
 
-    PNG's Sub filter turns the large flat areas in documentation renders into
-    runs of zeroes. Encoding those runs as distance-one matches keeps the files
-    compact without relying on the host zlib implementation.
+    The match finder deliberately considers exactly one previous position for
+    each three-byte sequence. This keeps both its decisions and its output
+    independent of the host zlib implementation.
     """
     writer = _BitWriter()
     writer.write(1, 1)  # Final block.
     writer.write(1, 2)  # Fixed-Huffman block.
 
+    previous_positions: dict[int, int] = {}
     position = 0
-    while position < len(data):
-        value = data[position]
-        run_end = position + 1
-        while run_end < len(data) and data[run_end] == value:
-            run_end += 1
+    data_length = len(data)
+    while position < data_length:
+        match_length = 0
+        match_distance = 0
+        if position + 2 < data_length:
+            key = (data[position] << 16) | (data[position + 1] << 8) | data[position + 2]
+            previous = previous_positions.get(key)
+            if previous is not None and position - previous <= 32768:
+                maximum = min(258, data_length - position)
+                while (
+                    match_length < maximum
+                    and data[previous + match_length] == data[position + match_length]
+                ):
+                    match_length += 1
+                if match_length >= 3:
+                    match_distance = position - previous
 
-        if position == 0 or data[position - 1] != value:
-            _write_fixed_symbol(writer, value)
-            position += 1
+        consumed = match_length if match_length >= 3 else 1
+        if match_length >= 3:
+            _write_match(writer, match_length, match_distance)
+        else:
+            _write_fixed_symbol(writer, data[position])
 
-        remaining = run_end - position
-        while remaining >= 3:
-            length = min(remaining, 258)
-            if remaining - length in {1, 2}:
-                length -= 3 - (remaining - length)
-            _write_length(writer, length)
-            position += length
-            remaining -= length
-        while position < run_end:
-            _write_fixed_symbol(writer, value)
-            position += 1
+        update_end = min(position + consumed, data_length - 2)
+        for update_position in range(position, update_end):
+            key = (
+                (data[update_position] << 16)
+                | (data[update_position + 1] << 8)
+                | data[update_position + 2]
+            )
+            previous_positions[key] = update_position
+        position += consumed
 
     _write_fixed_symbol(writer, 256)
     deflate = writer.finish()
@@ -139,27 +170,12 @@ def _png_bytes(image: Image.Image) -> bytes:
     )
 
 
-def canonicalize(path: Path | str, reference: Path | str | None = None) -> bool:
-    """Canonicalize ``path``, unless its pixels already match ``reference``.
-
-    Returns whether the caller should replace the reference with the result.
-    Keeping an identical checked-in reference avoids rewriting legacy PNGs just
-    to migrate their encoding. New or visually changed images use the fully
-    deterministic encoder above.
-    """
+def canonicalize(path: Path | str) -> None:
     path = Path(path)
     with Image.open(path) as source:
         normalized = source.convert("RGB")
         size = normalized.size
         pixels = normalized.tobytes()
-
-    if reference is not None:
-        reference_path = Path(reference)
-        if reference_path.is_file():
-            with Image.open(reference_path) as existing:
-                existing = existing.convert("RGB")
-                if existing.size == size and existing.tobytes() == pixels:
-                    return False
 
     temporary_path = path.with_name(f".{path.name}.canonical.png")
     try:
@@ -168,7 +184,6 @@ def canonicalize(path: Path | str, reference: Path | str | None = None) -> bool:
         temporary_path.replace(path)
     finally:
         temporary_path.unlink(missing_ok=True)
-    return True
 
 
 if __name__ == "__main__":
