@@ -16,13 +16,7 @@ OPENSCAD_URL = (
     f"OpenSCAD-{OPENSCAD_VERSION}-x86_64.AppImage"
 )
 OPENSCAD_SHA256 = "85000c7839cf96ca824511d9da38091683e3c6f71a390205ef4dd07e62ed97b4"
-
-
-def _cache_parent() -> Path:
-    xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
-    if xdg_cache_home:
-        return Path(xdg_cache_home) / "gridflock"
-    return Path.home() / ".cache" / "gridflock"
+BUILD_DIRECTORY = Path(__file__).resolve().parent.parent / "build"
 
 
 def _download(destination: Path) -> None:
@@ -45,7 +39,7 @@ def openscad_path() -> Path:
     if platform.system() != "Linux" or platform.machine() not in {"x86_64", "AMD64"}:
         raise RuntimeError("The pinned OpenSCAD AppImage requires x86_64 Linux")
 
-    cache_parent = _cache_parent()
+    cache_parent = BUILD_DIRECTORY
     cache_directory = cache_parent / f"openscad-{OPENSCAD_VERSION}-{OPENSCAD_SHA256[:12]}"
     executable = cache_directory / "AppRun"
     if executable.is_file():
