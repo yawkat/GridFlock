@@ -556,7 +556,7 @@ A bottom wall can be used to keep your grid from slipping off e.g. a table, with
 
 ### Variable wall height
 
-The top and bottom wall height can also be adjusted individually for each corner using the `plate_wall_below` and `plate_wall_above` options. This allows you to create shelf-style grids:
+The top and bottom wall height can also be adjusted individually for each corner using the `plate_wall_below` and `plate_wall_above` options. This allows you to create shelf-style grids. The following example has a plate wall thickness of 1mm on all sides except south, and a variable height of 20mm for the NW and NE corners.
 
 <!-- openscad -o docs/images/wall-variable.png --camera=0,0,0,40,0,20,300 -D plate_size='[84, 84]' -D plate_wall_thickness='[1,1,0,1]' -D plate_wall_above='[0, 20, 20, 0]' -->
 <img src="docs/images/wall-variable.png" alt="Shelf" />
