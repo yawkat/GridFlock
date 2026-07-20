@@ -561,6 +561,9 @@ The top and bottom wall height can also be adjusted individually for each corner
 <!-- openscad -o docs/images/wall-variable.png --camera=0,0,0,40,0,20,300 -D plate_size='[84, 84]' -D plate_wall_thickness='[1,1,0,1]' -D plate_wall_above='[0, 20, 20, 0]' -->
 <img src="docs/images/wall-variable.png" alt="Shelf" />
 
+> [!NOTE]
+> Variable height does not currently render correctly with segmented baseplates.
+
 ## Vertical Screws
 
 Vertical screws are inserted at cell intersections. They can be used to screw down the plate. Screws can be placed at various positions depending on use case.
