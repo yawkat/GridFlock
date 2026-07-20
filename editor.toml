@@ -179,6 +179,7 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-inter
 [model.tab-metadata."Horizontal Screws"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
 description-html = "Add horizontal screw holes to selected plate edges."
+collapsed = true
 [model.param-metadata."horizontal_screw_wall_*"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
 [model.param-metadata.horizontal_screw_diameter]
