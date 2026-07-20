@@ -67,6 +67,7 @@ For inserting magnets, check out [the jig](#jig).
   - [Plate Wall](#plate-wall)
     - [Top plate wall](#top-plate-wall)
     - [Bottom plate wall](#bottom-plate-wall)
+    - [Variable wall height](#variable-wall-height)
   - [Vertical Screws](#vertical-screws)
     - [Screw dimensions](#screw-dimensions)
     - [Screw locations](#screw-locations)
@@ -552,6 +553,13 @@ A bottom wall can be used to keep your grid from slipping off e.g. a table, with
 
 <!-- openscad -o docs/images/wall-bottom.png --camera=0,0,0,140,0,20,200 -D plate_size='[84, 84]' -D magnets=false -D plate_wall_thickness='[1,1,1,1]' -D plate_wall_height='[0,5]' -->
 <img src="docs/images/wall-bottom.png" alt="Bottom wall" />
+
+### Variable wall height
+
+The top and bottom wall height can also be adjusted individually for each corner using the `plate_wall_below` and `plate_wall_above` options. This allows you to create shelf-style grids:
+
+<!-- openscad -o docs/images/wall-variable.png --camera=0,0,0,40,0,20,300 -D plate_size='[84, 84]' -D plate_wall_thickness='[1,1,0,1]' -D plate_wall_above='[0, 20, 20, 0]' -->
+<img src="docs/images/wall-variable.png" alt="Shelf" />
 
 ## Vertical Screws
 

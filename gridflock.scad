@@ -129,6 +129,10 @@ top_chamfer = [0, 0, 0, 0]; // 0.1
 plate_wall_thickness = [0, 0, 0, 0]; // 0.5
 // Plate wall height. The first value is the height above the plate, the second value the height below the plate
 plate_wall_height = [0, 0];
+// Variable wall height, above the plate. Specified for each corner individually. Corners are SW, NW, NE, SE.
+plate_wall_above = [0, 0, 0, 0];
+// Variable wall height, below the plate. Specified for each corner individually. Corners are SW, NW, NE, SE.
+plate_wall_below = [0, 0, 0, 0];
 
 /* [Vertical Screws] */
 
@@ -890,11 +894,30 @@ module segment_corner(posy=_NORTH, posx=_WEST, connector=[false, false, false, f
 /**
  * This is an "inverted" quarter-circle that is used to punch out the corner of a rounded rectangle.
  */
-module corner_punch() {
-    difference() {
+module corner_punch(size) {
+    if (size.x != 0 && size.y != 0) scale(size) difference() {
         square([1, 1]);
         translate([1, 1]) circle(r=1);
     }
+}
+
+module segment_corner_punch(size, connector, include_wall) {
+    // wall thickness to cut off, by side
+    wall_t = function (side) include_wall || connector[side] ? 0 : plate_wall_thickness[side];
+    // corner radius by side
+    bounds_min = [
+        -size.x/2 + wall_t(_WEST),
+        -size.y/2 + wall_t(_SOUTH)
+    ];
+    bounds_max = [
+        size.x/2 - wall_t(_EAST),
+        size.y/2 - wall_t(_NORTH)
+    ];
+    compute_radius = function (side) plate_corner_radius - wall_t(side);
+    if (!connector[_SOUTH] && !connector[_WEST]) translate(bounds_min) corner_punch([compute_radius(_WEST), compute_radius(_SOUTH)]);
+    if (!connector[_NORTH] && !connector[_WEST]) translate([bounds_min.x, bounds_max.y]) rotate(-90) corner_punch([compute_radius(_NORTH), compute_radius(_WEST)]);
+    if (!connector[_SOUTH] && !connector[_EAST]) translate([bounds_max.x, bounds_min.y]) rotate(90) corner_punch([compute_radius(_SOUTH), compute_radius(_EAST)]);
+    if (!connector[_NORTH] && !connector[_EAST]) translate(bounds_max) rotate(180) corner_punch([compute_radius(_EAST), compute_radius(_NORTH)]);
 }
 
 /**
@@ -906,23 +929,12 @@ module corner_punch() {
 module segment_rectangle(size, connector=[false, false, false, false], include_wall=false) {
     // wall thickness to cut off, by side
     wall_t = function (side) include_wall || connector[side] ? 0 : plate_wall_thickness[side];
-    // corner radius by side
-    compute_radius = function (side) max(0.01, plate_corner_radius - wall_t(side));
-    bounds_offset = function (side) wall_t(side);
-    bounds_min = [
-        -size.x/2 + bounds_offset(_WEST),
-        -size.y/2 + bounds_offset(_SOUTH)
-    ];
-    bounds_max = [
-        size.x/2 - bounds_offset(_EAST),
-        size.y/2 - bounds_offset(_NORTH)
-    ];
     difference() {
-        translate(bounds_min) square([bounds_max.x - bounds_min.x, bounds_max.y - bounds_min.y]);
-        if (!connector[_SOUTH] && !connector[_WEST]) translate(bounds_min) scale([compute_radius(_WEST), compute_radius(_SOUTH)]) corner_punch();
-        if (!connector[_NORTH] && !connector[_WEST]) translate([bounds_min.x, bounds_max.y]) scale([compute_radius(_WEST), compute_radius(_NORTH)]) rotate(-90) corner_punch();
-        if (!connector[_SOUTH] && !connector[_EAST]) translate([bounds_max.x, bounds_min.y]) scale([compute_radius(_EAST), compute_radius(_SOUTH)]) rotate(90) corner_punch();
-        if (!connector[_NORTH] && !connector[_EAST]) translate(bounds_max) scale([compute_radius(_EAST), compute_radius(_NORTH)]) rotate(180) corner_punch();
+        translate([
+            -size.x/2 + wall_t(_WEST),
+            -size.y/2 + wall_t(_SOUTH)
+        ]) square([size.x - wall_t(_EAST) - wall_t(_WEST), size.y - wall_t(_NORTH) - wall_t(_SOUTH)]);
+        segment_corner_punch(size, connector, include_wall);
     }
 }
 
@@ -994,9 +1006,77 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                 };
             };
 
-            if (plate_wall_thickness != [0,0,0,0]) translate([0, 0, -_extra_height-plate_wall_height[1]]) linear_extrude(_total_height + plate_wall_height[0] + plate_wall_height[1]) difference() {
-                segment_rectangle(size, connector, include_wall=true);
-                segment_rectangle(size, connector, include_wall=false);
+            // draw walls
+            if (plate_wall_thickness != [0,0,0,0]) {
+                // we draw an outer polyhedron with the walls, and then cut out an inner polyhedron without those walls (both rounded).
+                // the polyhedron has a bottom and a top surface. the top surface has, from above, this point numbering layout:
+                // ( 3) XX( 7)XXX(11)XX (15)
+                //      X             X
+                // ( 2) X ( 6)   (10) X (14)
+                //      X             X
+                // ( 1) X ( 5)   ( 9) X (13)
+                //      X             X
+                // ( 0) XX( 4)XXX( 8)XX (12)
+
+                corner_coordinate = function (i, bottom, include_wall=[true, true]) let(
+                    side_x = i == 0 || i == 1 ? _WEST : _EAST,
+                    side_y = i == 0 || i == 3 ? _SOUTH : _NORTH
+                ) [
+                    (size.x/2 - (include_wall.x ? 0 : plate_wall_thickness[side_x])) * (side_x == _WEST ? -1 : 1),
+                    (size.y/2 - (include_wall.y ? 0 : plate_wall_thickness[side_y])) * (side_y == _SOUTH ? -1 : 1),
+                    (bottom ? -1 : 1) * ((bottom ? plate_wall_below : plate_wall_above)[i] + plate_wall_height[bottom ? 1 : 0] + (bottom ? _extra_height : _profile_height))
+                ];
+                wall_points = function(bottom) [
+                    corner_coordinate(0, bottom, [true, true]),
+                    corner_coordinate(0, bottom, [true, false]),
+                    corner_coordinate(1, bottom, [true, false]),
+                    corner_coordinate(1, bottom, [true, true]),
+                    corner_coordinate(0, bottom, [false, true]),
+                    corner_coordinate(0, bottom, [false, false]),
+                    corner_coordinate(1, bottom, [false, false]),
+                    corner_coordinate(1, bottom, [false, true]),
+                    corner_coordinate(3, bottom, [false, true]),
+                    corner_coordinate(3, bottom, [false, false]),
+                    corner_coordinate(2, bottom, [false, false]),
+                    corner_coordinate(2, bottom, [false, true]),
+                    corner_coordinate(3, bottom, [true, true]),
+                    corner_coordinate(3, bottom, [true, false]),
+                    corner_coordinate(2, bottom, [true, false]),
+                    corner_coordinate(2, bottom, [true, true]),
+                ];
+                wall_face_base = [
+                    [0, 1, 5, 4],
+                    [1, 2, 6, 5],
+                    [2, 3, 7, 6],
+                    [4, 5, 9, 8],
+                    [5, 6, 10, 9],
+                    [6, 7, 11, 10],
+                    [8, 9, 13, 12],
+                    [9, 10, 14, 13],
+                    [10, 11, 15, 14]
+                ];
+                wall_bounds = [
+                    max(plate_wall_below) + plate_wall_height[0],
+                    max(plate_wall_above) + plate_wall_height[1]
+                ];
+                difference() {
+                    polyhedron(points = [
+                        each wall_points(false),
+                        each wall_points(true)
+                    ], faces = [
+                        each wall_face_base,
+                        for (face = wall_face_base) [for (i = [1:len(face)]) face[len(face) - i] + 16],
+                        // side faces
+                        [0, 16, 17, 18, 19, 3, 2, 1],
+                        [3, 19, 23, 27, 31, 15, 11, 7],
+                        [15, 31, 30, 29, 28, 12, 13, 14],
+                        [0, 4, 8, 12, 28, 24, 20, 16]
+                    ]);
+                    translate([0, 0, -_extra_height - plate_wall_height[1] - max(plate_wall_below)]) linear_extrude(_total_height + plate_wall_height[0] + plate_wall_height[1] + max(plate_wall_below) + max(plate_wall_above)) {
+                        segment_corner_punch(size, connector, include_wall = true);
+                        segment_rectangle(size, connector, include_wall = false);
+                    }
+                }
             }
             
             if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, trace, size, padding, connector);
