@@ -178,22 +178,21 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-inter
 
 [model.tab-metadata."Horizontal Screws"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
-control-boolean = "horizontal_screw_wall"
-description-html = "Enable horizontal screws on plate walls. Requires plate_wall_thickness."
-[model.param-metadata.horizontal_screw_wall]
-display-condition = {fixed = false}
+description-html = "Add horizontal screw holes to selected plate edges."
+[model.param-metadata."horizontal_screw_wall_*"]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
 [model.param-metadata.horizontal_screw_diameter]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
-display-condition = {js = "horizontal_screw_wall"}
+display-condition = {js = "horizontal_screw_wall_north || horizontal_screw_wall_east || horizontal_screw_wall_south || horizontal_screw_wall_west"}
 [model.param-metadata.horizontal_screw_countersink_top]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
-display-condition = {js = "horizontal_screw_wall"}
+display-condition = {js = "horizontal_screw_wall_north || horizontal_screw_wall_east || horizontal_screw_wall_south || horizontal_screw_wall_west"}
 [model.param-metadata.horizontal_screw_counterbore_top]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
-display-condition = {js = "horizontal_screw_wall"}
+display-condition = {js = "horizontal_screw_wall_north || horizontal_screw_wall_east || horizontal_screw_wall_south || horizontal_screw_wall_west"}
 [model.param-metadata.horizontal_screw_offset]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
-display-condition = {js = "horizontal_screw_wall"}
+display-condition = {js = "horizontal_screw_wall_north || horizontal_screw_wall_east || horizontal_screw_wall_south || horizontal_screw_wall_west"}
 
 [model.tab-metadata."Thumb Screw"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#thumb-screw"

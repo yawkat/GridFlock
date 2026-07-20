@@ -160,8 +160,14 @@ vertical_screw_other = false;
 
 /* [Horizontal Screws] */
 
-// Enable horizontal screws on plate walls (requires plate_wall_thickness)
-horizontal_screw_wall = false;
+// Enable horizontal screws on the north edge
+horizontal_screw_wall_north = false;
+// Enable horizontal screws on the east edge
+horizontal_screw_wall_east = false;
+// Enable horizontal screws on the south edge
+horizontal_screw_wall_south = false;
+// Enable horizontal screws on the west edge
+horizontal_screw_wall_west = false;
 // Radius of vertical screws
 horizontal_screw_diameter = 3.2; // 0.1
 // Top countersink dimension. First value is the diameter of the screw head, second value the height
@@ -847,9 +853,10 @@ module vertical_screw() {
     translate([0, 0, _profile_height]) screw(depth=_total_height, d=vertical_screw_diameter, countersink=vertical_screw_countersink_top, counterbore=vertical_screw_counterbore_top);
 }
 
-module horizontal_screws(direction, padding, trace) {
+module horizontal_screws(direction, padding, trace, connector) {
     wall = plate_wall_thickness[direction];
-    if (horizontal_screw_wall && wall > 0 && padding[direction] > 0) {
+    enabled = [horizontal_screw_wall_north, horizontal_screw_wall_east, horizontal_screw_wall_south, horizontal_screw_wall_west];
+    if (enabled[direction] && !connector[direction]) {
         direction_left = (direction + 3) % 4;
         direction_right = (direction + 1) % 4;
         cumulated = cumulate(trace);
@@ -1139,10 +1146,10 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         }
 
         // horizontal screw holes
-        translate([0, size.y/2]) horizontal_screws(_NORTH, padding, trace = trace.x);
-        translate([0, -size.y/2]) rotate([0, 0, 180]) horizontal_screws(_SOUTH, padding, trace = trace.x);
-        translate([-size.x/2, 0]) rotate([0, 0, 90]) horizontal_screws(_WEST, padding, trace = trace.y);
-        translate([size.x/2, 0]) rotate([0, 0, -90]) horizontal_screws(_EAST, padding, trace = trace.y);
+        translate([0, size.y/2]) horizontal_screws(_NORTH, padding, trace = trace.x, connector = connector);
+        translate([0, -size.y/2]) rotate([0, 0, 180]) horizontal_screws(_SOUTH, padding, trace = trace.x, connector = connector);
+        translate([-size.x/2, 0]) rotate([0, 0, 90]) horizontal_screws(_WEST, padding, trace = trace.y, connector = connector);
+        translate([size.x/2, 0]) rotate([0, 0, -90]) horizontal_screws(_EAST, padding, trace = trace.y, connector = connector);
     }
 }
 
