@@ -153,7 +153,7 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
 [model.param-metadata.plate_wall_height]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
 
-[model.tab-metadata."openGrid Adapter"]
+[model.tab-metadata.openGrid]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-adapter"
 collapsed = true
 [model.param-metadata.adapter_north]

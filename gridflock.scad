@@ -1001,8 +1001,10 @@ module adapter_side(side, size) {
                 }
             }
         } else if (adapter_mode == _ADAPTER_SLOT_OPENCONNECT || adapter_mode == _ADAPTER_SLOT_OPENCONNECT_LOCK) {
-            rotate([90, 0, 180]) translate([0, 0, -2.7]) 
-            if (adapter_mode == _ADAPTER_SLOT_OPENCONNECT) import("opengrid/openconnect_slot_negative.3mf"); else import("opengrid/openconnect_slot_negative_lock.3mf");
+            rotate([90, 0, 180]) translate([0, 0, -2.7]) {
+                if (adapter_mode == _ADAPTER_SLOT_OPENCONNECT) import("opengrid/openconnect_slot_negative.3mf");
+                else import("opengrid/openconnect_slot_negative_lock.3mf");
+            }
         }
     }
 }
