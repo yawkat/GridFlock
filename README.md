@@ -570,6 +570,8 @@ The top and bottom wall height can also be adjusted individually for each corner
 
 ## openGrid Adapter
 
+**[Customizer with recommended openConnect layout](https://gridflock.yawk.at/#eyJwbGF0ZV9zaXplIjpbNDIsNDJdLCJwbGF0ZV93YWxsX3RoaWNrbmVzcyI6WzAsMSw0LDFdLCJwbGF0ZV93YWxsX2Fib3ZlIjpbMTQsMCwwLDE0XSwiYWRhcHRlcl9ub3J0aCI6dHJ1ZSwiYWRhcHRlcl9lYXN0Ijp0cnVlLCJhZGFwdGVyX3NvdXRoIjp0cnVlLCJhZGFwdGVyX3dlc3QiOnRydWV9)**
+
 You can use GridFlock to generate Gridfinity "shelves" that can be attached to an [openGrid](https://www.opengrid.world/) system. Configure a plate wall of sufficient height, and then enable `adapter_north`, `adapter_east`, `adapter_west`, or `adapter_south`. For example, the following shelf has been generated with `plate_wall_thickness=[0,1,1,1]` (1mm wall everywhere except north) and `plate_wall_above=[20,0,0,20]` (20mm wall at south-east and south-west corners):
 
 <!-- openscad -o docs/images/adapter-simple.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=6 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
