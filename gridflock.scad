@@ -134,6 +134,19 @@ plate_wall_above = [0, 0, 0, 0];
 // Variable wall height, below the plate. Specified for each corner individually. Corners are SW, NW, NE, SE.
 plate_wall_below = [0, 0, 0, 0];
 
+/* [openGrid] */
+
+// Generate openGrid adapters on the north wall. Requires a plate wall of sufficient height/thickness on that side
+adapter_north = false;
+// Generate openGrid adapters on the east wall. Requires a plate wall of sufficient height/thickness on that side
+adapter_east = false;
+// Generate openGrid adapters on the south wall. Requires a plate wall of sufficient height/thickness on that side
+adapter_south = false;
+// Generate openGrid adapters on the west wall. Requires a plate wall of sufficient height/thickness on that side
+adapter_west = false;
+// Style of the openGrid adapter. The plain openGrid connectors can be printed directly, in normal or 'lite' strength, and in a directional or non-directional variant. The 'vertical' variants of each cut a 45° angle to allow printing without supports, at the cost of reduced strength. The openConnect variants instead cut a slot for a separately printed openConnect connector, which is the recommended option
+adapter_mode = 11; // [0:openGrid, 1:openGrid/lite, 2:openGrid/directional, 3:openGrid/lite/directional, 4:openGrid/vertical, 5:openGrid/lite/vertical, 6:openGrid/directional/vertical, 7:openGrid/lite/directional/vertical, 10:openConnect Slot, 11:openConnect Slot w/ Lock]
+
 /* [Vertical Screws] */
 
 // Radius of vertical screws
@@ -242,6 +255,14 @@ _MAGNET_ROUND_CORNERS = 1;
 assert(!magnets || magnet_frame_style != _MAGNET_SOLID || magnet_style != _MAGNET_PRESS_FIT, "'Solid' magnet frame style is not compatible with press-fit magnets.");
 
 assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGNET_SOLID), "Thumbscrew holes require some sort of solid base, such as magnet_style solid, or an explicit solid_base.");
+
+_OPENGRID_LITE = 1;
+_OPENGRID_DIRECTIONAL = 2;
+_OPENGRID_VERTICAL = 4;
+_OPENGRID_MAX = 7;
+
+_ADAPTER_SLOT_OPENCONNECT = 10;
+_ADAPTER_SLOT_OPENCONNECT_LOCK = 11;
 
 $fn=40;
 
@@ -951,6 +972,51 @@ module chamfer_triangle() {
     polygon([[-extend, -extend], [1 + extend, -extend], [-extend, 1 + extend]]);
 }
 
+module adapter_side(side, size) {
+    min_below = min(plate_wall_below[(side+1)%4], plate_wall_below[(side+2)%4]);
+    min_above = min(plate_wall_above[(side+1)%4], plate_wall_above[(side+2)%4]);
+    height_side = _total_height + plate_wall_height[0] + plate_wall_height[1] + min_below + min_above;
+    area = [
+        size[side == _WEST || side == _EAST ? 1 : 0] - plate_corner_radius*2,
+        height_side
+    ];
+    connector_size = 
+        adapter_mode <= _OPENGRID_MAX ? [24.6, 24.6] :
+        adapter_mode == _ADAPTER_SLOT_OPENCONNECT || adapter_mode == _ADAPTER_SLOT_OPENCONNECT_LOCK ? [26, 18] :
+        assert(false);
+    count = [for (i = [0,1]) floor((area[i] + 28 - connector_size[i]) / 28)];
+    for (xi = [0:count.x-1], yi = [0:count.y-1]) translate([(-count.x/2+xi+0.5)*28, size[side == _WEST || side == _EAST ? 0 : 1]/2, (-count.y/2+yi+0.5)*28 - _extra_height - plate_wall_height[1] - min_below + height_side / 2]) {
+        if (adapter_mode <= _OPENGRID_MAX) {
+            depth = (adapter_mode & _OPENGRID_LITE) == 0 ? 6.8 : 3.4;
+            translate([0, depth, 0]) rotate([90, 0, 0]) {
+                difference() {
+                    if ((adapter_mode & _OPENGRID_DIRECTIONAL) == 0) {
+                        if ((adapter_mode & _OPENGRID_LITE) == 0) import("opengrid/opengrid-bare-snap.3mf");
+                        else import("opengrid/opengrid-bare-lite-snap.3mf");
+                    } else {
+                        if ((adapter_mode & _OPENGRID_LITE) == 0) import("opengrid/opengrid-bare-directional-snap-v21.3mf");
+                        else import("opengrid/opengrid-bare-directional-lite-snap-v2.3mf");
+                    }
+                    if ((adapter_mode & _OPENGRID_VERTICAL) != 0) translate([0, -12.3, 0]) rotate([0, -90, 0]) linear_extrude(h=28, center=true) polygon([[0, -depth], [depth, -depth], [depth, 0], [0, depth]]);
+                }
+            }
+        } else if (adapter_mode == _ADAPTER_SLOT_OPENCONNECT || adapter_mode == _ADAPTER_SLOT_OPENCONNECT_LOCK) {
+            rotate([90, 0, 180]) translate([0, 0, -2.7]) 
+            if (adapter_mode == _ADAPTER_SLOT_OPENCONNECT) import("opengrid/openconnect_slot_negative.3mf"); else import("opengrid/openconnect_slot_negative_lock.3mf");
+        }
+    }
+}
+
+module adapter(size, connector, negative) {
+    mode_negative = adapter_mode == _ADAPTER_SLOT_OPENCONNECT || adapter_mode == _ADAPTER_SLOT_OPENCONNECT_LOCK;
+    if (negative == mode_negative) {
+        if (adapter_north && !connector[_NORTH]) adapter_side(_NORTH, size);
+        if (adapter_east && !connector[_EAST]) rotate([0,0,-90]) adapter_side(_EAST, size);
+        if (adapter_south && !connector[_SOUTH]) rotate([0,0,180]) adapter_side(_SOUTH, size);
+        if (adapter_west && !connector[_WEST]) rotate([0,0,90]) adapter_side(_WEST, size);
+    }
+}
+
 function compute_segment_size(trace, padding) = [
     BASEPLATE_DIMENSIONS.x * cumulate(trace.x)[len(trace.x)] + padding[_EAST] + padding[_WEST],
     BASEPLATE_DIMENSIONS.y * cumulate(trace.y)[len(trace.y)] + padding[_NORTH] + padding[_SOUTH],
@@ -1085,6 +1151,8 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                     }
                 }
             }
+
+            adapter(size, connector, negative=false);
             
             if (connector_intersection_puzzle) translate([0, 0, -_extra_height]) linear_extrude(height = _total_height) segment_intersection_connectors(true, trace, size, padding, connector);
             if (connector_edge_puzzle) {
@@ -1103,6 +1171,8 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                 }
             }
         }
+        adapter(size, connector, negative=true);
+
         if (connector_edge_puzzle) {
             translate([0, 0, -_extra_height]) linear_extrude(height = _extra_height+edge_puzzle_height_female) segment_edge_connectors(false, trace, size, padding, connector);
         }

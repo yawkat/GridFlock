@@ -153,6 +153,21 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
 [model.param-metadata.plate_wall_height]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-wall"
 
+[model.tab-metadata."openGrid Adapter"]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-adapter"
+collapsed = true
+[model.param-metadata.adapter_north]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-adapter"
+[model.param-metadata.adapter_east]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-adapter"
+[model.param-metadata.adapter_south]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-adapter"
+[model.param-metadata.adapter_west]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-adapter"
+[model.param-metadata.adapter_mode]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#adapter-types"
+display-condition = {js = "adapter_north || adapter_east || adapter_south || adapter_west"}
+
 [model.tab-metadata."Vertical Screws"]
 collapsed = true
 [model.param-metadata.vertical_screw_diameter]

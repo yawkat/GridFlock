@@ -68,6 +68,10 @@ For inserting magnets, check out [the jig](#jig).
     - [Top plate wall](#top-plate-wall)
     - [Bottom plate wall](#bottom-plate-wall)
     - [Variable wall height](#variable-wall-height)
+  - [openGrid Adapter](#opengrid-adapter)
+    - [Adapter types](#adapter-types)
+      - [Standard openGrid](#standard-opengrid)
+      - [openConnect](#openconnect)
   - [Vertical Screws](#vertical-screws)
     - [Screw dimensions](#screw-dimensions)
     - [Screw locations](#screw-locations)
@@ -563,6 +567,65 @@ The top and bottom wall height can also be adjusted individually for each corner
 
 > [!NOTE]
 > Variable height does not currently render correctly with segmented baseplates.
+
+## openGrid Adapter
+
+You can use GridFlock to generate Gridfinity "shelves" that can be attached to an [openGrid](https://www.opengrid.world/) system. Configure a plate wall of sufficient height, and then enable `adapter_north`, `adapter_east`, `adapter_west`, or `adapter_south`. For example, the following shelf has been generated with `plate_wall_thickness=[0,1,1,1]` (1mm wall everywhere except north) and `plate_wall_above=[20,0,0,20]` (20mm wall at south-east and south-west corners):
+
+<!-- openscad -o docs/images/adapter-simple.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=6 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
+<img src="docs/images/adapter-simple.png" alt="Shelf" />
+
+Note that openConnect is preferred over directly printing openGrid snaps, see below.
+
+The wall will automatically be filled with as many adapters as possible:
+
+<!-- openscad -o docs/images/adapter-multi.png --camera=0,0,0,60,0,20,100 -D plate_size='[88, 42]' -D adapter_south=true -D adapter_mode=6 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
+<img src="docs/images/adapter-multi.png" alt="Shelf" />
+
+> [!NOTE]
+> Adapters do not render correctly with segmented baseplates.
+
+### Adapter types
+
+GridFlock offers various adapter variants.
+
+#### Standard openGrid
+
+You can print the standard openGrid connector directly onto the wall. Normal and lite, directional and non-directional variants are available. There is also a "vertical" variant of each which cuts a 45° angle from the bottom of each connector which makes printing without supports possible, but reduces strength.
+
+> [!NOTE]
+> The printability vs strength tradeoff is substantial with this adapter. The vertical variants don't stay in place nearly as well, but the non-vertical type is very difficult to print. The openConnect system described below is the preferred option for connecting to openGrid.
+
+The standard connector works with standard openGrid plates, but not lite plates:
+
+<!-- openscad -o docs/images/opengrid-standard.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=0 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
+<img src="docs/images/opengrid-standard.png" alt="Standard connector" />
+
+The lite connector works with all openGrid plates, but has reduced strength:
+
+<!-- openscad -o docs/images/opengrid-lite.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=1 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
+<img src="docs/images/opengrid-lite.png" alt="Lite connector" />
+
+The directional connector has increased strength:
+
+<!-- openscad -o docs/images/opengrid-directional.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=2 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
+<img src="docs/images/opengrid-directional.png" alt="Directional connector" />
+
+The vertical variants make the connector actually printable:
+
+<!-- openscad -o docs/images/opengrid-vertical.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=4 -D plate_wall_thickness='[0,1,1,1]' -D plate_wall_above='[20,0,0,20]' -->
+<img src="docs/images/opengrid-vertical.png" alt="Vertical connector" />
+
+#### openConnect
+
+[openConnect](https://www.printables.com/model/1559478-openconnect-opengrids-own-connector-system) is a system that adds a separately printed connector in between GridFlock and openGrid. This makes vertical printing a breeze without compromising attachment strength.
+
+Since the GridFlock side of the connector is recessed, this requires a thicker wall of ~4mm, but vertical height can be lower.
+
+<!-- openscad -o docs/images/openconnect-standard.png --camera=0,0,0,60,0,20,100 -D plate_size='[42, 42]' -D adapter_south=true -D adapter_mode=10 -D plate_wall_thickness='[0,1,4,1]' -D plate_wall_above='[14,0,0,14]' -->
+<img src="docs/images/openconnect-standard.png" alt="Standard openConnect" />
+
+There is also a "lock" variant that increases the connection strength to the openConnect interconnect. This connection is so strong that you may need a hammer to install the interconnect. This is my preferred option.
 
 ## Vertical Screws
 
