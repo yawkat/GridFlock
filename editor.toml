@@ -131,7 +131,6 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#dynamic"
 display-condition = {js = "filler_x == 2 || filler_y == 2"}
 
 [model.tab-metadata."Lightweight"]
-description-html = "Skeletonize the baseplate so only thin walls are printed. This roughly halves filament use and print time, but leaves no material for magnets, a solid base or the click latch."
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#lightweight"
 collapsed = true
 [model.param-metadata.hollow]
