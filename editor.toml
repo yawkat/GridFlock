@@ -136,6 +136,7 @@ collapsed = true
 [model.param-metadata.hollow]
 [model.param-metadata.hollow_wall]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#wall-thickness"
+display-condition = {js = "hollow"}
 [model.param-metadata.remove_bottom_lip]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-lip"
 display-condition = {js = "!hollow"}
