@@ -14,10 +14,11 @@ description-extra-html = """
 <br>Apr 8: Glue-in magnets now have a release slot, which can be disabled by setting magnet_release_width to 0.
 <span style="display: none" class="alert alert-warning" data-display-condition="click && click_style == 0">The click latch can deform over time, especially if made of PLA. Prefer other materials like PETG.</span>
 <span style="display: none" class="alert alert-warning" data-display-condition="click && click_style == 1">The click latch can deform over time if used with non-ClickGroove bins, especially if made of PLA. Prefer other materials like PETG if you plan to use such bins.</span>
+<span style="display: none" class="alert alert-danger" data-display-condition="hollow && (magnets || solid_base > 0 || click)">Hollow mode only leaves a thin wall around the gridfinity profile, so it cannot be combined with magnets, a solid base or the click latch.</span>
 <span style="display: none" class="alert alert-warning" data-display-condition="connector_intersection_puzzle && connector_edge_puzzle">You have enabled both the edge and intersection puzzle connectors. While technically possible, it is better to focus on and tune one connector type.</span>
 """
 umami-track-render = []
-umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y", "stacked_print", "adapter_mode"]
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y", "stacked_print", "adapter_mode", "hollow"]
 
 [model.param-metadata.bed_size.presets]
 text = "Printer Presets"
@@ -128,6 +129,18 @@ display-condition = {js = "filler_x == 1 || filler_y == 1"}
 [model.param-metadata.filler_minimum_size]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#dynamic"
 display-condition = {js = "filler_x == 2 || filler_y == 2"}
+
+[model.tab-metadata."Lightweight"]
+control-boolean = "hollow"
+description-html = "Skeletonize the baseplate so only thin walls are printed. This roughly halves filament use and print time, but leaves no material for magnets, a solid base or the click latch."
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#lightweight"
+[model.param-metadata.hollow]
+display-condition = {fixed = false}
+[model.param-metadata.hollow_wall]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#wall-thickness"
+[model.param-metadata.remove_bottom_lip]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-lip"
+display-condition = {js = "!hollow"}
 
 [model.tab-metadata."Numbering"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#numbering"

@@ -103,6 +103,15 @@ filler_minimum_size = [15, 15];
 // Padding alignment. The first value is the x direction (east/west), the second value the y direction (north/south). When padding is added to the build plate, this alignment is used to distribute it. A lower value will move the grid towards the west/south direction, adding more padding to the east/north
 alignment = [0.5, 0.5]; // [0:0.1:1]
 
+/* [Lightweight] */
+
+// Skeletonize the baseplate: instead of solid material between the cells, only a thin wall following the gridfinity profile is printed. This roughly halves filament use and print time. Incompatible with magnets, a solid base and the click latch
+hollow = false;
+// Wall thickness in hollow mode. This is a horizontal thickness, which is what the slicer sees on each layer, so a value matching your nozzle diameter prints as a single wall
+hollow_wall = 0.8; // 0.05
+// Remove the bottom lip of the gridfinity profile, extending the vertical section of the profile straight down instead. The lip is not functionally required; removing it saves filament, removes the overhang between neighbouring cells, and widens the first layer. Always enabled in hollow mode
+remove_bottom_lip = false;
+
 /* [Numbering] */
 
 // Enable numbering of the segements, embossed in a corner
@@ -256,6 +265,10 @@ assert(!magnets || magnet_frame_style != _MAGNET_SOLID || magnet_style != _MAGNE
 
 assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGNET_SOLID), "Thumbscrew holes require some sort of solid base, such as magnet_style solid, or an explicit solid_base.");
 
+assert(!hollow || (!magnets && solid_base == 0 && !click), "Hollow mode only leaves a thin wall around the gridfinity profile, so there is nothing left to hold magnets, a solid base or a click latch.");
+
+assert(hollow_wall > 0, "hollow_wall must be positive.");
+
 _OPENGRID_LITE = 1;
 _OPENGRID_DIRECTIONAL = 2;
 _OPENGRID_VERTICAL = 4;
@@ -276,6 +289,12 @@ _magnet_extraction_dim_negative = [magnet_release_width, magnet_diameter/2];
 _profile_height_raw = 4.65;
 // for stacked prints, we cut off a sliver at the top to get a better contact area
 _profile_height = _profile_height_raw - top_slice - (stacked_print ? stacked_print_slice : 0);
+// The lip slopes inward, so in hollow mode it would taper the horizontally measured shell to nothing
+_remove_bottom_lip = remove_bottom_lip || hollow;
+// Horizontal distance from the sweep path to the vertical (waist) section of the gridfinity profile
+_profile_waist_offset = BASEPLATE_INNER_RADIUS + _BASEPLATE_PROFILE[1].x;
+// Height of the bottom lip of the gridfinity profile
+_profile_lip_height = _BASEPLATE_PROFILE[1].y;
 // height of the magnet level
 _magnet_level_height = (magnet_style != _MAGNET_GLUE_TOP ? magnet_top : 0) + (magnet_style != _MAGNET_GLUE_BOTTOM ? magnet_bottom : 0) + magnet_height;
 // total height of the non-bin levels (magnets, solid base). These are placed at z<0
@@ -372,6 +391,24 @@ module cutter(size, below=0) {
                 translate([-size.x/2, -size.y/2]) cube([size.x, size.y, cutter_height]);
             }
         }
+    }
+    // Extend the waist straight down, removing the lip and the overhang between neighbouring cells
+    if (_remove_bottom_lip) {
+        floor = -below - 0.001;
+        translate([0, 0, floor]) linear_extrude(_profile_lip_height - floor) offset(_profile_waist_offset)
+            square([size.x - BASEPLATE_OUTER_DIAMETER, size.y - BASEPLATE_OUTER_DIAMETER], center=true);
+    }
+}
+
+/**
+ * @Summary The interior volume of a cell that hollow mode removes, leaving a hollow_wall shell
+ * @param unit_size Size of the cell, in grid units, in each direction
+ */
+module cell_core(unit_size=[1, 1]) {
+    size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
+    difference() {
+        translate([-size.x/2, -size.y/2, -0.001]) cube([size.x, size.y, _total_height + 0.002]);
+        cutter([size.x + hollow_wall*2, size.y + hollow_wall*2]);
     }
 }
 
@@ -1025,6 +1062,33 @@ function compute_segment_size(trace, padding) = [
 ];
 
 /**
+ * @Summary Decide how a single cell is rendered, from cell_override
+ * @param index Index of the cell within the segment
+ */
+function cell_style(index, global_cell_index, global_cell_count) = let(
+    seq_index = (index.y + global_cell_index.y) * ceil(global_cell_count.x) + (index.x + global_cell_index.x)
+) len(cell_override) > seq_index ? cell_override[seq_index] : _CELL_STYLE_NORMAL;
+
+/**
+ * @Summary The union of the cell cores, clipped so the outer wall and its puzzle connectors stay solid
+ */
+module segment_core(trace, size, padding, connector, global_cell_index, global_cell_count) {
+    last = [len(trace.x)-1, len(trace.y)-1];
+    intersection() {
+        translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
+            offset(-hollow_wall) segment_rectangle(size, connector, include_wall=false);
+        union() {
+            for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                cell_size = [trace.x[ix], trace.y[iy]];
+                if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
+                    cell_core(cell_size);
+                }
+            }
+        }
+    }
+}
+
+/**
  * @Summary Model a segment, which is piece of the plate without breaks
  * @param trace The cell sizes, in grid units, on each axis
  * @param padding The padding, for each side
@@ -1061,21 +1125,20 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                     for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
                         cell_size = [trace.x[ix], trace.y[iy]];
 
-                        seq_index = (iy + global_cell_index.y) * ceil(global_cell_count.x) + (ix + global_cell_index.x);
-                        cell_style = len(cell_override) <= seq_index ? _CELL_STYLE_NORMAL : cell_override[seq_index];
-                        if (cell_style == _CELL_STYLE_NORMAL) {
+                        style = cell_style([ix, iy], global_cell_index, global_cell_count);
+                        if (style == _CELL_STYLE_NORMAL) {
                             at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
                             cell(
                                 cell_size, 
                                 connector=[for (direction = [0:3]) connector[direction] && at_edge[direction]], 
                                 bottom_chamfer_takes=[for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0]
                             );
-                        } else if (cell_style == _CELL_STYLE_EMPTY) {
-                        } else if (cell_style == _CELL_STYLE_SOLID) {
+                        } else if (style == _CELL_STYLE_EMPTY) {
+                        } else if (style == _CELL_STYLE_SOLID) {
                             dim = [BASEPLATE_DIMENSIONS.x * cell_size.x, BASEPLATE_DIMENSIONS.y * cell_size.y];
                             translate([-dim.x/2, -dim.y/2, -_extra_height]) cube([dim.x, dim.y, _total_height]);
                         } else {
-                            assert(false, str("Unknown cell style: '", cell_style, "'"));
+                            assert(false, str("Unknown cell style: '", style, "'"));
                         }
                     };
                 };
@@ -1222,6 +1285,8 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         translate([0, -size.y/2]) rotate([0, 0, 180]) horizontal_screws(_SOUTH, padding, trace = trace.x, connector = connector);
         translate([-size.x/2, 0]) rotate([0, 0, 90]) horizontal_screws(_WEST, padding, trace = trace.y, connector = connector);
         translate([size.x/2, 0]) rotate([0, 0, -90]) horizontal_screws(_EAST, padding, trace = trace.y, connector = connector);
+
+        if (hollow) segment_core(trace, size, padding, connector, global_cell_index, global_cell_count);
     }
 }
 

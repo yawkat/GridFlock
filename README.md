@@ -56,6 +56,9 @@ For inserting magnets, check out [the jig](#jig).
     - [None](#none)
     - [Integer Fraction](#integer-fraction)
     - [Dynamic](#dynamic)
+  - [Lightweight](#lightweight)
+    - [Wall thickness](#wall-thickness)
+    - [Bottom lip](#bottom-lip)
   - [Corner radius](#corner-radius)
   - [Alignment](#alignment)
   - [Custom cell size](#custom-cell-size)
@@ -461,6 +464,39 @@ If you wish to only create larger cells, not smaller cells, you can set the mini
 
 <!-- openscad -o docs/images/filler-dynamic-expand-always.png --camera=0,0,0,40,0,10,150 -D plate_size='[120, 42]' -D filler_x=2 -D filler_minimum_size=[42,42] -->
 <img src="docs/images/filler-dynamic-expand-always.png" alt="Dynamic filler always expanded" />
+
+## Lightweight
+
+`hollow` skeletonizes the baseplate: instead of solid material between the cells, only a thin wall following the Gridfinity profile is printed. Neighbouring cells share a hollow channel, open towards the bed and closed at the top by a self-supporting 45° roof. Without magnets this roughly halves filament use and print time — a 4x4 plate drops from 20.6cm³ to 10.5cm³.
+
+<!-- openscad -o docs/images/lightweight.png --camera=0,0,0,150,0,25,260 -D plate_size='[84, 84]' -D hollow=true -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/lightweight.png" alt="Lightweight baseplate, seen from below" />
+
+The same plate without `hollow`, also seen from below:
+
+<!-- openscad -o docs/images/lightweight-off.png --camera=0,0,0,150,0,25,260 -D plate_size='[84, 84]' -D hollow=false -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/lightweight-off.png" alt="Standard baseplate, seen from below" />
+
+The top surface, the outer wall of each segment and the puzzle connectors stay solid, so segments link up the same way and the plate looks unchanged from above.
+
+> [!NOTE]
+> Hollow mode is incompatible with magnets, `solid_base` and the click latch — there is no material left to hold them, and GridFlock refuses to render that combination.
+
+### Wall thickness
+
+`hollow_wall` sets the wall thickness. It is a *horizontal* thickness, which is what the slicer sees on each layer, so setting it to your nozzle diameter prints the plate as a single wall with no infill. The default 0.8mm is one wall on a 0.8mm nozzle, two to three on a 0.4mm nozzle.
+
+<!-- openscad -o docs/images/lightweight-wall.png --camera=0,0,0,150,0,25,260 -D plate_size='[84, 84]' -D hollow=true -D hollow_wall=1.6 -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/lightweight-wall.png" alt="Lightweight baseplate with thicker walls" />
+
+### Bottom lip
+
+The Gridfinity profile ends in a 0.7mm lip that slopes back inwards. It is not functionally required; `remove_bottom_lip` replaces it with a straight continuation of the vertical section. This saves a little filament, removes the overhang where two cells meet, and gives the first layer a flat contact area instead of a knife edge.
+
+<!-- openscad -o docs/images/bottom-lip.png --camera=0,0,0,150,0,25,140 -D plate_size='[42, 42]' -D remove_bottom_lip=true -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/bottom-lip.png" alt="Baseplate with the bottom lip removed" />
+
+It can be used on its own, and is always enabled in hollow mode, where the inward slope would taper the horizontally measured walls to nothing at the first layer.
 
 ## Corner radius
 
