@@ -767,7 +767,7 @@ The exact hole position can be adjusted using `horizontal_screw_offset`. By defa
 
 Bottom magnets hold the baseplate itself in place on a metal surface, such as a steel drawer. They are enabled with `bottom_magnets`, and are independent of the [bin magnets](#magnets) described above. The magnets are placed in pockets on the bottom of the plate, at cell intersections.
 
-<!-- openscad -o docs/images/bottom-magnets.png --camera=0,0,0,180,0,0,750 -D plate_size='[336, 210]' -D 'bed_size=[180, 250]' -D magnets=false -D bottom_magnets=true -->
+<!-- openscad -o docs/images/bottom-magnets.png --camera=0,0,0,140,0,10,190 -D plate_size='[126, 84]' -D magnets=false -D bottom_magnets=true -->
 <img src="docs/images/bottom-magnets.png" alt="Bottom magnets" />
 
 By default, the pockets are open at the bottom. The magnets can be glued in, or press-fit by tuning `bottom_magnet_diameter`. Even loose magnets will keep the plate from sliding around, but they won't hold the plate in place when it's lifted. See [bottom magnet floor](#bottom-magnet-floor) for alternatives.
@@ -786,7 +786,7 @@ Bottom magnets use the same intersection categories as [vertical screws](#screw-
 
 For a stronger hold, `bottom_magnet_other` adds magnets at all other intersections:
 
-<!-- openscad -o docs/images/bottom-magnets-other.png --camera=0,0,0,180,0,0,750 -D plate_size='[336, 210]' -D 'bed_size=[180, 250]' -D magnets=false -D bottom_magnets=true -D bottom_magnet_other=true -->
+<!-- openscad -o docs/images/bottom-magnets-other.png --camera=0,0,0,140,0,10,230 -D plate_size='[168, 84]' -D magnets=false -D bottom_magnets=true -D bottom_magnet_other=true -->
 <img src="docs/images/bottom-magnets-other.png" alt="Bottom magnets at all intersections" />
 
 Intersections on the plate edge or on a segment edge never get a magnet, because there is either no room or a connector in the way.
@@ -797,7 +797,7 @@ Intersections on the plate edge or on a segment edge never get a magnet, because
 
 With a floor, the pocket is fully enclosed, so you have to pause the print at the top of the pocket to insert the magnets. Alternatively, you can set `bottom_magnet_height` to a value larger than the plate height (e.g. 10). The pocket then extends all the way through the plate, and the magnets can be pushed in from the top after printing:
 
-<!-- openscad -o docs/images/bottom-magnets-open-top.png --camera=0,0,0,40,0,10,200 -D plate_size='[105, 63]' -D magnets=false -D bottom_magnets=true -D bottom_magnet_other=true -D bottom_magnet_floor=0.25 -D bottom_magnet_height=10 -->
+<!-- openscad -o docs/images/bottom-magnets-open-top.png --camera=21,0,0,40,0,10,100 -D plate_size='[126, 84]' -D magnets=false -D bottom_magnets=true -D bottom_magnet_floor=0.25 -D bottom_magnet_height=10 -->
 <img src="docs/images/bottom-magnets-open-top.png" alt="Bottom magnets inserted from the top" />
 
 > [!NOTE]
