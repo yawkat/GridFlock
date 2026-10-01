@@ -709,7 +709,7 @@ Setting `vertical_screw_style` to `Magnet` replaces the screw holes with magnet 
 
 By default, the pockets are open at the bottom. The magnets can be glued in, or press-fit by tuning `vertical_screw_magnet_diameter`. Even loose magnets will keep the plate from sliding around, but they won't hold the plate in place when it's lifted. See [magnet floor](#magnet-floor) for alternatives.
 
-The magnets use the same [locations](#hole-locations) as screws, except that intersections on a plate or segment edge never get a magnet, because there is either no room or a connector in the way.
+The magnets use the same [locations](#hole-locations) as screws. Note that intersections on the plate edge often have no room for a magnet, and intersections on segment edges interfere with the intersection puzzle connector.
 
 #### Magnet dimensions
 

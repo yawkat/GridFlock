@@ -181,13 +181,13 @@ vertical_screw_magnet_release_diameter = 1.5; // 0.1
 vertical_screw_plate_corners = false;
 // Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
 vertical_screw_plate_corner_inset = [1, 1];
-// Enable screws at *plate* edges. Not available for magnets
+// Enable screws at *plate* edges
 vertical_screw_plate_edges = false;
 // Enable screws at *segment* corners that are not also plate corners
 vertical_screw_segment_corners = false;
 // Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
 vertical_screw_segment_corner_inset = [1, 1];
-// Enable screws at *segment* edges (will interfere with intersection connectors!). Not available for magnets
+// Enable screws at *segment* edges (will interfere with intersection connectors!)
 vertical_screw_segment_edges = false;
 // Enable screws at all other intersections
 vertical_screw_other = false;
@@ -326,8 +326,8 @@ function intersection_pocket_max_height(r) =
 _VERTICAL_SCREW_STYLE_SCREW = 0;
 _VERTICAL_SCREW_STYLE_MAGNET = 1;
 
-// whether any intersection magnet pockets are enabled. The edge locations are not available for magnets
-_vertical_magnets = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && (vertical_screw_plate_corners || vertical_screw_segment_corners || vertical_screw_other);
+// whether any intersection magnet pockets are enabled
+_vertical_magnets = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && (vertical_screw_plate_corners || vertical_screw_plate_edges || vertical_screw_segment_corners || vertical_screw_segment_edges || vertical_screw_other);
 // height of the top of the magnet pocket, measured from the bottom of the plate
 _vertical_magnet_top = vertical_screw_magnet_floor + vertical_screw_magnet_height;
 // if the magnet pocket reaches the top of the plate, it is open at the top so that magnets can be inserted from there
@@ -942,33 +942,6 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
     }
 }
 
-_INTERSECTION_PLATE_CORNER = 0;
-_INTERSECTION_PLATE_EDGE = 1;
-_INTERSECTION_SEGMENT_CORNER = 2;
-_INTERSECTION_SEGMENT_EDGE = 3;
-_INTERSECTION_OTHER = 4;
-
-function is_edge_axis(index, bounds, inset=0) = (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
-function is_edge_intersection(index, bounds) = is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
-function is_corner_intersection(index, bounds, inset) = is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
-
-/**
- * @Summary Classify a cell intersection, for placing features such as vertical screws
- * @param segment_index Index of the intersection within the segment
- * @param segment_count Cell count of the segment
- * @param global_cell_index Global cell index of the segment
- * @param global_cell_count Global cell count
- * @param plate_corner_inset Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
- * @param segment_corner_inset Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
- * @return One of the _INTERSECTION_* constants
- */
-function classify_intersection(segment_index, segment_count, global_cell_index, global_cell_count, plate_corner_inset, segment_corner_inset) =
-    is_corner_intersection(segment_index + global_cell_index, global_cell_count, plate_corner_inset) ? _INTERSECTION_PLATE_CORNER :
-    is_edge_intersection(segment_index + global_cell_index, global_cell_count) ? _INTERSECTION_PLATE_EDGE :
-    is_corner_intersection(segment_index, segment_count, segment_corner_inset) ? _INTERSECTION_SEGMENT_CORNER :
-    is_edge_intersection(segment_index, segment_count) ? _INTERSECTION_SEGMENT_EDGE :
-    _INTERSECTION_OTHER;
-
 module vertical_screw() {
     if (vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET) {
         bottom = vertical_screw_magnet_floor > 0 ? vertical_screw_magnet_floor : -0.01;
@@ -1331,11 +1304,23 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         if (top_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([-size.x/2, size.y/2, _profile_height]) rotate([0, 90, 0]) rotate([0, 0, -90]) linear_extrude(size.x + extend * 2) scale(top_chamfer[_NORTH]) chamfer_triangle();
         if (top_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, _profile_height]) rotate([90, -90, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(top_chamfer[_EAST]) chamfer_triangle(); 
 
+        // vertical screw holes
+        is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
+        is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
+        is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
         for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, trace, padding, [ix, iy], _SOUTH, _WEST) {
-            // Magnets are never placed on segment edges, since they lie on the plate edge or on a connector. This also applies to plate corners that happen to be on a segment edge
-            magnet_excluded = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && is_edge_intersection([ix, iy], [len(trace.x), len(trace.y)]);
-            enabled = [vertical_screw_plate_corners, vertical_screw_plate_edges, vertical_screw_segment_corners, vertical_screw_segment_edges, vertical_screw_other];
-            if (!magnet_excluded && enabled[classify_intersection([ix, iy], [len(trace.x), len(trace.y)], global_cell_index, global_cell_count, vertical_screw_plate_corner_inset, vertical_screw_segment_corner_inset)]) vertical_screw();
+            segment_index = [ix, iy];
+            if (is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset)) {
+                if (vertical_screw_plate_corners) vertical_screw();
+            } else if (is_edge(segment_index + global_cell_index, global_cell_count)) {
+                if (vertical_screw_plate_edges) vertical_screw();
+            } else if (is_corner(segment_index, [len(trace.x), len(trace.y)], vertical_screw_segment_corner_inset)) {
+                if (vertical_screw_segment_corners) vertical_screw();
+            } else if (is_edge(segment_index, [len(trace.x), len(trace.y)])) {
+                if (vertical_screw_segment_edges) vertical_screw();
+            } else {
+                if (vertical_screw_other) vertical_screw();
+            }
         }
 
         // horizontal screw holes
