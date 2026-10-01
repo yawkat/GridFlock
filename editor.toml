@@ -84,7 +84,7 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#release-slo
 
 [model.tab-metadata."Bottom Magnets"]
 control-boolean = "bottom_magnets"
-description-html = "Magnet pockets on the bottom of the plate, to hold the plate in place on a metal surface such as a steel drawer. The magnets need to be glued in."
+description-html = "Magnet pockets on the bottom of the plate, to hold the plate in place on a metal surface such as a steel drawer."
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnets"
 [model.param-metadata.bottom_magnets]
 display-condition = {fixed = false}
@@ -93,6 +93,9 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magn
 display-condition = {js = "bottom_magnets"}
 [model.param-metadata.bottom_magnet_height]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-dimensions"
+display-condition = {js = "bottom_magnets"}
+[model.param-metadata.bottom_magnet_floor]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-floor"
 display-condition = {js = "bottom_magnets"}
 [model.param-metadata.bottom_magnet_plate_corners]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-locations"

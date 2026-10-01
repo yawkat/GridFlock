@@ -30,12 +30,14 @@ magnet_release_width = 3; // 0.5
 
 /* [Bottom Magnets] */
 
-// Add pockets for magnets on the bottom of the plate, at cell intersections. These magnets hold the plate itself in place on a metal surface, e.g. a steel drawer. The magnets need to be glued in
+// Add pockets for magnets on the bottom of the plate, at cell intersections. These magnets hold the plate itself in place on a metal surface, e.g. a steel drawer
 bottom_magnets = false;
 // Diameter of the bottom magnet pocket
 bottom_magnet_diameter = 6.1; // 0.01
 // Height of the bottom magnet pocket
 bottom_magnet_height = 2.1; // 0.05
+// Floor below the bottom magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
+bottom_magnet_floor = 0; // 0.05
 // Enable bottom magnets at *plate* corners
 bottom_magnet_plate_corners = true;
 // Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
@@ -330,7 +332,12 @@ function intersection_pocket_max_height(r) =
     (r <= _intersection_base_clearance ? _extra_height : 0) +
     (r <= _intersection_waist_clearance ? min(_profile_height, _BASEPLATE_PROFILE[2].y + _intersection_waist_clearance - r) : 0);
 
-assert(!bottom_magnets || bottom_magnet_height <= intersection_pocket_max_height(bottom_magnet_diameter/2), str("Bottom magnet pocket does not fit into the plate. With a diameter of ", bottom_magnet_diameter, ", the pocket can be at most ", intersection_pocket_max_height(bottom_magnet_diameter/2), " high. Add a solid_base or magnets to gain vertical space."));
+// height of the top of the bottom magnet pocket, measured from the bottom of the plate
+_bottom_magnet_top = bottom_magnet_floor + bottom_magnet_height;
+// if the bottom magnet pocket reaches the top of the plate, it is open at the top so that magnets can be inserted from there
+_bottom_magnet_open_top = _bottom_magnet_top >= _total_height;
+
+assert(!bottom_magnets || _bottom_magnet_open_top || _bottom_magnet_top <= intersection_pocket_max_height(bottom_magnet_diameter/2), str("Bottom magnet pocket does not fit into the plate. With a diameter of ", bottom_magnet_diameter, ", bottom_magnet_floor + bottom_magnet_height can be at most ", intersection_pocket_max_height(bottom_magnet_diameter/2), ". Add a solid_base or magnets to gain vertical space, or increase bottom_magnet_height beyond the plate height (", _total_height, ") to open the pocket at the top."));
 
 assert(!hollow || !bottom_magnets, "Hollow mode leaves no material at the cell intersections to hold bottom magnets.");
 
@@ -1330,7 +1337,9 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
             // bottom magnet pockets. Edge intersections are excluded since they lie on the plate edge or on a connector
             bottom_magnet_enabled = [bottom_magnet_plate_corners, false, bottom_magnet_segment_corners, false, bottom_magnet_other];
             if (bottom_magnets && bottom_magnet_enabled[classify(bottom_magnet_plate_corner_inset, bottom_magnet_segment_corner_inset)]) {
-                translate([0, 0, -_extra_height - 0.01]) cylinder(d=bottom_magnet_diameter, h=bottom_magnet_height + 0.01);
+                bottom = bottom_magnet_floor > 0 ? bottom_magnet_floor : -0.01;
+                top = _bottom_magnet_open_top ? _total_height + 0.01 : _bottom_magnet_top;
+                translate([0, 0, -_extra_height + bottom]) cylinder(d=bottom_magnet_diameter, h=top - bottom);
             }
         }
 
