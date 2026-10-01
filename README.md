@@ -715,8 +715,6 @@ The magnets use the same [locations](#hole-locations) as screws. Note that inter
 
 The pocket size is configured with `vertical_screw_magnet_diameter` and `vertical_screw_magnet_height`. The defaults fit standard 6x2mm magnets.
 
-Intersection magnets cannot be combined with the [hollow](#lightweight) mode, since there is no material left at the cell intersections.
-
 #### Magnet floor
 
 `vertical_screw_magnet_floor` adds a floor below the pocket, which keeps the magnets in the plate without glue. A value of 0.25mm or one or two layers is enough. A floor reduces the magnet strength a bit, because the magnet is further away from the metal surface.
