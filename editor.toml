@@ -14,11 +14,11 @@ description-extra-html = """
 <br>Apr 8: Glue-in magnets now have a release slot, which can be disabled by setting magnet_release_width to 0.
 <span style="display: none" class="alert alert-warning" data-display-condition="click && click_style == 0">The click latch can deform over time, especially if made of PLA. Prefer other materials like PETG.</span>
 <span style="display: none" class="alert alert-warning" data-display-condition="click && click_style == 1">The click latch can deform over time if used with non-ClickGroove bins, especially if made of PLA. Prefer other materials like PETG if you plan to use such bins.</span>
-<span style="display: none" class="alert alert-danger" data-display-condition="hollow && (magnets || bottom_magnets || solid_base > 0 || click)">Hollow mode only leaves a thin wall around the gridfinity profile, so it cannot be combined with magnets, bottom magnets, a solid base or the click latch.</span>
+<span style="display: none" class="alert alert-danger" data-display-condition="hollow && (magnets || (vertical_screw_style == 1 && (vertical_screw_plate_corners || vertical_screw_segment_corners || vertical_screw_other)) || solid_base > 0 || click)">Hollow mode only leaves a thin wall around the gridfinity profile, so it cannot be combined with magnets, intersection magnets, a solid base or the click latch.</span>
 <span style="display: none" class="alert alert-warning" data-display-condition="connector_intersection_puzzle && connector_edge_puzzle">You have enabled both the edge and intersection puzzle connectors. While technically possible, it is better to focus on and tune one connector type.</span>
 """
 umami-track-render = []
-umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y", "stacked_print", "adapter_mode", "hollow", "bottom_magnets"]
+umami-track-export = ["magnets", "magnet_style", "connector_intersection_puzzle", "connector_edge_puzzle", "bed_size", "click", "click_style", "filler_x", "filler_y", "stacked_print", "adapter_mode", "hollow", "vertical_screw_style"]
 
 [model.param-metadata.bed_size.presets]
 text = "Printer Presets"
@@ -180,26 +180,46 @@ help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#opengrid-ad
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#adapter-types"
 display-condition = {js = "adapter_north || adapter_east || adapter_south || adapter_west"}
 
-[model.tab-metadata."Vertical Screws"]
+[model.tab-metadata."Intersection Holes"]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#intersection-holes"
 collapsed = true
+[model.param-metadata.vertical_screw_style]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#intersection-holes"
 [model.param-metadata.vertical_screw_diameter]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
+display-condition = {js = "vertical_screw_style == 0"}
 [model.param-metadata.vertical_screw_countersink_top]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
+display-condition = {js = "vertical_screw_style == 0"}
 [model.param-metadata.vertical_screw_counterbore_top]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#screw-dimensions"
+display-condition = {js = "vertical_screw_style == 0"}
+[model.param-metadata.vertical_screw_magnet_diameter]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-dimensions"
+display-condition = {js = "vertical_screw_style == 1"}
+[model.param-metadata.vertical_screw_magnet_height]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-dimensions"
+display-condition = {js = "vertical_screw_style == 1"}
+[model.param-metadata.vertical_screw_magnet_floor]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-floor"
+display-condition = {js = "vertical_screw_style == 1"}
+[model.param-metadata.vertical_screw_magnet_release_diameter]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-release-hole"
+display-condition = {js = "vertical_screw_style == 1"}
 [model.param-metadata.vertical_screw_plate_corners]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-corners"
 [model.param-metadata.vertical_screw_plate_corner_inset]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-corners"
 [model.param-metadata.vertical_screw_plate_edges]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#plate-edges"
+display-condition = {js = "vertical_screw_style == 0"}
 [model.param-metadata.vertical_screw_segment_corners]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-corners"
 [model.param-metadata.vertical_screw_segment_corner_inset]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-corners"
 [model.param-metadata.vertical_screw_segment_edges]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#segment-edges"
+display-condition = {js = "vertical_screw_style == 0"}
 [model.param-metadata.vertical_screw_other]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#other-intersections"
 
@@ -220,37 +240,6 @@ display-condition = {js = "horizontal_screw_wall_north || horizontal_screw_wall_
 [model.param-metadata.horizontal_screw_offset]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#horizontal-screws"
 display-condition = {js = "horizontal_screw_wall_north || horizontal_screw_wall_east || horizontal_screw_wall_south || horizontal_screw_wall_west"}
-
-[model.tab-metadata."Bottom Magnets"]
-control-boolean = "bottom_magnets"
-description-html = "Magnet pockets on the bottom of the plate, to hold the plate in place on a metal surface such as a steel drawer."
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnets"
-[model.param-metadata.bottom_magnets]
-display-condition = {fixed = false}
-[model.param-metadata.bottom_magnet_diameter]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-dimensions"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_height]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-dimensions"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_floor]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-floor"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_plate_corners]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-locations"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_plate_corner_inset]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-locations"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_segment_corners]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-locations"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_segment_corner_inset]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-locations"
-display-condition = {js = "bottom_magnets"}
-[model.param-metadata.bottom_magnet_other]
-help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#bottom-magnet-locations"
-display-condition = {js = "bottom_magnets"}
 
 [model.tab-metadata."Thumb Screw"]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#thumb-screw"

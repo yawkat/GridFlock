@@ -75,9 +75,13 @@ For inserting magnets, check out [the jig](#jig).
     - [Adapter types](#adapter-types)
       - [Standard openGrid](#standard-opengrid)
       - [openConnect](#openconnect)
-  - [Vertical Screws](#vertical-screws)
+  - [Intersection Holes](#intersection-holes)
     - [Screw dimensions](#screw-dimensions)
-    - [Screw locations](#screw-locations)
+    - [Intersection magnets](#intersection-magnets)
+      - [Magnet dimensions](#magnet-dimensions)
+      - [Magnet floor](#magnet-floor)
+      - [Magnet release hole](#magnet-release-hole)
+    - [Hole locations](#hole-locations)
       - [Plate corners](#plate-corners)
       - [Plate edges](#plate-edges)
       - [Segment corners](#segment-corners)
@@ -85,10 +89,6 @@ For inserting magnets, check out [the jig](#jig).
       - [Other intersections](#other-intersections)
       - [Combined](#combined)
   - [Horizontal Screws](#horizontal-screws)
-  - [Bottom Magnets](#bottom-magnets)
-    - [Bottom magnet dimensions](#bottom-magnet-dimensions)
-    - [Bottom magnet locations](#bottom-magnet-locations)
-    - [Bottom magnet floor](#bottom-magnet-floor)
   - [Thumb Screw](#thumb-screw)
   - [Segmentation](#segmentation)
     - [Horizontal](#horizontal)
@@ -669,9 +669,11 @@ Since the GridFlock side of the connector is recessed, this requires a thicker w
 
 There is also a "lock" variant that increases the connection strength to the openConnect interconnect. This connection is so strong that you may need a hammer to install the interconnect. This is my preferred option.
 
-## Vertical Screws
+## Intersection Holes
 
-Vertical screws are inserted at cell intersections. They can be used to screw down the plate. Screws can be placed at various positions depending on use case.
+<a name="vertical-screws"></a>
+
+Holes can be added at cell intersections. By default, these are vertical screw holes that can be used to screw down the plate. Alternatively, they can be [magnet pockets](#intersection-magnets) that hold the plate on a metal surface. The holes can be placed at various positions depending on use case, see [hole locations](#hole-locations).
 
 <!-- openscad -o docs/images/vscrews.png --camera=0,0,0,40,0,10,400 -D plate_size='[336, 210]' -D 'bed_size=[180, 250]' -D magnets=false -D vertical_screw_plate_corners=true -D vertical_screw_segment_corners=true -D vertical_screw_other=true -->
 <img src="docs/images/vscrews.png" alt="Vertical screws" />
@@ -698,9 +700,49 @@ If you combine the two options, the counterbore slot is placed above the counter
 <!-- openscad -o docs/images/vscrews-counterboth.png --camera=0,0,0,30,0,10,200 -D plate_size='[105, 63]' -D magnets=false -D vertical_screw_other=true -D vertical_screw_segment_corners=true -D vertical_screw_plate_corners=true -D solid_base=5 -D vertical_screw_counterbore_top='[6, 4]' -D vertical_screw_countersink_top='[6, 2.5]' -->
 <img src="docs/images/vscrews-counterboth.png" alt="Vertical screw counterbore + countersunk" />
 
-### Screw locations
+### Intersection magnets
 
-During the generation process, each intersection is classified into one of five categories. Each of these categories can have screws enabled separately.
+Setting `vertical_screw_style` to `Magnet` replaces the screw holes with magnet pockets on the bottom of the plate. These magnets hold the plate itself in place on a metal surface, such as a steel drawer. They are independent of the [bin magnets](#magnets) described above.
+
+<!-- openscad -o docs/images/vmagnets.png --camera=0,0,0,140,0,10,230 -D plate_size='[168, 84]' -D magnets=false -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -D vertical_screw_other=true -->
+<img src="docs/images/vmagnets.png" alt="Intersection magnets" />
+
+By default, the pockets are open at the bottom. The magnets can be glued in, or press-fit by tuning `vertical_screw_magnet_diameter`. Even loose magnets will keep the plate from sliding around, but they won't hold the plate in place when it's lifted. See [magnet floor](#magnet-floor) for alternatives.
+
+The magnets use the same [locations](#hole-locations) as screws, except that intersections on a plate or segment edge never get a magnet, because there is either no room or a connector in the way.
+
+#### Magnet dimensions
+
+The pocket size is configured with `vertical_screw_magnet_diameter` and `vertical_screw_magnet_height`. The defaults fit standard 6x2mm magnets.
+
+The pockets are placed in the material between the cells, so their size is limited. Without additional vertical space, a 6mm pocket can be up to about 3.2mm high (including the [floor](#magnet-floor)), and the diameter can be at most about 7.6mm. GridFlock will report an error if the pocket does not fit. To make room for larger magnets, you can add a [solid base](#solid-base) or enable the [bin magnets](#magnets).
+
+Intersection magnets cannot be combined with the [hollow](#lightweight) mode, since there is no material left at the cell intersections.
+
+#### Magnet floor
+
+`vertical_screw_magnet_floor` adds a floor below the pocket, which keeps the magnets in the plate without glue. A value of 0.25mm or one or two layers is enough. A floor reduces the magnet strength a bit, because the magnet is further away from the metal surface.
+
+With a floor, the pocket is fully enclosed, so you have to pause the print at the top of the pocket to insert the magnets. Alternatively, you can set `vertical_screw_magnet_height` to a value larger than the plate height (e.g. 10). The pocket then extends all the way through the plate, and the magnets can be pushed in from the top after printing:
+
+<!-- openscad -o docs/images/vmagnets-open-top.png --camera=21,0,0,40,0,10,100 -D plate_size='[126, 84]' -D magnets=false -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -D vertical_screw_magnet_floor=0.25 -D vertical_screw_magnet_height=10 -->
+<img src="docs/images/vmagnets-open-top.png" alt="Intersection magnets inserted from the top" />
+
+> [!NOTE]
+> The hole cuts into the corners of the gridfinity profile a bit. This should not matter for most bins.
+
+#### Magnet release hole
+
+A small hole goes through the whole plate at each magnet pocket. It lets you push the magnet out with a needle: through the top for pockets that are open at the bottom, or through the floor for pockets that are open at the top. The diameter is configured with `vertical_screw_magnet_release_diameter`, and setting it to 0 disables the hole.
+
+<!-- openscad -o docs/images/vmagnets-release.png --camera=21,0,0,140,0,10,60 -D plate_size='[126, 84]' -D magnets=false -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -->
+<img src="docs/images/vmagnets-release.png" alt="Magnet release hole" />
+
+### Hole locations
+
+<a name="screw-locations"></a>
+
+During the generation process, each intersection is classified into one of five categories. Each of these categories can have holes enabled separately.
 
 #### Plate corners
 
@@ -762,46 +804,6 @@ Horizontal screws are used to attach the plate on the side. Enable screws for in
 Similar to vertical screws, the screw head can be customized with `horizontal_screw_countersink_top` and `horizontal_screw_counterbore_top`. 
 
 The exact hole position can be adjusted using `horizontal_screw_offset`. By default, the hole will be centered vertically on the plate or any wall.
-
-## Bottom Magnets
-
-Bottom magnets hold the baseplate itself in place on a metal surface, such as a steel drawer. They are enabled with `bottom_magnets`, and are independent of the [bin magnets](#magnets) described above. The magnets are placed in pockets on the bottom of the plate, at cell intersections.
-
-<!-- openscad -o docs/images/bottom-magnets.png --camera=0,0,0,140,0,10,190 -D plate_size='[126, 84]' -D magnets=false -D bottom_magnets=true -->
-<img src="docs/images/bottom-magnets.png" alt="Bottom magnets" />
-
-By default, the pockets are open at the bottom. The magnets can be glued in, or press-fit by tuning `bottom_magnet_diameter`. Even loose magnets will keep the plate from sliding around, but they won't hold the plate in place when it's lifted. See [bottom magnet floor](#bottom-magnet-floor) for alternatives.
-
-### Bottom magnet dimensions
-
-The pocket size is configured with `bottom_magnet_diameter` and `bottom_magnet_height`. The defaults fit standard 6x2mm magnets.
-
-The pockets are placed in the material between the cells, so their size is limited. Without additional vertical space, a 6mm pocket can be up to about 3.2mm high (including the [floor](#bottom-magnet-floor)), and the diameter can be at most about 7.6mm. GridFlock will report an error if the pocket does not fit. To make room for larger magnets, you can add a [solid base](#solid-base) or enable the [bin magnets](#magnets).
-
-Bottom magnets cannot be combined with the [hollow](#lightweight) mode, since there is no material left at the cell intersections.
-
-### Bottom magnet locations
-
-Bottom magnets use the same intersection categories as [vertical screws](#screw-locations). By default, they are placed at the plate corners (`bottom_magnet_plate_corners`) and the segment corners (`bottom_magnet_segment_corners`). The corners can be moved with `bottom_magnet_plate_corner_inset` and `bottom_magnet_segment_corner_inset`.
-
-For a stronger hold, `bottom_magnet_other` adds magnets at all other intersections:
-
-<!-- openscad -o docs/images/bottom-magnets-other.png --camera=0,0,0,140,0,10,230 -D plate_size='[168, 84]' -D magnets=false -D bottom_magnets=true -D bottom_magnet_other=true -->
-<img src="docs/images/bottom-magnets-other.png" alt="Bottom magnets at all intersections" />
-
-Intersections on the plate edge or on a segment edge never get a magnet, because there is either no room or a connector in the way.
-
-### Bottom magnet floor
-
-`bottom_magnet_floor` adds a floor below the pocket, which keeps the magnets in the plate without glue. A value of 0.25mm or one or two layers is enough. A floor reduces the magnet strength a bit, because the magnet is further away from the metal surface.
-
-With a floor, the pocket is fully enclosed, so you have to pause the print at the top of the pocket to insert the magnets. Alternatively, you can set `bottom_magnet_height` to a value larger than the plate height (e.g. 10). The pocket then extends all the way through the plate, and the magnets can be pushed in from the top after printing:
-
-<!-- openscad -o docs/images/bottom-magnets-open-top.png --camera=21,0,0,40,0,10,100 -D plate_size='[126, 84]' -D magnets=false -D bottom_magnets=true -D bottom_magnet_floor=0.25 -D bottom_magnet_height=10 -->
-<img src="docs/images/bottom-magnets-open-top.png" alt="Bottom magnets inserted from the top" />
-
-> [!NOTE]
-> The hole cuts into the corners of the gridfinity profile a bit. This should not matter for most bins.
 
 ## Thumb Screw
 

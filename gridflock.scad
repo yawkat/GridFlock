@@ -156,7 +156,10 @@ adapter_west = false;
 // Style of the openGrid adapter. The plain openGrid connectors can be printed directly, in normal or 'lite' strength, and in a directional or non-directional variant. The 'vertical' variants of each cut a 45° angle to allow printing without supports, at the cost of reduced strength. The openConnect variants instead cut a slot for a separately printed openConnect connector, which is the recommended option
 adapter_mode = 11; // [0:openGrid, 1:openGrid/lite, 2:openGrid/directional, 3:openGrid/lite/directional, 4:openGrid/vertical, 5:openGrid/lite/vertical, 6:openGrid/directional/vertical, 7:openGrid/lite/directional/vertical, 10:openConnect Slot, 11:openConnect Slot w/ Lock]
 
-/* [Vertical Screws] */
+/* [Intersection Holes] */
+
+// Type of the holes at cell intersections. Screw holes go through the plate to screw it down. Magnet pockets are cut from the bottom, and hold the plate in place on a metal surface, e.g. a steel drawer
+vertical_screw_style = 0; // [0:Screw, 1:Magnet]
 
 // Radius of vertical screws
 vertical_screw_diameter = 3.2; // 0.1
@@ -165,17 +168,26 @@ vertical_screw_countersink_top = [0, 0]; // 0.1
 // Top counterbore dimension. First value is the diameter of the screw head, second value the height
 vertical_screw_counterbore_top = [0, 0]; // 0.1
 
+// Diameter of the magnet pocket
+vertical_screw_magnet_diameter = 6.1; // 0.01
+// Height of the magnet pocket
+vertical_screw_magnet_height = 2.1; // 0.05
+// Floor below the magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
+vertical_screw_magnet_floor = 0; // 0.05
+// Diameter of a small hole through the whole plate at the magnet pocket, used to push the magnet out with a needle. Set to 0 to disable
+vertical_screw_magnet_release_diameter = 1.5; // 0.1
+
 // Enable screws at *plate* corners
 vertical_screw_plate_corners = false;
 // Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
 vertical_screw_plate_corner_inset = [1, 1];
-// Enable screws at *plate* edges
+// Enable screws at *plate* edges. Not available for magnets
 vertical_screw_plate_edges = false;
 // Enable screws at *segment* corners that are not also plate corners
 vertical_screw_segment_corners = false;
 // Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
 vertical_screw_segment_corner_inset = [1, 1];
-// Enable screws at *segment* edges (will interfere with intersection connectors!)
+// Enable screws at *segment* edges (will interfere with intersection connectors!). Not available for magnets
 vertical_screw_segment_edges = false;
 // Enable screws at all other intersections
 vertical_screw_other = false;
@@ -198,27 +210,6 @@ horizontal_screw_countersink_top = [0, 0]; // 0.1
 horizontal_screw_counterbore_top = [0, 0]; // 0.1
 // Shift the screw location by a predetermined offset
 horizontal_screw_offset = [0, 0];
-
-/* [Bottom Magnets] */
-
-// Add pockets for magnets on the bottom of the plate, at cell intersections. These magnets hold the plate itself in place on a metal surface, e.g. a steel drawer
-bottom_magnets = false;
-// Diameter of the bottom magnet pocket
-bottom_magnet_diameter = 6.1; // 0.01
-// Height of the bottom magnet pocket
-bottom_magnet_height = 2.1; // 0.05
-// Floor below the bottom magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
-bottom_magnet_floor = 0; // 0.05
-// Enable bottom magnets at *plate* corners
-bottom_magnet_plate_corners = true;
-// Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
-bottom_magnet_plate_corner_inset = [1, 1];
-// Enable bottom magnets at *segment* corners that are not also plate corners
-bottom_magnet_segment_corners = true;
-// Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
-bottom_magnet_segment_corner_inset = [1, 1];
-// Enable bottom magnets at all other intersections that are not on a plate or segment edge
-bottom_magnet_other = false;
 
 /* [Thumb Screw] */
 
@@ -332,14 +323,19 @@ function intersection_pocket_max_height(r) =
     (r <= _intersection_base_clearance ? _extra_height : 0) +
     (r <= _intersection_waist_clearance ? min(_profile_height, _BASEPLATE_PROFILE[2].y + _intersection_waist_clearance - r) : 0);
 
-// height of the top of the bottom magnet pocket, measured from the bottom of the plate
-_bottom_magnet_top = bottom_magnet_floor + bottom_magnet_height;
-// if the bottom magnet pocket reaches the top of the plate, it is open at the top so that magnets can be inserted from there
-_bottom_magnet_open_top = _bottom_magnet_top >= _total_height;
+_VERTICAL_SCREW_STYLE_SCREW = 0;
+_VERTICAL_SCREW_STYLE_MAGNET = 1;
 
-assert(!bottom_magnets || _bottom_magnet_open_top || _bottom_magnet_top <= intersection_pocket_max_height(bottom_magnet_diameter/2), str("Bottom magnet pocket does not fit into the plate. With a diameter of ", bottom_magnet_diameter, ", bottom_magnet_floor + bottom_magnet_height can be at most ", intersection_pocket_max_height(bottom_magnet_diameter/2), ". Add a solid_base or magnets to gain vertical space, or increase bottom_magnet_height beyond the plate height (", _total_height, ") to open the pocket at the top."));
+// whether any intersection magnet pockets are enabled. The edge locations are not available for magnets
+_vertical_magnets = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && (vertical_screw_plate_corners || vertical_screw_segment_corners || vertical_screw_other);
+// height of the top of the magnet pocket, measured from the bottom of the plate
+_vertical_magnet_top = vertical_screw_magnet_floor + vertical_screw_magnet_height;
+// if the magnet pocket reaches the top of the plate, it is open at the top so that magnets can be inserted from there
+_vertical_magnet_open_top = _vertical_magnet_top >= _total_height;
 
-assert(!hollow || !bottom_magnets, "Hollow mode leaves no material at the cell intersections to hold bottom magnets.");
+assert(!_vertical_magnets || _vertical_magnet_open_top || _vertical_magnet_top <= intersection_pocket_max_height(vertical_screw_magnet_diameter/2), str("Intersection magnet pocket does not fit into the plate. With a diameter of ", vertical_screw_magnet_diameter, ", vertical_screw_magnet_floor + vertical_screw_magnet_height can be at most ", intersection_pocket_max_height(vertical_screw_magnet_diameter/2), ". Add a solid_base or magnets to gain vertical space, or increase vertical_screw_magnet_height beyond the plate height (", _total_height, ") to open the pocket at the top."));
+
+assert(!hollow || !_vertical_magnets, "Hollow mode leaves no material at the cell intersections to hold magnets.");
 
 // gap between segments in output
 _segment_gap = 10;
@@ -974,7 +970,15 @@ function classify_intersection(segment_index, segment_count, global_cell_index, 
     _INTERSECTION_OTHER;
 
 module vertical_screw() {
-    translate([0, 0, _profile_height]) screw(depth=_total_height, d=vertical_screw_diameter, countersink=vertical_screw_countersink_top, counterbore=vertical_screw_counterbore_top);
+    if (vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET) {
+        bottom = vertical_screw_magnet_floor > 0 ? vertical_screw_magnet_floor : -0.01;
+        top = _vertical_magnet_open_top ? _total_height + 0.01 : _vertical_magnet_top;
+        translate([0, 0, -_extra_height + bottom]) cylinder(d=vertical_screw_magnet_diameter, h=top - bottom);
+        // release hole, to push the magnet out with a needle
+        if (vertical_screw_magnet_release_diameter > 0) translate([0, 0, -_extra_height - 0.01]) cylinder(d=vertical_screw_magnet_release_diameter, h=_total_height + 0.02);
+    } else {
+        translate([0, 0, _profile_height]) screw(depth=_total_height, d=vertical_screw_diameter, countersink=vertical_screw_countersink_top, counterbore=vertical_screw_counterbore_top);
+    }
 }
 
 module horizontal_screws(direction, padding, trace, connector) {
@@ -1328,19 +1332,10 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         if (top_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, _profile_height]) rotate([90, -90, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(top_chamfer[_EAST]) chamfer_triangle(); 
 
         for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, trace, padding, [ix, iy], _SOUTH, _WEST) {
-            classify = function (plate_corner_inset, segment_corner_inset) classify_intersection([ix, iy], [len(trace.x), len(trace.y)], global_cell_index, global_cell_count, plate_corner_inset, segment_corner_inset);
-
-            // vertical screw holes
-            vertical_screw_enabled = [vertical_screw_plate_corners, vertical_screw_plate_edges, vertical_screw_segment_corners, vertical_screw_segment_edges, vertical_screw_other];
-            if (vertical_screw_enabled[classify(vertical_screw_plate_corner_inset, vertical_screw_segment_corner_inset)]) vertical_screw();
-
-            // bottom magnet pockets. Segment edge intersections are excluded since they lie on the plate edge or on a connector. This also applies to plate corners that happen to be on a segment edge
-            bottom_magnet_enabled = [bottom_magnet_plate_corners, false, bottom_magnet_segment_corners, false, bottom_magnet_other];
-            if (bottom_magnets && !is_edge_intersection([ix, iy], [len(trace.x), len(trace.y)]) && bottom_magnet_enabled[classify(bottom_magnet_plate_corner_inset, bottom_magnet_segment_corner_inset)]) {
-                bottom = bottom_magnet_floor > 0 ? bottom_magnet_floor : -0.01;
-                top = _bottom_magnet_open_top ? _total_height + 0.01 : _bottom_magnet_top;
-                translate([0, 0, -_extra_height + bottom]) cylinder(d=bottom_magnet_diameter, h=top - bottom);
-            }
+            // Magnets are never placed on segment edges, since they lie on the plate edge or on a connector. This also applies to plate corners that happen to be on a segment edge
+            magnet_excluded = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && is_edge_intersection([ix, iy], [len(trace.x), len(trace.y)]);
+            enabled = [vertical_screw_plate_corners, vertical_screw_plate_edges, vertical_screw_segment_corners, vertical_screw_segment_edges, vertical_screw_other];
+            if (!magnet_excluded && enabled[classify_intersection([ix, iy], [len(trace.x), len(trace.y)], global_cell_index, global_cell_count, vertical_screw_plate_corner_inset, vertical_screw_segment_corner_inset)]) vertical_screw();
         }
 
         // horizontal screw holes
