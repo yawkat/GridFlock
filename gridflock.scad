@@ -28,6 +28,25 @@ magnet_border = 2; // 0.5
 // Width of the magnet release slot
 magnet_release_width = 3; // 0.5
 
+/* [Bottom Magnets] */
+
+// Add pockets for magnets on the bottom of the plate, at cell intersections. These magnets hold the plate itself in place on a metal surface, e.g. a steel drawer. The magnets need to be glued in
+bottom_magnets = false;
+// Diameter of the bottom magnet pocket
+bottom_magnet_diameter = 6.1; // 0.01
+// Height of the bottom magnet pocket
+bottom_magnet_height = 2.1; // 0.05
+// Enable bottom magnets at *plate* corners
+bottom_magnet_plate_corners = true;
+// Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
+bottom_magnet_plate_corner_inset = [1, 1];
+// Enable bottom magnets at *segment* corners that are not also plate corners
+bottom_magnet_segment_corners = true;
+// Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
+bottom_magnet_segment_corner_inset = [1, 1];
+// Enable bottom magnets at all other intersections that are not on a plate or segment edge
+bottom_magnet_other = false;
+
 /* [Click Latch (Experimental)] */
 
 // Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
@@ -301,6 +320,19 @@ _magnet_level_height = (magnet_style != _MAGNET_GLUE_TOP ? magnet_top : 0) + (ma
 _extra_height = (magnets ? _magnet_level_height : 0) + solid_base;
 
 _total_height = _profile_height + _extra_height;
+
+// Horizontal distance from a cell intersection to the gridfinity profile, at the waist of the profile. The waist is the narrowest part of the material between cells
+_intersection_waist_clearance = BASEPLATE_OUTER_RADIUS * sqrt(2) - _profile_waist_offset;
+// Horizontal distance from a cell intersection to the cell cutout below the profile (z<0)
+_intersection_base_clearance = _remove_bottom_lip ? _intersection_waist_clearance : BASEPLATE_OUTER_RADIUS * sqrt(2) - BASEPLATE_INNER_RADIUS;
+// Maximum height of a pocket of the given radius at a cell intersection that stays within the solid material. Above the waist, the profile slopes inward at 45°
+function intersection_pocket_max_height(r) =
+    (r <= _intersection_base_clearance ? _extra_height : 0) +
+    (r <= _intersection_waist_clearance ? min(_profile_height, _BASEPLATE_PROFILE[2].y + _intersection_waist_clearance - r) : 0);
+
+assert(!bottom_magnets || bottom_magnet_height <= intersection_pocket_max_height(bottom_magnet_diameter/2), str("Bottom magnet pocket does not fit into the plate. With a diameter of ", bottom_magnet_diameter, ", the pocket can be at most ", intersection_pocket_max_height(bottom_magnet_diameter/2), " high. Add a solid_base or magnets to gain vertical space."));
+
+assert(!hollow || !bottom_magnets, "Hollow mode leaves no material at the cell intersections to hold bottom magnets.");
 
 // gap between segments in output
 _segment_gap = 10;
@@ -907,6 +939,33 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
     }
 }
 
+_INTERSECTION_PLATE_CORNER = 0;
+_INTERSECTION_PLATE_EDGE = 1;
+_INTERSECTION_SEGMENT_CORNER = 2;
+_INTERSECTION_SEGMENT_EDGE = 3;
+_INTERSECTION_OTHER = 4;
+
+function is_edge_axis(index, bounds, inset=0) = (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
+function is_edge_intersection(index, bounds) = is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
+function is_corner_intersection(index, bounds, inset) = is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
+
+/**
+ * @Summary Classify a cell intersection, for placing features such as vertical screws
+ * @param segment_index Index of the intersection within the segment
+ * @param segment_count Cell count of the segment
+ * @param global_cell_index Global cell index of the segment
+ * @param global_cell_count Global cell count
+ * @param plate_corner_inset Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
+ * @param segment_corner_inset Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
+ * @return One of the _INTERSECTION_* constants
+ */
+function classify_intersection(segment_index, segment_count, global_cell_index, global_cell_count, plate_corner_inset, segment_corner_inset) =
+    is_corner_intersection(segment_index + global_cell_index, global_cell_count, plate_corner_inset) ? _INTERSECTION_PLATE_CORNER :
+    is_edge_intersection(segment_index + global_cell_index, global_cell_count) ? _INTERSECTION_PLATE_EDGE :
+    is_corner_intersection(segment_index, segment_count, segment_corner_inset) ? _INTERSECTION_SEGMENT_CORNER :
+    is_edge_intersection(segment_index, segment_count) ? _INTERSECTION_SEGMENT_EDGE :
+    _INTERSECTION_OTHER;
+
 module vertical_screw() {
     translate([0, 0, _profile_height]) screw(depth=_total_height, d=vertical_screw_diameter, countersink=vertical_screw_countersink_top, counterbore=vertical_screw_counterbore_top);
 }
@@ -1261,22 +1320,17 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         if (top_chamfer[_NORTH] > 0 && !connector[_NORTH]) translate([-size.x/2, size.y/2, _profile_height]) rotate([0, 90, 0]) rotate([0, 0, -90]) linear_extrude(size.x + extend * 2) scale(top_chamfer[_NORTH]) chamfer_triangle();
         if (top_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, _profile_height]) rotate([90, -90, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(top_chamfer[_EAST]) chamfer_triangle(); 
 
-        // vertical screw holes
-        is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
-        is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
-        is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
         for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, trace, padding, [ix, iy], _SOUTH, _WEST) {
-            segment_index = [ix, iy];
-            if (is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset)) {
-                if (vertical_screw_plate_corners) vertical_screw();
-            } else if (is_edge(segment_index + global_cell_index, global_cell_count)) {
-                if (vertical_screw_plate_edges) vertical_screw();
-            } else if (is_corner(segment_index, [len(trace.x), len(trace.y)], vertical_screw_segment_corner_inset)) {
-                if (vertical_screw_segment_corners) vertical_screw();
-            } else if (is_edge(segment_index, [len(trace.x), len(trace.y)])) {
-                if (vertical_screw_segment_edges) vertical_screw();
-            } else {
-                if (vertical_screw_other) vertical_screw();
+            classify = function (plate_corner_inset, segment_corner_inset) classify_intersection([ix, iy], [len(trace.x), len(trace.y)], global_cell_index, global_cell_count, plate_corner_inset, segment_corner_inset);
+
+            // vertical screw holes
+            vertical_screw_enabled = [vertical_screw_plate_corners, vertical_screw_plate_edges, vertical_screw_segment_corners, vertical_screw_segment_edges, vertical_screw_other];
+            if (vertical_screw_enabled[classify(vertical_screw_plate_corner_inset, vertical_screw_segment_corner_inset)]) vertical_screw();
+
+            // bottom magnet pockets. Edge intersections are excluded since they lie on the plate edge or on a connector
+            bottom_magnet_enabled = [bottom_magnet_plate_corners, false, bottom_magnet_segment_corners, false, bottom_magnet_other];
+            if (bottom_magnets && bottom_magnet_enabled[classify(bottom_magnet_plate_corner_inset, bottom_magnet_segment_corner_inset)]) {
+                translate([0, 0, -_extra_height - 0.01]) cylinder(d=bottom_magnet_diameter, h=bottom_magnet_height + 0.01);
             }
         }
 
