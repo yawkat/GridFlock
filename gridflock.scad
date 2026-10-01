@@ -1334,9 +1334,9 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
             vertical_screw_enabled = [vertical_screw_plate_corners, vertical_screw_plate_edges, vertical_screw_segment_corners, vertical_screw_segment_edges, vertical_screw_other];
             if (vertical_screw_enabled[classify(vertical_screw_plate_corner_inset, vertical_screw_segment_corner_inset)]) vertical_screw();
 
-            // bottom magnet pockets. Edge intersections are excluded since they lie on the plate edge or on a connector
+            // bottom magnet pockets. Segment edge intersections are excluded since they lie on the plate edge or on a connector. This also applies to plate corners that happen to be on a segment edge
             bottom_magnet_enabled = [bottom_magnet_plate_corners, false, bottom_magnet_segment_corners, false, bottom_magnet_other];
-            if (bottom_magnets && bottom_magnet_enabled[classify(bottom_magnet_plate_corner_inset, bottom_magnet_segment_corner_inset)]) {
+            if (bottom_magnets && !is_edge_intersection([ix, iy], [len(trace.x), len(trace.y)]) && bottom_magnet_enabled[classify(bottom_magnet_plate_corner_inset, bottom_magnet_segment_corner_inset)]) {
                 bottom = bottom_magnet_floor > 0 ? bottom_magnet_floor : -0.01;
                 top = _bottom_magnet_open_top ? _total_height + 0.01 : _bottom_magnet_top;
                 translate([0, 0, -_extra_height + bottom]) cylinder(d=bottom_magnet_diameter, h=top - bottom);
