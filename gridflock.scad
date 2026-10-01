@@ -28,27 +28,6 @@ magnet_border = 2; // 0.5
 // Width of the magnet release slot
 magnet_release_width = 3; // 0.5
 
-/* [Bottom Magnets] */
-
-// Add pockets for magnets on the bottom of the plate, at cell intersections. These magnets hold the plate itself in place on a metal surface, e.g. a steel drawer
-bottom_magnets = false;
-// Diameter of the bottom magnet pocket
-bottom_magnet_diameter = 6.1; // 0.01
-// Height of the bottom magnet pocket
-bottom_magnet_height = 2.1; // 0.05
-// Floor below the bottom magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
-bottom_magnet_floor = 0; // 0.05
-// Enable bottom magnets at *plate* corners
-bottom_magnet_plate_corners = true;
-// Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
-bottom_magnet_plate_corner_inset = [1, 1];
-// Enable bottom magnets at *segment* corners that are not also plate corners
-bottom_magnet_segment_corners = true;
-// Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
-bottom_magnet_segment_corner_inset = [1, 1];
-// Enable bottom magnets at all other intersections that are not on a plate or segment edge
-bottom_magnet_other = false;
-
 /* [Click Latch (Experimental)] */
 
 // Enable the click latch. WARNING: The plastic can deform over time, do not use PLA! PETG might be fine, but there are no long-term tests yet
@@ -219,6 +198,27 @@ horizontal_screw_countersink_top = [0, 0]; // 0.1
 horizontal_screw_counterbore_top = [0, 0]; // 0.1
 // Shift the screw location by a predetermined offset
 horizontal_screw_offset = [0, 0];
+
+/* [Bottom Magnets] */
+
+// Add pockets for magnets on the bottom of the plate, at cell intersections. These magnets hold the plate itself in place on a metal surface, e.g. a steel drawer
+bottom_magnets = false;
+// Diameter of the bottom magnet pocket
+bottom_magnet_diameter = 6.1; // 0.01
+// Height of the bottom magnet pocket
+bottom_magnet_height = 2.1; // 0.05
+// Floor below the bottom magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
+bottom_magnet_floor = 0; // 0.05
+// Enable bottom magnets at *plate* corners
+bottom_magnet_plate_corners = true;
+// Distance from the edge (in number of cells) for an intersection to qualify as a plate corner
+bottom_magnet_plate_corner_inset = [1, 1];
+// Enable bottom magnets at *segment* corners that are not also plate corners
+bottom_magnet_segment_corners = true;
+// Distance from the edge (in number of cells) for an intersection to qualify as a segment corner
+bottom_magnet_segment_corner_inset = [1, 1];
+// Enable bottom magnets at all other intersections that are not on a plate or segment edge
+bottom_magnet_other = false;
 
 /* [Thumb Screw] */
 
