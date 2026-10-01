@@ -715,7 +715,7 @@ The magnets use the same [locations](#hole-locations) as screws. Note that inter
 
 The pocket size is configured with `vertical_screw_magnet_diameter` and `vertical_screw_magnet_height`. The defaults fit standard 6x2mm magnets.
 
-The pockets are placed in the material between the cells, so their size is limited. Without additional vertical space, a 6mm pocket can be up to about 3.2mm high (including the [floor](#magnet-floor)), and the diameter can be at most about 7.6mm. GridFlock will report an error if the pocket does not fit. To make room for larger magnets, you can add a [solid base](#solid-base) or enable the [bin magnets](#magnets).
+The pockets are placed in the material between the cells, so their size is limited. Without additional vertical space, a 6mm pocket can be up to about 3.2mm high (including the [floor](#magnet-floor)) before it breaks into the cell, and the diameter can be at most about 7.6mm. To make room for larger magnets, you can add a [solid base](#solid-base) or enable the [bin magnets](#magnets).
 
 Intersection magnets cannot be combined with the [hollow](#lightweight) mode, since there is no material left at the cell intersections.
 

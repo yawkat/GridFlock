@@ -314,28 +314,8 @@ _extra_height = (magnets ? _magnet_level_height : 0) + solid_base;
 
 _total_height = _profile_height + _extra_height;
 
-// Horizontal distance from a cell intersection to the gridfinity profile, at the waist of the profile. The waist is the narrowest part of the material between cells
-_intersection_waist_clearance = BASEPLATE_OUTER_RADIUS * sqrt(2) - _profile_waist_offset;
-// Horizontal distance from a cell intersection to the cell cutout below the profile (z<0)
-_intersection_base_clearance = _remove_bottom_lip ? _intersection_waist_clearance : BASEPLATE_OUTER_RADIUS * sqrt(2) - BASEPLATE_INNER_RADIUS;
-// Maximum height of a pocket of the given radius at a cell intersection that stays within the solid material. Above the waist, the profile slopes inward at 45°
-function intersection_pocket_max_height(r) =
-    (r <= _intersection_base_clearance ? _extra_height : 0) +
-    (r <= _intersection_waist_clearance ? min(_profile_height, _BASEPLATE_PROFILE[2].y + _intersection_waist_clearance - r) : 0);
-
 _VERTICAL_SCREW_STYLE_SCREW = 0;
 _VERTICAL_SCREW_STYLE_MAGNET = 1;
-
-// whether any intersection magnet pockets are enabled
-_vertical_magnets = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && (vertical_screw_plate_corners || vertical_screw_plate_edges || vertical_screw_segment_corners || vertical_screw_segment_edges || vertical_screw_other);
-// height of the top of the magnet pocket, measured from the bottom of the plate
-_vertical_magnet_top = vertical_screw_magnet_floor + vertical_screw_magnet_height;
-// if the magnet pocket reaches the top of the plate, it is open at the top so that magnets can be inserted from there
-_vertical_magnet_open_top = _vertical_magnet_top >= _total_height;
-
-assert(!_vertical_magnets || _vertical_magnet_open_top || _vertical_magnet_top <= intersection_pocket_max_height(vertical_screw_magnet_diameter/2), str("Intersection magnet pocket does not fit into the plate. With a diameter of ", vertical_screw_magnet_diameter, ", vertical_screw_magnet_floor + vertical_screw_magnet_height can be at most ", intersection_pocket_max_height(vertical_screw_magnet_diameter/2), ". Add a solid_base or magnets to gain vertical space, or increase vertical_screw_magnet_height beyond the plate height (", _total_height, ") to open the pocket at the top."));
-
-assert(!hollow || !_vertical_magnets, "Hollow mode leaves no material at the cell intersections to hold magnets.");
 
 // gap between segments in output
 _segment_gap = 10;
@@ -944,9 +924,9 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
 
 module vertical_screw() {
     if (vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET) {
+        // if the pocket is higher than the plate, it cuts through the top, so that magnets can be inserted from there
         bottom = vertical_screw_magnet_floor > 0 ? vertical_screw_magnet_floor : -0.01;
-        top = _vertical_magnet_open_top ? _total_height + 0.01 : _vertical_magnet_top;
-        translate([0, 0, -_extra_height + bottom]) cylinder(d=vertical_screw_magnet_diameter, h=top - bottom);
+        translate([0, 0, -_extra_height + bottom]) cylinder(d=vertical_screw_magnet_diameter, h=vertical_screw_magnet_floor + vertical_screw_magnet_height - bottom);
         // release hole, to push the magnet out with a needle
         if (vertical_screw_magnet_release_diameter > 0) translate([0, 0, -_extra_height - 0.01]) cylinder(d=vertical_screw_magnet_release_diameter, h=_total_height + 0.02);
     } else {
