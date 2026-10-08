@@ -109,6 +109,8 @@ alignment = [0.5, 0.5]; // [0:0.1:1]
 hollow = false;
 // Wall thickness in hollow mode. This is a horizontal thickness, which is what the slicer sees on each layer, so a value matching your nozzle diameter prints as a single wall
 hollow_wall = 0.8; // 0.05
+// Solid material kept around the puzzle connectors in hollow mode. Without it the connectors hang off a single wall with nothing behind them. 0 saves that material, at the cost of weaker connectors
+hollow_connector_fill = 2; // 0.5
 // Remove the bottom lip of the gridfinity profile, extending the vertical section of the profile straight down instead. The lip is not functionally required; removing it saves filament, removes the overhang between neighbouring cells, and widens the first layer. Always enabled in hollow mode
 remove_bottom_lip = false;
 
@@ -280,6 +282,7 @@ assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGN
 assert(!hollow || (!magnets && solid_base == 0 && !click), "Hollow mode only leaves a thin wall around the gridfinity profile, so there is nothing left to hold magnets, a solid base or a click latch.");
 
 assert(hollow_wall > 0, "hollow_wall must be positive.");
+assert(hollow_connector_fill >= 0, "hollow_connector_fill must not be negative.");
 
 _OPENGRID_LITE = 1;
 _OPENGRID_DIRECTIONAL = 2;
@@ -1093,21 +1096,35 @@ function cell_style(index, global_cell_index, global_cell_count) = let(
 ) len(cell_override) > seq_index ? cell_override[seq_index] : _CELL_STYLE_NORMAL;
 
 /**
- * @Summary The union of the cell cores, clipped so the outer wall and its puzzle connectors stay solid
+ * @Summary The union of the cell cores, clipped so the outer wall stays solid and the puzzle connectors keep hollow_connector_fill of material around them
  */
 module segment_core(trace, size, padding, connector, global_cell_index, global_cell_count) {
     last = [len(trace.x)-1, len(trace.y)-1];
-    intersection() {
-        translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
-            offset(-hollow_wall) segment_rectangle(size, connector, include_wall=false);
-        union() {
-            for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
-                cell_size = [trace.x[ix], trace.y[iy]];
-                if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
-                    cell_core(cell_size);
+    difference() {
+        intersection() {
+            translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
+                offset(-hollow_wall) segment_rectangle(size, connector, include_wall=false);
+            union() {
+                for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                    cell_size = [trace.x[ix], trace.y[iy]];
+                    if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
+                        cell_core(cell_size);
+                    }
                 }
             }
         }
+        if (hollow_connector_fill > 0)
+            translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
+                offset(hollow_connector_fill) {
+                    if (connector_intersection_puzzle) {
+                        segment_intersection_connectors(true, trace, size, padding, connector);
+                        segment_intersection_connectors(false, trace, size, padding, connector);
+                    }
+                    if (connector_edge_puzzle) {
+                        segment_edge_connectors(true, trace, size, padding, connector);
+                        segment_edge_connectors(false, trace, size, padding, connector);
+                    }
+                }
     }
 }
 

@@ -58,6 +58,7 @@ For inserting magnets, check out [the jig](#jig).
     - [Dynamic](#dynamic)
   - [Lightweight](#lightweight)
     - [Wall thickness](#wall-thickness)
+    - [Connector fill](#connector-fill)
     - [Bottom lip](#bottom-lip)
   - [Corner radius](#corner-radius)
   - [Alignment](#alignment)
@@ -492,6 +493,18 @@ The top surface, the outer wall of each segment and the puzzle connectors stay s
 
 <!-- openscad -o docs/images/lightweight-wall.png --camera=0,0,0,150,0,25,260 -D plate_size='[84, 84]' -D hollow=true -D hollow_wall=1.6 -D connector_intersection_puzzle=false -D numbering=false -->
 <img src="docs/images/lightweight-wall.png" alt="Lightweight baseplate with thicker walls" />
+
+### Connector fill
+
+`hollow_connector_fill` keeps that much solid material around every puzzle connector, male and female. Setting it to 0 saves that material, but leaves the connectors weaker.
+
+<!-- openscad -o docs/images/connector-fill.png --camera=0,0,0,180,0,0,60 -D plate_size='[84, 84]' -D bed_size='[60, 100]' -D hollow=true -D numbering=false -->
+<img src="docs/images/connector-fill.png" alt="Intersection puzzle connectors with connector fill, seen from below" />
+
+The same connectors with `hollow_connector_fill=0`:
+
+<!-- openscad -o docs/images/connector-fill-off.png --camera=0,0,0,180,0,0,60 -D plate_size='[84, 84]' -D bed_size='[60, 100]' -D hollow=true -D hollow_connector_fill=0 -D numbering=false -->
+<img src="docs/images/connector-fill-off.png" alt="Intersection puzzle connectors without connector fill, seen from below" />
 
 ### Bottom lip
 
