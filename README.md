@@ -511,7 +511,7 @@ The same connectors with `hollow_connector_fill=0`:
 
 [Intersection holes](#intersection-holes) sit where the hollow channels cross. In hollow mode, GridFlock keeps the plate solid around each hole, out to where the bin cavities meet it on the diagonals. The wall around a hole is then the same all the way round, and as thick as on a solid plate. A hole wider than that, such as a large counterbore, keeps `hollow_wall` of material around it.
 
-<!-- openscad -o docs/images/intersection-fill.png --camera=0,0,0,180,0,0,60 -D plate_size='[84, 84]' -D hollow=true -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -D connector_intersection_puzzle=false -D numbering=false -->
+<!-- openscad -o docs/images/intersection-fill.png --camera=0,0,0,145,0,25,45 -D plate_size='[84, 84]' -D hollow=true -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -D connector_intersection_puzzle=false -D numbering=false -->
 <img src="docs/images/intersection-fill.png" alt="Intersection magnet pocket in hollow mode, seen from below" />
 
 ### Bottom lip
