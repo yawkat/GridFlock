@@ -925,6 +925,49 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
     }
 }
 
+/**
+ * @Summary Diameter of the widest part of an intersection hole
+ */
+function vertical_screw_hole_diameter() = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET
+    ? vertical_screw_magnet_diameter
+    : max(vertical_screw_diameter, vertical_screw_countersink_top.x, vertical_screw_counterbore_top.x);
+
+/**
+ * @Summary Radius of the solid material hollow mode keeps around an intersection hole
+ * @Details Out to where the bin cavities meet it on the diagonals, at the waist of the profile (the
+ *          bottom lip is always removed in hollow mode). Any further and the material would only
+ *          thicken the wall along the grid lines, while the diagonals stay as thin as on a solid plate.
+ *          Holes wider than that still get a hollow_wall of material around them.
+ */
+function hollow_intersection_radius() = max(
+    sqrt(2) * BASEPLATE_OUTER_DIAMETER/2 - _profile_waist_offset,
+    vertical_screw_hole_diameter()/2 + hollow_wall);
+
+/**
+ * @Summary Run the children at every intersection that has an intersection hole enabled
+ * @param trace The cell sizes of this segment
+ * @param size The size of this segment
+ * @param padding The padding of this segment (for each edge)
+ * @param global_cell_index The index of the first cell of this segment in the whole plate
+ * @param global_cell_count The number of cells in the whole plate
+ */
+module vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count) {
+    last = [len(trace.x)-1, len(trace.y)-1];
+    is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
+    is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
+    is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
+    for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, trace, padding, [ix, iy], _SOUTH, _WEST) {
+        segment_index = [ix, iy];
+        enabled =
+            is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset) ? vertical_screw_plate_corners :
+            is_edge(segment_index + global_cell_index, global_cell_count) ? vertical_screw_plate_edges :
+            is_corner(segment_index, [len(trace.x), len(trace.y)], vertical_screw_segment_corner_inset) ? vertical_screw_segment_corners :
+            is_edge(segment_index, [len(trace.x), len(trace.y)]) ? vertical_screw_segment_edges :
+            vertical_screw_other;
+        if (enabled) children();
+    }
+}
+
 module vertical_screw() {
     if (vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET) {
         // if the pocket is higher than the plate, it cuts through the top, so that magnets can be inserted from there
@@ -1096,7 +1139,7 @@ function cell_style(index, global_cell_index, global_cell_count) = let(
 ) len(cell_override) > seq_index ? cell_override[seq_index] : _CELL_STYLE_NORMAL;
 
 /**
- * @Summary The union of the cell cores, clipped so the outer wall stays solid and the puzzle connectors keep hollow_connector_fill of material around them
+ * @Summary The union of the cell cores, clipped so the outer wall stays solid, the puzzle connectors keep hollow_connector_fill of material around them and the intersection holes stay surrounded by solid material
  */
 module segment_core(trace, size, padding, connector, global_cell_index, global_cell_count) {
     last = [len(trace.x)-1, len(trace.y)-1];
@@ -1125,6 +1168,9 @@ module segment_core(trace, size, padding, connector, global_cell_index, global_c
                         segment_edge_connectors(false, trace, size, padding, connector);
                     }
                 }
+        translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
+            vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count)
+                circle(r = hollow_intersection_radius());
     }
 }
 
@@ -1302,23 +1348,7 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         if (top_chamfer[_EAST] > 0 && !connector[_EAST]) translate([size.x/2, size.y/2 + extend, _profile_height]) rotate([90, -90, 0]) rotate([0, 0, 90]) linear_extrude(size.y + extend * 2) scale(top_chamfer[_EAST]) chamfer_triangle(); 
 
         // vertical screw holes
-        is_edge_axis = function (index, bounds, inset=0) (index == inset && index <= ceil(bounds - 0.25) - inset) || (index == ceil(bounds - 0.25) - inset && index >= inset);
-        is_edge = function (index, bounds) is_edge_axis(index.x, bounds.x) || is_edge_axis(index.y, bounds.y);
-        is_corner = function (index, bounds, inset) is_edge_axis(index.x, bounds.x, inset.x) && is_edge_axis(index.y, bounds.y, inset.y);
-        for (ix = [0:1:last.x+1]) for (iy = [0:1:last.y+1]) navigate_corner(size, trace, padding, [ix, iy], _SOUTH, _WEST) {
-            segment_index = [ix, iy];
-            if (is_corner(segment_index + global_cell_index, global_cell_count, vertical_screw_plate_corner_inset)) {
-                if (vertical_screw_plate_corners) vertical_screw();
-            } else if (is_edge(segment_index + global_cell_index, global_cell_count)) {
-                if (vertical_screw_plate_edges) vertical_screw();
-            } else if (is_corner(segment_index, [len(trace.x), len(trace.y)], vertical_screw_segment_corner_inset)) {
-                if (vertical_screw_segment_corners) vertical_screw();
-            } else if (is_edge(segment_index, [len(trace.x), len(trace.y)])) {
-                if (vertical_screw_segment_edges) vertical_screw();
-            } else {
-                if (vertical_screw_other) vertical_screw();
-            }
-        }
+        vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count) vertical_screw();
 
         // horizontal screw holes
         translate([0, size.y/2]) horizontal_screws(_NORTH, padding, trace = trace.x, connector = connector);
