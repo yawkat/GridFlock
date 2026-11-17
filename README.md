@@ -59,6 +59,7 @@ For inserting magnets, check out [the jig](#jig).
   - [Lightweight](#lightweight)
     - [Wall thickness](#wall-thickness)
     - [Connector fill](#connector-fill)
+    - [Intersection holes in hollow mode](#intersection-holes-in-hollow-mode)
     - [Bottom lip](#bottom-lip)
   - [Corner radius](#corner-radius)
   - [Alignment](#alignment)
@@ -506,6 +507,13 @@ The same connectors with `hollow_connector_fill=0`:
 <!-- openscad -o docs/images/connector-fill-off.png --camera=0,0,0,180,0,0,60 -D plate_size='[84, 84]' -D bed_size='[60, 100]' -D hollow=true -D hollow_connector_fill=0 -D numbering=false -->
 <img src="docs/images/connector-fill-off.png" alt="Intersection puzzle connectors without connector fill, seen from below" />
 
+### Intersection holes in hollow mode
+
+[Intersection holes](#intersection-holes) sit where the hollow channels cross. In hollow mode, GridFlock keeps the plate solid around each hole, out to where the bin cavities meet it on the diagonals. The wall around a hole is then the same all the way round, and as thick as on a solid plate. A hole wider than that, such as a large counterbore, keeps `hollow_wall` of material around it.
+
+<!-- openscad -o docs/images/intersection-fill.png --camera=0,0,0,180,0,0,60 -D plate_size='[84, 84]' -D hollow=true -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/intersection-fill.png" alt="Intersection magnet pocket in hollow mode, seen from below" />
+
 ### Bottom lip
 
 The Gridfinity profile ends in a 0.7mm lip that slopes back inwards. It is not functionally required; `remove_bottom_lip` replaces it with a straight continuation of the vertical section. This saves a little filament, removes the overhang where two cells meet, and gives the first layer a flat contact area instead of a knife edge.
@@ -723,6 +731,8 @@ Setting `vertical_screw_style` to `Magnet` replaces the screw holes with magnet 
 By default, the pockets are open at the bottom. The magnets can be glued in, or press-fit by tuning `vertical_screw_magnet_diameter`. Even loose magnets will keep the plate from sliding around, but they won't hold the plate in place when it's lifted. See [magnet floor](#magnet-floor) for alternatives.
 
 The magnets use the same [locations](#hole-locations) as screws. Note that intersections on the plate edge often have no room for a magnet, and intersections on segment edges interfere with the intersection puzzle connector.
+
+In [hollow mode](#lightweight), the plate stays [solid around the pockets](#intersection-holes-in-hollow-mode).
 
 #### Magnet dimensions
 
