@@ -39,7 +39,7 @@ jobs:
           just paths
 
       - name: Generate site
-        uses: yawkat/web-openscad-editor@323ca329f12ea210428ed6407f57f870fba548b7 # main
+        uses: yawkat/web-openscad-editor@61b9d58e561f231e2af72bb4e41a45d16ba87e64 # main
         with:
           config: editor.toml
           output: out
