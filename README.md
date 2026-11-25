@@ -60,6 +60,7 @@ For inserting magnets, check out [the jig](#jig).
     - [Click latch](#click-latch-1)
     - [Wall thickness](#wall-thickness)
     - [Connector fill](#connector-fill)
+    - [Open frame border](#open-frame-border)
     - [Bottom lip](#bottom-lip)
   - [Corner radius](#corner-radius)
   - [Alignment](#alignment)
@@ -515,6 +516,15 @@ The same connectors with `hollow_connector_fill=0`:
 
 <!-- openscad -o docs/images/connector-fill-off.png --camera=0,0,0,180,0,0,60 -D plate_size='[84, 84]' -D bed_size='[60, 100]' -D hollow=true -D hollow_connector_fill=0 -D numbering=false -->
 <img src="docs/images/connector-fill-off.png" alt="Intersection puzzle connectors without connector fill, seen from below" />
+
+### Open frame border
+
+With [filler cells](#filler) turned off, the space that doesn't fit a whole cell becomes a border, split evenly between both sides, so the plate is symmetric. In hollow mode, that border stays solid by default, and on a plate with wide borders it is most of the material. Setting `hollow_padding` to `Open frame` keeps only an outer rim and a wall along the grid, both `hollow_wall` thick, plus a rib at every grid line that runs out to the rim. The rest of the border is open at the top and bottom. On a 200x150mm plate (4x3 cells with 16mm and 12mm borders), this drops the plate from 47.5cm³ to 12.2cm³.
+
+Openings narrower than 3mm stay solid, so a narrow border doesn't change. Puzzle connectors and intersection holes keep the same material around them as in the cells, and on a chamfered edge the rim moves in by the chamfer.
+
+<!-- openscad -o docs/images/lightweight-open-frame.png --camera=0,0,0,40,0,25,520 -D plate_size='[200, 150]' -D filler_x=0 -D filler_y=0 -D hollow=true -D hollow_padding=1 -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/lightweight-open-frame.png" alt="Hollow plate with an open frame border" />
 
 ### Bottom lip
 

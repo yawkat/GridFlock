@@ -137,6 +137,9 @@ collapsed = true
 [model.param-metadata.hollow_wall]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#wall-thickness"
 display-condition = {js = "hollow"}
+[model.param-metadata.hollow_padding]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#open-frame-border"
+display-condition = {js = "hollow"}
 [model.param-metadata.hollow_connector_fill]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#connector-fill"
 display-condition = {js = "hollow && (connector_intersection_puzzle || connector_edge_puzzle)"}

@@ -111,6 +111,8 @@ hollow = false;
 hollow_wall = 0.8; // 0.05
 // Solid material kept around the puzzle connectors in hollow mode. Without it the connectors hang off a single wall with nothing behind them. 0 saves that material, at the cost of weaker connectors
 hollow_connector_fill = 2; // 0.5
+// Plate border (padding) in hollow mode. Open frame keeps only an outer rim, a wall along the grid and a rib at every grid line, and leaves the rest of the border open top and bottom
+hollow_padding = 0; // [0:Solid, 1:Open frame]
 // Remove the bottom lip of the gridfinity profile, extending the vertical section of the profile straight down instead. The lip is not functionally required; removing it saves filament, removes the overhang between neighbouring cells, and widens the first layer. Always enabled in hollow mode
 remove_bottom_lip = false;
 
@@ -326,6 +328,8 @@ _VERTICAL_SCREW_STYLE_SCREW = 0;
 _VERTICAL_SCREW_STYLE_MAGNET = 1;
 _VERTICAL_SCREW_MAGNET_ROUND = 0;
 _VERTICAL_SCREW_MAGNET_OCTAGON = 1;
+_HOLLOW_PADDING_SOLID = 0;
+_HOLLOW_PADDING_OPEN_FRAME = 1;
 
 // gap between segments in output
 _segment_gap = 10;
@@ -1474,6 +1478,57 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
         translate([size.x/2, 0]) rotate([0, 0, -90]) horizontal_screws(_EAST, padding, trace = trace.y, connector = connector);
 
         if (hollow) segment_core(trace, size, padding, connector, global_cell_index, global_cell_count);
+        if (hollow && hollow_padding == _HOLLOW_PADDING_OPEN_FRAME)
+            translate([0, 0, -_extra_height - 0.01]) linear_extrude(height = _total_height + 0.02)
+                padding_void(trace, size, padding, connector, global_cell_index, global_cell_count);
+    }
+}
+
+/**
+ * @Summary The part of the plate border (padding) that the open frame style removes (2D)
+ * @Details Keeps an outer rim and a wall along the grid area, both hollow_wall thick, and a rib of
+ *          hollow_wall at every grid line, running out to the rim. On a chamfered edge, the rim moves
+ *          in by the chamfer, so the chamfer doesn't cut it away. Puzzle connectors and intersection holes
+ *          keep the same solid material around them as in the hollow core. Openings narrower than 3mm stay
+ *          solid, since a thin slit would print as a messy partial wall.
+ * @param trace The cell sizes of this segment
+ * @param size The size of this segment
+ * @param padding The padding of this segment (for each edge)
+ * @param connector Does this segment have a connector? (for each edge)
+ * @param global_cell_index The index of the first cell of this segment in the whole plate
+ * @param global_cell_count The number of cells in the whole plate
+ */
+module padding_void(trace, size, padding, connector, global_cell_index, global_cell_count) {
+    grid_min = [-size.x/2 + padding[_WEST], -size.y/2 + padding[_SOUTH]];
+    grid_max = [size.x/2 - padding[_EAST], size.y/2 - padding[_NORTH]];
+    lines = [cumulate(trace.x), cumulate(trace.y)];
+    chamfer = function (side) connector[side] ? 0 : max(bottom_chamfer[side], top_chamfer[side]);
+    min_opening = 3;
+    offset(r=min_opening/2) offset(delta=-min_opening/2) difference() {
+        offset(-hollow_wall) segment_rectangle(size, connector, include_wall=false);
+        // grid area and the wall along it
+        translate(grid_min - [hollow_wall, hollow_wall]) square(grid_max - grid_min + 2*[hollow_wall, hollow_wall]);
+        // ribs at the grid lines
+        for (x = lines.x) translate([grid_min.x + x*BASEPLATE_DIMENSIONS.x - hollow_wall/2, -size.y]) square([hollow_wall, 2*size.y]);
+        for (y = lines.y) translate([-size.x, grid_min.y + y*BASEPLATE_DIMENSIONS.y - hollow_wall/2]) square([2*size.x, hollow_wall]);
+        // chamfered edges
+        if (chamfer(_NORTH) > 0) translate([-size.x, size.y/2 - hollow_wall - chamfer(_NORTH)]) square([2*size.x, size.y]);
+        if (chamfer(_EAST) > 0) translate([size.x/2 - hollow_wall - chamfer(_EAST), -size.y]) square([size.x, 2*size.y]);
+        if (chamfer(_SOUTH) > 0) translate([-size.x, -size.y*1.5 + hollow_wall + chamfer(_SOUTH)]) square([2*size.x, size.y]);
+        if (chamfer(_WEST) > 0) translate([-size.x*1.5 + hollow_wall + chamfer(_WEST), -size.y]) square([size.x, 2*size.y]);
+        // puzzle connectors and intersection holes
+        if (hollow_connector_fill > 0) offset(hollow_connector_fill) {
+            if (connector_intersection_puzzle) {
+                segment_intersection_connectors(true, trace, size, padding, connector);
+                segment_intersection_connectors(false, trace, size, padding, connector);
+            }
+            if (connector_edge_puzzle) {
+                segment_edge_connectors(true, trace, size, padding, connector);
+                segment_edge_connectors(false, trace, size, padding, connector);
+            }
+        }
+        vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count)
+            circle(r = hollow_intersection_radius());
     }
 }
 
