@@ -81,6 +81,8 @@ For inserting magnets, check out [the jig](#jig).
     - [Screw dimensions](#screw-dimensions)
     - [Intersection magnets](#intersection-magnets)
       - [Magnet dimensions](#magnet-dimensions)
+      - [Press-fit pocket](#press-fit-pocket)
+      - [Magnet chamfer](#magnet-chamfer)
       - [Magnet floor](#magnet-floor)
       - [Magnet release hole](#magnet-release-hole)
     - [Hole locations](#hole-locations)
@@ -737,6 +739,17 @@ The magnets use the same [locations](#hole-locations) as screws. Note that inter
 #### Magnet dimensions
 
 The pocket size is configured with `vertical_screw_magnet_diameter` and `vertical_screw_magnet_height`. The defaults fit standard 6x2mm magnets.
+
+#### Press-fit pocket
+
+Setting `vertical_screw_magnet_shape` to `Octagon` cuts an octagonal pocket. `vertical_screw_magnet_diameter` is then the distance between opposite flats. The flats grip the magnet, and the corners leave room for the plastic that the magnet pushes aside, so the magnets can be pressed in without glue. Set the diameter a little below the magnet diameter, e.g. 5.8mm for 6mm magnets, and tune it for your printer.
+
+<!-- openscad -o docs/images/vmagnets-octagon.png --camera=21,0,0,150,0,25,45 -D plate_size='[126, 84]' -D magnets=false -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -D vertical_screw_magnet_shape=1 -D vertical_screw_magnet_diameter=5.8 -->
+<img src="docs/images/vmagnets-octagon.png" alt="Octagonal press-fit magnet pocket" />
+
+#### Magnet chamfer
+
+`vertical_screw_magnet_chamfer` chamfers the bottom edge of a pocket that is open at the bottom. It guides the magnet into the pocket, and makes up for elephant foot, which otherwise narrows the bottom of the pocket. The first value is how far the chamfer widens the pocket, the second value its height. The default `[0.2, 0.35]` is taken from [CLICKbase Refined](https://www.printables.com/model/1487592), and its height is more than one layer at all common layer heights. The chamfer follows the pocket shape, and setting either value to 0 disables it. Pockets with a floor don't get a chamfer.
 
 #### Magnet floor
 
