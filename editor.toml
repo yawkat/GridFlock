@@ -200,6 +200,9 @@ display-condition = {js = "vertical_screw_style == 0"}
 [model.param-metadata.vertical_screw_magnet_diameter]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-dimensions"
 display-condition = {js = "vertical_screw_style == 1"}
+[model.param-metadata.vertical_screw_magnet_shape]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#press-fit-pocket"
+display-condition = {js = "vertical_screw_style == 1"}
 [model.param-metadata.vertical_screw_magnet_height]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-dimensions"
 display-condition = {js = "vertical_screw_style == 1"}

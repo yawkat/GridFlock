@@ -170,8 +170,10 @@ vertical_screw_countersink_top = [0, 0]; // 0.1
 // Top counterbore dimension. First value is the diameter of the screw head, second value the height
 vertical_screw_counterbore_top = [0, 0]; // 0.1
 
-// Diameter of the magnet pocket
+// Diameter of the magnet pocket. For the octagon shape, this is the distance between opposite flats
 vertical_screw_magnet_diameter = 6.1; // 0.01
+// Shape of the magnet pocket. The flats of the octagon grip the magnet for a press fit, and the corners leave room for the plastic that the magnet pushes aside
+vertical_screw_magnet_shape = 0; // [0:Round, 1:Octagon]
 // Height of the magnet pocket
 vertical_screw_magnet_height = 2.1; // 0.05
 // Floor below the magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
@@ -319,6 +321,8 @@ _total_height = _profile_height + _extra_height;
 
 _VERTICAL_SCREW_STYLE_SCREW = 0;
 _VERTICAL_SCREW_STYLE_MAGNET = 1;
+_VERTICAL_SCREW_MAGNET_ROUND = 0;
+_VERTICAL_SCREW_MAGNET_OCTAGON = 1;
 
 // gap between segments in output
 _segment_gap = 10;
@@ -929,7 +933,7 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
  * @Summary Diameter of the widest part of an intersection hole
  */
 function vertical_screw_hole_diameter() = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET
-    ? vertical_screw_magnet_diameter
+    ? vertical_screw_magnet_outer_diameter()
     : max(vertical_screw_diameter, vertical_screw_countersink_top.x, vertical_screw_counterbore_top.x);
 
 /**
@@ -968,11 +972,26 @@ module vertical_screw_sites(trace, size, padding, global_cell_index, global_cell
     }
 }
 
+/**
+ * @Summary Diameter of the circle around the magnet pocket
+ */
+function vertical_screw_magnet_outer_diameter() = vertical_screw_magnet_shape == _VERTICAL_SCREW_MAGNET_OCTAGON
+    ? vertical_screw_magnet_diameter / cos(22.5)
+    : vertical_screw_magnet_diameter;
+
 module vertical_screw() {
     if (vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET) {
         // if the pocket is higher than the plate, it cuts through the top, so that magnets can be inserted from there
         bottom = vertical_screw_magnet_floor > 0 ? vertical_screw_magnet_floor : -0.01;
-        translate([0, 0, -_extra_height + bottom]) cylinder(d=vertical_screw_magnet_diameter, h=vertical_screw_magnet_floor + vertical_screw_magnet_height - bottom);
+        height = vertical_screw_magnet_floor + vertical_screw_magnet_height - bottom;
+        translate([0, 0, -_extra_height + bottom]) {
+            if (vertical_screw_magnet_shape == _VERTICAL_SCREW_MAGNET_OCTAGON) {
+                // flats facing along the grid lines and towards the cell corners
+                rotate([0, 0, 22.5]) cylinder(d=vertical_screw_magnet_outer_diameter(), h=height, $fn=8);
+            } else {
+                cylinder(d=vertical_screw_magnet_diameter, h=height);
+            }
+        }
         // release hole, to push the magnet out with a needle
         if (vertical_screw_magnet_release_diameter > 0) translate([0, 0, -_extra_height - 0.01]) cylinder(d=vertical_screw_magnet_release_diameter, h=_total_height + 0.02);
     } else {
