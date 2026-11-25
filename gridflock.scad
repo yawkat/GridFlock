@@ -437,7 +437,7 @@ module cell_core(unit_size=[1, 1]) {
  * @param bottom_chamfer_takes How much of this cell a bottom chamfer will eat up (by direction)
  */
 function clickgroove_sides(connector, bottom_chamfer_takes) = [for (direction = [0:3])
-    bottom_chamfer_takes[direction] < clickgroove_wall_strength && !(connector_edge_puzzle && connector[direction] && (direction == _SOUTH || direction == _WEST))];
+    bottom_chamfer_takes[direction] < clickgroove_wall_strength && !(connector_edge_puzzle && connector[direction] && !_edge_puzzle_direction_male[direction])];
 
 /**
  * @Summary The material around one ClickGroove latch that hollow mode keeps solid, in the each_cell_side frame
@@ -449,16 +449,25 @@ function clickgroove_sides(connector, bottom_chamfer_takes) = [for (direction = 
  */
 module hollow_clickgroove_keep() {
     anchor = 2;
-    beam_start = 2.85 - clickgroove_strength;
+    outer = -_baseplate_max_strength - 0.01;
+    beam_end = clickgroove_strength - _baseplate_max_strength;
+    gap_half = clickgroove_gap_length/2;
+    anchor_end = gap_half + anchor + 0.01;
     septum = hollow_wall / 2;
     cap_start = _profile_height_raw - hollow_wall - clickgroove_wall_strength; // where the hollow core meets the far side of the gap
     bottom = -_extra_height - 0.01;
     height = _total_height + 0.02;
-    // anchors
-    for (end = [-1, 1]) translate([-2.86, bottom, end > 0 ? clickgroove_gap_length/2 : -clickgroove_gap_length/2 - anchor - 0.01])
-        cube([2.87, height, anchor + 0.01]);
-    // beam
-    translate([-2.86, bottom, -clickgroove_gap_length/2 - 0.01]) cube([2.86 - beam_start, height, clickgroove_gap_length + 0.02]);
+    // beam and the anchors at both of its ends, as one C-shaped outline (symmetric, so the flip of the rotation doesn't matter)
+    translate([0, bottom, 0]) rotate([-90, 0, 0]) linear_extrude(height) polygon([
+        [outer, -anchor_end],
+        [0.01, -anchor_end],
+        [0.01, -gap_half],
+        [beam_end, -gap_half],
+        [beam_end, gap_half],
+        [0.01, gap_half],
+        [0.01, anchor_end],
+        [outer, anchor_end]
+    ]);
     // septum and cap
     linear_extrude(clickgroove_gap_length + 0.02, center=true) polygon([
         [0.01, bottom],
@@ -490,7 +499,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
                     if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
                 }
                 if (click && click_style == _CLICK2) {
-                    each_cell_side(unit_size, enabled=latch_sides) translate([-2.85+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([2.85-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
+                    each_cell_side(unit_size, enabled=latch_sides) translate([-_baseplate_max_strength+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([_baseplate_max_strength-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
                 }
             }
             if (click && click_style == _CLICK1) {
@@ -1178,36 +1187,42 @@ function cell_style(index, global_cell_index, global_cell_count) = let(
 ) len(cell_override) > seq_index ? cell_override[seq_index] : _CELL_STYLE_NORMAL;
 
 /**
- * @Summary Is there a connector right next to this cell? (by direction)
+ * @Summary Run the children centered on every cell of a segment
+ * @Details The children can use these special variables:
+ *          $cell_size: Size of the cell, in grid units, in each direction
+ *          $cell_style: How the cell is rendered (see cell_style)
+ *          $cell_connector: Is there a connector right next to this cell? (by direction)
+ *          $cell_bottom_chamfer_takes: How much of this cell a bottom chamfer will eat up (by direction)
+ * @param trace The cell sizes of this segment
+ * @param size The size of this segment
+ * @param padding The padding of this segment (for each edge)
  * @param connector Does the segment have a connector? (by direction)
- * @param at_edge Is the cell at the segment edge? (by direction)
+ * @param global_cell_index The index of the first cell of this segment in the whole plate
+ * @param global_cell_count The number of cells in the whole plate
  */
-function cell_connector(connector, at_edge) = [for (direction = [0:3]) connector[direction] && at_edge[direction]];
-
-/**
- * @Summary How much of this cell a bottom chamfer will eat up (by direction)
- * @param connector Does the segment have a connector? (by direction)
- * @param at_edge Is the cell at the segment edge? (by direction)
- * @param padding The padding of the segment (by direction)
- */
-function cell_bottom_chamfer_takes(connector, at_edge, padding) = [for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0];
+module segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count) {
+    last = [len(trace.x)-1, len(trace.y)-1];
+    for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+        at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
+        $cell_size = [trace.x[ix], trace.y[iy]];
+        $cell_style = cell_style([ix, iy], global_cell_index, global_cell_count);
+        $cell_connector = [for (direction = [0:3]) connector[direction] && at_edge[direction]];
+        $cell_bottom_chamfer_takes = [for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0];
+        children();
+    }
+}
 
 /**
  * @Summary The union of the cell cores, clipped so the outer wall stays solid, the puzzle connectors keep hollow_connector_fill of material around them, the intersection holes stay surrounded by solid material and the ClickGroove latches keep what they need to flex
  */
 module segment_core(trace, size, padding, connector, global_cell_index, global_cell_count) {
-    last = [len(trace.x)-1, len(trace.y)-1];
     difference() {
         intersection() {
             translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
                 offset(-hollow_wall) segment_rectangle(size, connector, include_wall=false);
             union() {
-                for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
-                    cell_size = [trace.x[ix], trace.y[iy]];
-                    if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
-                        cell_core(cell_size);
-                    }
-                }
+                segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count)
+                    if ($cell_style == _CELL_STYLE_NORMAL) cell_core($cell_size);
             }
         }
         if (hollow_connector_fill > 0)
@@ -1226,14 +1241,10 @@ module segment_core(trace, size, padding, connector, global_cell_index, global_c
             vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count)
                 circle(r = hollow_intersection_radius());
         if (click && click_style == _CLICK2)
-            for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
-                cell_size = [trace.x[ix], trace.y[iy]];
-                if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
-                    at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
-                    each_cell_side(cell_size, enabled=clickgroove_sides(cell_connector(connector, at_edge), cell_bottom_chamfer_takes(connector, at_edge, padding)))
+            segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count)
+                if ($cell_style == _CELL_STYLE_NORMAL)
+                    each_cell_side($cell_size, enabled=clickgroove_sides($cell_connector, $cell_bottom_chamfer_takes))
                         hollow_clickgroove_keep();
-                }
-            }
     }
 }
 
@@ -1271,23 +1282,15 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                         if (padding[_WEST] > 0) translate([-size.x/2, -size.y/2]) cube([padding[_WEST], size.y, _total_height]);
                     }
                     // cells
-                    for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
-                        cell_size = [trace.x[ix], trace.y[iy]];
-
-                        style = cell_style([ix, iy], global_cell_index, global_cell_count);
-                        if (style == _CELL_STYLE_NORMAL) {
-                            at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
-                            cell(
-                                cell_size, 
-                                connector=cell_connector(connector, at_edge), 
-                                bottom_chamfer_takes=cell_bottom_chamfer_takes(connector, at_edge, padding)
-                            );
-                        } else if (style == _CELL_STYLE_EMPTY) {
-                        } else if (style == _CELL_STYLE_SOLID) {
-                            dim = [BASEPLATE_DIMENSIONS.x * cell_size.x, BASEPLATE_DIMENSIONS.y * cell_size.y];
+                    segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count) {
+                        if ($cell_style == _CELL_STYLE_NORMAL) {
+                            cell($cell_size, connector=$cell_connector, bottom_chamfer_takes=$cell_bottom_chamfer_takes);
+                        } else if ($cell_style == _CELL_STYLE_EMPTY) {
+                        } else if ($cell_style == _CELL_STYLE_SOLID) {
+                            dim = [BASEPLATE_DIMENSIONS.x * $cell_size.x, BASEPLATE_DIMENSIONS.y * $cell_size.y];
                             translate([-dim.x/2, -dim.y/2, -_extra_height]) cube([dim.x, dim.y, _total_height]);
                         } else {
-                            assert(false, str("Unknown cell style: '", style, "'"));
+                            assert(false, str("Unknown cell style: '", $cell_style, "'"));
                         }
                     };
                 };
