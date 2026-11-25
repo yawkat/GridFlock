@@ -931,7 +931,7 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
  * @Summary Diameter of the widest part of an intersection hole
  */
 function vertical_screw_hole_diameter() = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET
-    ? vertical_screw_magnet_diameter + (vertical_screw_magnet_floor > 0 ? 0 : 2*vertical_screw_magnet_chamfer)
+    ? vertical_screw_magnet_diameter
     : max(vertical_screw_diameter, vertical_screw_countersink_top.x, vertical_screw_counterbore_top.x);
 
 /**
@@ -943,7 +943,13 @@ function vertical_screw_hole_diameter() = vertical_screw_style == _VERTICAL_SCRE
  */
 function hollow_intersection_radius() = max(
     sqrt(2) * BASEPLATE_OUTER_DIAMETER/2 - _profile_waist_offset,
-    vertical_screw_hole_diameter()/2 + hollow_wall);
+    vertical_screw_hole_diameter()/2 + vertical_screw_magnet_chamfer_width() + hollow_wall);
+
+/**
+ * @Summary How far the magnet pocket chamfer reaches beyond the pocket, 0 if there is none
+ */
+function vertical_screw_magnet_chamfer_width() =
+    vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET && vertical_screw_magnet_floor <= 0 ? vertical_screw_magnet_chamfer : 0;
 
 /**
  * @Summary Run the children at every intersection that has an intersection hole enabled
@@ -975,11 +981,12 @@ module vertical_screw() {
         // if the pocket is higher than the plate, it cuts through the top, so that magnets can be inserted from there
         bottom = vertical_screw_magnet_floor > 0 ? vertical_screw_magnet_floor : -0.01;
         translate([0, 0, -_extra_height + bottom]) cylinder(d=vertical_screw_magnet_diameter, h=vertical_screw_magnet_floor + vertical_screw_magnet_height - bottom);
-        // 45° chamfer at the bottom edge of a pocket that is open at the bottom
-        if (vertical_screw_magnet_floor <= 0 && vertical_screw_magnet_chamfer > 0)
-            translate([0, 0, -_extra_height - 0.01]) cylinder(d1=vertical_screw_magnet_diameter + 2*(vertical_screw_magnet_chamfer + 0.01), d2=vertical_screw_magnet_diameter, h=vertical_screw_magnet_chamfer + 0.01);
         // release hole, to push the magnet out with a needle
         if (vertical_screw_magnet_release_diameter > 0) translate([0, 0, -_extra_height - 0.01]) cylinder(d=vertical_screw_magnet_release_diameter, h=_total_height + 0.02);
+        // 45° chamfer at the bottom edge of a pocket that is open at the bottom
+        chamfer = vertical_screw_magnet_chamfer_width();
+        if (chamfer > 0) translate([0, 0, -_extra_height - 0.01])
+            cylinder(d1=vertical_screw_hole_diameter() + 2*(chamfer + 0.01), d2=vertical_screw_hole_diameter(), h=chamfer + 0.01);
     } else {
         translate([0, 0, _profile_height]) screw(depth=_total_height, d=vertical_screw_diameter, countersink=vertical_screw_countersink_top, counterbore=vertical_screw_counterbore_top);
     }
