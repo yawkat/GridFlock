@@ -283,7 +283,8 @@ assert(!magnets || magnet_frame_style != _MAGNET_SOLID || magnet_style != _MAGNE
 
 assert(!thumbscrews || solid_base > 0 || (magnets && magnet_frame_style == _MAGNET_SOLID), "Thumbscrew holes require some sort of solid base, such as magnet_style solid, or an explicit solid_base.");
 
-assert(!hollow || (!magnets && solid_base == 0 && !click), "Hollow mode only leaves a thin wall around the gridfinity profile, so there is nothing left to hold magnets, a solid base or a click latch.");
+assert(!hollow || (!magnets && solid_base == 0), "Hollow mode only leaves a thin wall around the gridfinity profile, so there is nothing left to hold magnets or a solid base.");
+assert(!hollow || !click || click_style == _CLICK2, "Hollow mode only supports the ClickGroove click latch (click_style=1).");
 
 assert(hollow_wall > 0, "hollow_wall must be positive.");
 assert(hollow_connector_fill >= 0, "hollow_connector_fill must not be negative.");
@@ -437,6 +438,53 @@ module cell_core(unit_size=[1, 1]) {
 }
 
 /**
+ * @Summary Which sides of a cell get a ClickGroove latch (by direction)
+ * @param connector Is there a connector right next to this cell? (by direction)
+ * @param bottom_chamfer_takes How much of this cell a bottom chamfer will eat up (by direction)
+ */
+function clickgroove_sides(connector, bottom_chamfer_takes) = [for (direction = [0:3])
+    bottom_chamfer_takes[direction] < clickgroove_wall_strength && !(connector_edge_puzzle && connector[direction] && !_edge_puzzle_direction_male[direction])];
+
+/**
+ * @Summary The material around one ClickGroove latch that hollow mode keeps solid, in the each_cell_side frame
+ * @Details The latch beam, a 2mm anchor at each end of the beam, and a septum of half the hollow_wall
+ *          on the grid line (the neighbouring cell adds the other half). The septum widens at 45° into a
+ *          cap that meets the far side of the relief gap where the hollow core ends, so the top prints
+ *          without bridging. The relief gap stays open between beam and cap, so the beam flexes like on a
+ *          solid plate.
+ */
+module hollow_clickgroove_keep() {
+    anchor = 2;
+    outer = -_baseplate_max_strength - 0.01;
+    beam_end = clickgroove_strength - _baseplate_max_strength;
+    gap_half = clickgroove_gap_length/2;
+    anchor_end = gap_half + anchor + 0.01;
+    septum = hollow_wall / 2;
+    cap_start = _profile_height_raw - hollow_wall - clickgroove_wall_strength; // where the hollow core meets the far side of the gap
+    bottom = -_extra_height - 0.01;
+    height = _total_height + 0.02;
+    // beam and the anchors at both of its ends, as one C-shaped outline (symmetric, so the flip of the rotation doesn't matter)
+    translate([0, bottom, 0]) rotate([-90, 0, 0]) linear_extrude(height) polygon([
+        [outer, -anchor_end],
+        [0.01, -anchor_end],
+        [0.01, -gap_half],
+        [beam_end, -gap_half],
+        [beam_end, gap_half],
+        [0.01, gap_half],
+        [0.01, anchor_end],
+        [outer, anchor_end]
+    ]);
+    // septum and cap
+    linear_extrude(clickgroove_gap_length + 0.02, center=true) polygon([
+        [0.01, bottom],
+        [-septum, bottom],
+        [-septum, cap_start - (clickgroove_wall_strength - septum)],
+        [-clickgroove_wall_strength - height, cap_start + height],
+        [0.01, cap_start + height]
+    ]);
+}
+
+/**
  * @Summary Draw a grid cell centered on 0,0
  * @param unit_size Size of the cell, in grid units, in each direction
  * @param connector Is there a connector right next to this cell? (by direction)
@@ -447,7 +495,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
     size = [BASEPLATE_DIMENSIONS.x*unit_size.x, BASEPLATE_DIMENSIONS.y*unit_size.y];
     difference() {
         union() {
-            enable_clickgroove = function(direction) positive && bottom_chamfer_takes[direction] < clickgroove_wall_strength && !(connector_edge_puzzle && connector[direction] && (direction == _SOUTH || direction == _WEST));
+            latch_sides = [for (enabled = clickgroove_sides(connector, bottom_chamfer_takes)) positive && enabled];
 
             difference() {
                 translate([-size.x/2, -size.y/2, -_extra_height]) cube([size.x, size.y, _total_height]);
@@ -457,7 +505,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
                     if (unit_size.y == 1) cube([size.x-click1_wall_strength*2, click1_outer_length, _profile_height], center=true);
                 }
                 if (click && click_style == _CLICK2) {
-                    each_cell_side(unit_size, enabled=[for (dir = [0:3]) enable_clickgroove(dir)]) translate([-2.85+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([2.85-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
+                    each_cell_side(unit_size, enabled=latch_sides) translate([-_baseplate_max_strength+clickgroove_strength, 0, -clickgroove_gap_length/2]) cube([_baseplate_max_strength-clickgroove_wall_strength-clickgroove_strength, _profile_height, clickgroove_gap_length]);
                 }
             }
             if (click && click_style == _CLICK1) {
@@ -468,7 +516,7 @@ module cell(unit_size=[1, 1], connector=[false, false, false, false], bottom_cha
                 center_y = 0.8+1.8/2;
                 max_y = 2.5;
                 inset = 0.01;
-                each_cell_side(unit_size, enabled=[for (dir = [0:3]) enable_clickgroove(dir)]) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([
+                each_cell_side(unit_size, enabled=latch_sides) translate([-2.15, 0.8+1.8/2]) linear_extrude(clickgroove_tab_length, center=true) polygon([
                     [-clickgroove_depth, 0], // peak
                     [0, min(height/2, max_y - center_y)], // top corner
                     [0.01, 0], // slight dent to make sure the polygon is connected to the edge
@@ -1184,7 +1232,22 @@ function cell_style(index, global_cell_index, global_cell_count) = let(
 ) len(cell_override) > seq_index ? cell_override[seq_index] : _CELL_STYLE_NORMAL;
 
 /**
- * @Summary The union of the cell cores, clipped so the outer wall stays solid, the puzzle connectors keep hollow_connector_fill of material around them and the intersection holes stay surrounded by solid material
+ * @Summary Is there a connector right next to this cell? (by direction)
+ * @param connector Does the segment have a connector? (by direction)
+ * @param at_edge Is the cell at the segment edge? (by direction)
+ */
+function cell_connector(connector, at_edge) = [for (direction = [0:3]) connector[direction] && at_edge[direction]];
+
+/**
+ * @Summary How much of this cell a bottom chamfer will eat up (by direction)
+ * @param connector Does the segment have a connector? (by direction)
+ * @param at_edge Is the cell at the segment edge? (by direction)
+ * @param padding The padding of the segment (by direction)
+ */
+function cell_bottom_chamfer_takes(connector, at_edge, padding) = [for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0];
+
+/**
+ * @Summary The union of the cell cores, clipped so the outer wall stays solid, the puzzle connectors keep hollow_connector_fill of material around them, the intersection holes stay surrounded by solid material and the ClickGroove latches keep what they need to flex
  */
 module segment_core(trace, size, padding, connector, global_cell_index, global_cell_count) {
     last = [len(trace.x)-1, len(trace.y)-1];
@@ -1216,6 +1279,15 @@ module segment_core(trace, size, padding, connector, global_cell_index, global_c
         translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
             vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count)
                 circle(r = hollow_intersection_radius());
+        if (click && click_style == _CLICK2)
+            for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                cell_size = [trace.x[ix], trace.y[iy]];
+                if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
+                    at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
+                    each_cell_side(cell_size, enabled=clickgroove_sides(cell_connector(connector, at_edge), cell_bottom_chamfer_takes(connector, at_edge, padding)))
+                        hollow_clickgroove_keep();
+                }
+            }
     }
 }
 
@@ -1260,9 +1332,9 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                         if (style == _CELL_STYLE_NORMAL) {
                             at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
                             cell(
-                                cell_size, 
-                                connector=[for (direction = [0:3]) connector[direction] && at_edge[direction]], 
-                                bottom_chamfer_takes=[for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0]
+                                cell_size,
+                                connector=cell_connector(connector, at_edge),
+                                bottom_chamfer_takes=cell_bottom_chamfer_takes(connector, at_edge, padding)
                             );
                         } else if (style == _CELL_STYLE_EMPTY) {
                         } else if (style == _CELL_STYLE_SOLID) {
