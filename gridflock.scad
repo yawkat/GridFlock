@@ -1187,42 +1187,36 @@ function cell_style(index, global_cell_index, global_cell_count) = let(
 ) len(cell_override) > seq_index ? cell_override[seq_index] : _CELL_STYLE_NORMAL;
 
 /**
- * @Summary Run the children centered on every cell of a segment
- * @Details The children can use these special variables:
- *          $cell_size: Size of the cell, in grid units, in each direction
- *          $cell_style: How the cell is rendered (see cell_style)
- *          $cell_connector: Is there a connector right next to this cell? (by direction)
- *          $cell_bottom_chamfer_takes: How much of this cell a bottom chamfer will eat up (by direction)
- * @param trace The cell sizes of this segment
- * @param size The size of this segment
- * @param padding The padding of this segment (for each edge)
+ * @Summary Is there a connector right next to this cell? (by direction)
  * @param connector Does the segment have a connector? (by direction)
- * @param global_cell_index The index of the first cell of this segment in the whole plate
- * @param global_cell_count The number of cells in the whole plate
+ * @param at_edge Is the cell at the segment edge? (by direction)
  */
-module segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count) {
-    last = [len(trace.x)-1, len(trace.y)-1];
-    for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
-        at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
-        $cell_size = [trace.x[ix], trace.y[iy]];
-        $cell_style = cell_style([ix, iy], global_cell_index, global_cell_count);
-        $cell_connector = [for (direction = [0:3]) connector[direction] && at_edge[direction]];
-        $cell_bottom_chamfer_takes = [for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0];
-        children();
-    }
-}
+function cell_connector(connector, at_edge) = [for (direction = [0:3]) connector[direction] && at_edge[direction]];
+
+/**
+ * @Summary How much of this cell a bottom chamfer will eat up (by direction)
+ * @param connector Does the segment have a connector? (by direction)
+ * @param at_edge Is the cell at the segment edge? (by direction)
+ * @param padding The padding of the segment (by direction)
+ */
+function cell_bottom_chamfer_takes(connector, at_edge, padding) = [for (direction = [0:3]) at_edge[direction] && !connector[direction] ? max(0, bottom_chamfer[direction] - padding[direction]) : 0];
 
 /**
  * @Summary The union of the cell cores, clipped so the outer wall stays solid, the puzzle connectors keep hollow_connector_fill of material around them, the intersection holes stay surrounded by solid material and the ClickGroove latches keep what they need to flex
  */
 module segment_core(trace, size, padding, connector, global_cell_index, global_cell_count) {
+    last = [len(trace.x)-1, len(trace.y)-1];
     difference() {
         intersection() {
             translate([0, 0, -_extra_height]) linear_extrude(height = _total_height)
                 offset(-hollow_wall) segment_rectangle(size, connector, include_wall=false);
             union() {
-                segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count)
-                    if ($cell_style == _CELL_STYLE_NORMAL) cell_core($cell_size);
+                for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                    cell_size = [trace.x[ix], trace.y[iy]];
+                    if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
+                        cell_core(cell_size);
+                    }
+                }
             }
         }
         if (hollow_connector_fill > 0)
@@ -1241,10 +1235,14 @@ module segment_core(trace, size, padding, connector, global_cell_index, global_c
             vertical_screw_sites(trace, size, padding, global_cell_index, global_cell_count)
                 circle(r = hollow_intersection_radius());
         if (click && click_style == _CLICK2)
-            segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count)
-                if ($cell_style == _CELL_STYLE_NORMAL)
-                    each_cell_side($cell_size, enabled=clickgroove_sides($cell_connector, $cell_bottom_chamfer_takes))
+            for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                cell_size = [trace.x[ix], trace.y[iy]];
+                if (cell_style([ix, iy], global_cell_index, global_cell_count) == _CELL_STYLE_NORMAL) {
+                    at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
+                    each_cell_side(cell_size, enabled=clickgroove_sides(cell_connector(connector, at_edge), cell_bottom_chamfer_takes(connector, at_edge, padding)))
                         hollow_clickgroove_keep();
+                }
+            }
     }
 }
 
@@ -1282,15 +1280,23 @@ module segment(trace=[[1], [1]], padding=[0, 0, 0, 0], connector=[false, false, 
                         if (padding[_WEST] > 0) translate([-size.x/2, -size.y/2]) cube([padding[_WEST], size.y, _total_height]);
                     }
                     // cells
-                    segment_cells(trace, size, padding, connector, global_cell_index, global_cell_count) {
-                        if ($cell_style == _CELL_STYLE_NORMAL) {
-                            cell($cell_size, connector=$cell_connector, bottom_chamfer_takes=$cell_bottom_chamfer_takes);
-                        } else if ($cell_style == _CELL_STYLE_EMPTY) {
-                        } else if ($cell_style == _CELL_STYLE_SOLID) {
-                            dim = [BASEPLATE_DIMENSIONS.x * $cell_size.x, BASEPLATE_DIMENSIONS.y * $cell_size.y];
+                    for (ix = [0:1:last.x]) for (iy = [0:1:last.y]) navigate_cell(size, trace, padding, [ix, iy]) {
+                        cell_size = [trace.x[ix], trace.y[iy]];
+
+                        style = cell_style([ix, iy], global_cell_index, global_cell_count);
+                        if (style == _CELL_STYLE_NORMAL) {
+                            at_edge = [iy == last.y, ix == last.x, iy == 0, ix == 0];
+                            cell(
+                                cell_size,
+                                connector=cell_connector(connector, at_edge),
+                                bottom_chamfer_takes=cell_bottom_chamfer_takes(connector, at_edge, padding)
+                            );
+                        } else if (style == _CELL_STYLE_EMPTY) {
+                        } else if (style == _CELL_STYLE_SOLID) {
+                            dim = [BASEPLATE_DIMENSIONS.x * cell_size.x, BASEPLATE_DIMENSIONS.y * cell_size.y];
                             translate([-dim.x/2, -dim.y/2, -_extra_height]) cube([dim.x, dim.y, _total_height]);
                         } else {
-                            assert(false, str("Unknown cell style: '", $cell_style, "'"));
+                            assert(false, str("Unknown cell style: '", style, "'"));
                         }
                     };
                 };
