@@ -81,6 +81,7 @@ For inserting magnets, check out [the jig](#jig).
     - [Intersection magnets](#intersection-magnets)
       - [Magnet dimensions](#magnet-dimensions)
       - [Magnet floor](#magnet-floor)
+      - [Magnet chamfer](#magnet-chamfer)
       - [Magnet release hole](#magnet-release-hole)
     - [Hole locations](#hole-locations)
       - [Plate corners](#plate-corners)
@@ -739,6 +740,13 @@ With a floor, the pocket is fully enclosed, so you have to pause the print at th
 
 > [!NOTE]
 > The hole cuts into the corners of the gridfinity profile a bit. This should not matter for most bins.
+
+#### Magnet chamfer
+
+`vertical_screw_magnet_chamfer` adds a 45° chamfer at the bottom edge of a pocket that is open at the bottom. It guides the magnet into the pocket, and makes up for elephant foot, which otherwise narrows the bottom of the pocket. The default of 0.3mm is more than one layer at all common layer heights. Set it to 0 to disable the chamfer. The chamfer is not added to pockets with a floor.
+
+<!-- openscad -o docs/images/vmagnets-chamfer.png --camera=21,0,0,150,0,25,45 -D plate_size='[126, 84]' -D magnets=false -D vertical_screw_style=1 -D vertical_screw_plate_corners=true -->
+<img src="docs/images/vmagnets-chamfer.png" alt="Magnet pocket with a chamfer at the bottom edge" />
 
 #### Magnet release hole
 

@@ -176,6 +176,8 @@ vertical_screw_magnet_diameter = 6.1; // 0.01
 vertical_screw_magnet_height = 2.1; // 0.05
 // Floor below the magnet pocket. At 0, the pocket is open at the bottom and the magnets are glued or pressed in from below. With a thin floor, the magnets can be embedded using a print pause, or inserted from the top if the pocket height exceeds the plate height
 vertical_screw_magnet_floor = 0; // 0.05
+// Chamfer at the bottom edge of the magnet pocket, when it is open at the bottom. Guides the magnet in and makes up for elephant foot
+vertical_screw_magnet_chamfer = 0.3; // 0.05
 // Diameter of a small hole through the whole plate at the magnet pocket, used to push the magnet out with a needle. Set to 0 to disable
 vertical_screw_magnet_release_diameter = 1.5; // 0.1
 
@@ -929,7 +931,7 @@ module screw(depth, d, countersink, counterbore, clear_up=0.01) {
  * @Summary Diameter of the widest part of an intersection hole
  */
 function vertical_screw_hole_diameter() = vertical_screw_style == _VERTICAL_SCREW_STYLE_MAGNET
-    ? vertical_screw_magnet_diameter
+    ? vertical_screw_magnet_diameter + (vertical_screw_magnet_floor > 0 ? 0 : 2*vertical_screw_magnet_chamfer)
     : max(vertical_screw_diameter, vertical_screw_countersink_top.x, vertical_screw_counterbore_top.x);
 
 /**
@@ -973,6 +975,9 @@ module vertical_screw() {
         // if the pocket is higher than the plate, it cuts through the top, so that magnets can be inserted from there
         bottom = vertical_screw_magnet_floor > 0 ? vertical_screw_magnet_floor : -0.01;
         translate([0, 0, -_extra_height + bottom]) cylinder(d=vertical_screw_magnet_diameter, h=vertical_screw_magnet_floor + vertical_screw_magnet_height - bottom);
+        // 45° chamfer at the bottom edge of a pocket that is open at the bottom
+        if (vertical_screw_magnet_floor <= 0 && vertical_screw_magnet_chamfer > 0)
+            translate([0, 0, -_extra_height - 0.01]) cylinder(d1=vertical_screw_magnet_diameter + 2*(vertical_screw_magnet_chamfer + 0.01), d2=vertical_screw_magnet_diameter, h=vertical_screw_magnet_chamfer + 0.01);
         // release hole, to push the magnet out with a needle
         if (vertical_screw_magnet_release_diameter > 0) translate([0, 0, -_extra_height - 0.01]) cylinder(d=vertical_screw_magnet_release_diameter, h=_total_height + 0.02);
     } else {

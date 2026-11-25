@@ -206,6 +206,9 @@ display-condition = {js = "vertical_screw_style == 1"}
 [model.param-metadata.vertical_screw_magnet_floor]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-floor"
 display-condition = {js = "vertical_screw_style == 1"}
+[model.param-metadata.vertical_screw_magnet_chamfer]
+help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-chamfer"
+display-condition = {js = "vertical_screw_style == 1 && vertical_screw_magnet_floor <= 0"}
 [model.param-metadata.vertical_screw_magnet_release_diameter]
 help-link = "https://github.com/yawkat/GridFlock/blob/main/README.md#magnet-release-hole"
 display-condition = {js = "vertical_screw_style == 1"}
