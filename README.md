@@ -57,6 +57,7 @@ For inserting magnets, check out [the jig](#jig).
     - [Integer Fraction](#integer-fraction)
     - [Dynamic](#dynamic)
   - [Lightweight](#lightweight)
+    - [Click latch](#click-latch-1)
     - [Wall thickness](#wall-thickness)
     - [Connector fill](#connector-fill)
     - [Bottom lip](#bottom-lip)
@@ -485,7 +486,14 @@ The same plate without `hollow`, also seen from below:
 The top surface, the outer wall of each segment and the puzzle connectors stay solid, so segments link up the same way and the plate looks unchanged from above.
 
 > [!NOTE]
-> Hollow mode is incompatible with magnets, `solid_base` and the click latch — there is no material left to hold them, and GridFlock refuses to render that combination.
+> Hollow mode is incompatible with magnets and `solid_base`, because there is no material left to hold them. GridFlock refuses to render that combination.
+
+### Click latch
+
+Hollow mode works with the [ClickGroove](#clickgroove) latch (`click_style=1`), but not with the arc latch. The latch beam stays solid, with a short anchor at each end. Behind the beam, the gap stays open and the wall on the grid line is `hollow_wall` thick, with a 45° roof over the gap. The latch flexes the same as on a solid plate. A 4x4 plate with ClickGroove latches drops from 18.6cm³ to 13.1cm³.
+
+<!-- openscad -o docs/images/lightweight-clickgroove.png --camera=0,0,0,150,0,25,260 -D plate_size='[84, 84]' -D hollow=true -D click=true -D click_style=1 -D connector_intersection_puzzle=false -D numbering=false -->
+<img src="docs/images/lightweight-clickgroove.png" alt="Lightweight baseplate with ClickGroove latches, seen from below" />
 
 ### Wall thickness
 
